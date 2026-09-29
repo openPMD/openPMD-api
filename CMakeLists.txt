@@ -862,6 +862,7 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/container_buffer_size_1d_downsizes.cpp
                 test/Files_SerialIO/joined_dim_buffer_api.cpp
                 test/Files_SerialIO/memory_selection_rejected_before_flush.cpp
+                test/Files_SerialIO/memory_selection_old_adios2.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}

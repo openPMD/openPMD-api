@@ -90,12 +90,6 @@ void DatasetReader::call(
 template <class>
 inline constexpr bool always_false_v = false;
 
-static constexpr char const *warningMemorySelection =
-    "[Warning] Using a version of ADIOS2 that cannot reset memory selections "
-    "on a variable, once specified. When using memory selections, then please "
-    "specify it explicitly on all storeChunk() calls. Further info: "
-    "https://github.com/ornladios/ADIOS2/pull/4169.";
-
 template <typename T>
 void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
 {
@@ -126,15 +120,16 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                 engine.Put(var, ptr);
                 if (bp.param.memorySelection.has_value())
                 {
+                    /*
+                     * Reset the memory selection so that it does not leak into
+                     * the next put of this variable. ADIOS2 versions that
+                     * cannot reset a memory selection reject the selection
+                     * already in verifyDataset(), so this branch is only ever
+                     * reached with supporting versions.
+                     */
                     if constexpr (openPMD::CanTheMemorySelectionBeReset)
                     {
                         var.SetMemorySelection();
-                    }
-                    else if (!ba.m_impl->printedWarningsAlready.memorySelection)
-                    {
-                        std::cerr << warningMemorySelection << std::endl;
-                        ba.m_impl->printedWarningsAlready.memorySelection =
-                            true;
                     }
                 }
             }
@@ -211,14 +206,16 @@ struct RunUniquePtrPut
         engine.Put(var, ptr);
         if (bufferedPut.memorySelection.has_value())
         {
+            /*
+             * Reset the memory selection so that it does not leak into the
+             * next put of this variable. ADIOS2 versions that cannot reset a
+             * memory selection reject the selection already in
+             * verifyDataset(), so this branch is only ever reached with
+             * supporting versions.
+             */
             if constexpr (openPMD::CanTheMemorySelectionBeReset)
             {
                 var.SetMemorySelection();
-            }
-            else if (!ba.m_impl->printedWarningsAlready.memorySelection)
-            {
-                std::cerr << warningMemorySelection << std::endl;
-                ba.m_impl->printedWarningsAlready.memorySelection = true;
             }
         }
     }

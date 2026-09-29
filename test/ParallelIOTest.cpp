@@ -480,6 +480,9 @@ void available_chunks_test(std::string const &file_ending)
                            0, 7, 8, 9, 0, //
                            0, 0, 0, 0, 0};
     std::vector<int> ydata_firstandlastrow{-1, -1, -1};
+    // Equivalent contiguous representation of the 3x3 block with values 1..9
+    // for ADIOS2 versions that do not support memory selections.
+    std::vector<int> ydata_block{1, 2, 3, 4, 5, 6, 7, 8, 9};
     {
         Series write(name, Access::CREATE, MPI_COMM_WORLD, parameters.str());
         Iteration it0 = write.iterations[0];
@@ -495,26 +498,39 @@ void available_chunks_test(std::string const &file_ending)
             .unsafeNoAutomaticFlush()
             .store()
             .get();
-        E_y.prepareLoadStore()
-            .offset({1, 3ul * mpi_rank})
-            .extent({3, 3})
-            .withContiguousContainer(ydata)
-            .memorySelection({{1, 1}, {5, 5}})
-            .unsafeNoAutomaticFlush()
-            .store()
-            .get();
-        // if condition checks if this PR is available in ADIOS2:
-        // https://github.com/ornladios/ADIOS2/pull/4169
+        // Memory selections can only be reset in ADIOS2 >= 2.10.1
+        // (https://github.com/ornladios/ADIOS2/pull/4169). Older versions
+        // reject them, so use an equivalent contiguous buffer there.
         if constexpr (CanTheMemorySelectionBeReset)
         {
+            // Take the 3x3 block (values 1..9) out of the 5x5 buffer `ydata`
+            // and store it non-contiguously.
             E_y.prepareLoadStore()
-                .withContiguousContainer(ydata_firstandlastrow)
-                .offset({4, 3ul * mpi_rank})
-                .extent({1, 3})
+                .offset({1, 3ul * mpi_rank})
+                .extent({3, 3})
+                .withContiguousContainer(ydata)
+                .memorySelection({{1, 1}, {5, 5}})
                 .unsafeNoAutomaticFlush()
                 .store()
                 .get();
         }
+        else
+        {
+            E_y.prepareLoadStore()
+                .withContiguousContainer(ydata_block)
+                .offset({1, 3ul * mpi_rank})
+                .extent({3, 3})
+                .unsafeNoAutomaticFlush()
+                .store()
+                .get();
+        }
+        E_y.prepareLoadStore()
+            .withContiguousContainer(ydata_firstandlastrow)
+            .offset({4, 3ul * mpi_rank})
+            .extent({1, 3})
+            .unsafeNoAutomaticFlush()
+            .store()
+            .get();
         it0.close();
     }
 
@@ -566,16 +582,7 @@ void available_chunks_test(std::string const &file_ending)
         auto middle_rows = middle_rows_deferred.get();
         auto last_row = last_row_deferred.get();
 
-        for (auto row : [&]() -> std::vector<std::shared_ptr<int> *> {
-                 if constexpr (CanTheMemorySelectionBeReset)
-                 {
-                     return {&first_row, &last_row};
-                 }
-                 else
-                 {
-                     return {&first_row};
-                 }
-             }())
+        for (auto row : {&first_row, &last_row})
         {
             for (size_t i = 0; i < width; ++i)
             {
