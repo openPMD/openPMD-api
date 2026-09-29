@@ -339,6 +339,13 @@ public:
 
     /** Set memory selection for non-contiguous memory regions
      *
+     * Only supported with ADIOS2 >= 2.10.1 (the capability to reset a memory
+     * selection was added upstream in 2.11.0 and backported to 2.10.1). Older
+     * versions cannot reset a memory selection once it has been set, which
+     * would silently leak it into subsequent store operations of the same
+     * variable. Those versions reject memory selections with an error at store
+     * time.
+     *
      * @param memorySelection Selection of memory region
      * @return Reference to this object for chaining
      */
@@ -465,6 +472,13 @@ public:
     }
 
     /** Set memory selection for non-contiguous memory regions
+     *
+     * Only supported with ADIOS2 >= 2.10.1 (the capability to reset a memory
+     * selection was added upstream in 2.11.0 and backported to 2.10.1). Older
+     * versions cannot reset a memory selection once it has been set, which
+     * would silently leak it into subsequent store operations of the same
+     * variable. Those versions reject memory selections with an error at store
+     * time.
      *
      * @param memorySelection Selection of memory region
      * @return Reference to this object for chaining

@@ -627,6 +627,16 @@ private:
 
         if (memorySelection.has_value())
         {
+            if (!openPMD::CanTheMemorySelectionBeReset)
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    "Non-contiguous memory selections are not supported with "
+                    "this version of ADIOS2 (upstream since 2.11.0, backported "
+                    "to 2.10.1): A memory selection can not be reset once "
+                    "specified, which would silently affect subsequent put "
+                    "operations.");
+            }
             var.SetMemorySelection(
                 {adios2::Dims(
                      memorySelection->offset.begin(),
@@ -643,7 +653,6 @@ private:
     {
         bool noGroupBased = false;
         bool blosc2bp5 = false;
-        bool memorySelection = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
@@ -1007,7 +1016,12 @@ public:
 
     bool supportsMemorySelection() const override
     {
-        return true;
+        /*
+         * A memory selection that cannot be reset would silently leak into
+         * subsequent store operations of the same variable. That ability was
+         * added upstream in ADIOS2 v2.11.0 and backported to v2.10.1.
+         */
+        return openPMD::CanTheMemorySelectionBeReset;
     }
 
     std::future<void> flush_impl(internal::ParsedFlushParams &) override;

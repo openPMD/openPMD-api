@@ -44,6 +44,8 @@
 
 #include "SerialIOTests.hpp"
 
+#include "openPMD/IO/ADIOS/macros.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <string>
@@ -54,6 +56,18 @@ using namespace openPMD;
 namespace
 {
 constexpr size_t N = 4;
+
+#if openPMD_HAVE_ADIOS2
+bool adios2SupportsMemorySelection()
+{
+    return CanTheMemorySelectionBeReset;
+}
+#else
+bool adios2SupportsMemorySelection()
+{
+    return false;
+}
+#endif
 
 struct WriteResult
 {
@@ -68,7 +82,10 @@ struct WriteResult
 WriteResult write_and_reject(std::string const &name)
 {
     Series s(name, Access::CREATE);
-    bool const backendSupports = s.backend() == "ADIOS2";
+    // HDF5 and JSON never support memory selections. ADIOS2 only supports them
+    // if its version can reset a memory selection (>= 2.10.1).
+    bool const backendSupports =
+        s.backend() == "ADIOS2" && adios2SupportsMemorySelection();
     s.setAttribute("some_global", "attribute");
 
     // Valid chunk that must not be lost.
