@@ -1087,10 +1087,7 @@ void RecordComponent::storeChunkRaw(T const *ptr, Offset offset, Extent extent)
     {
         operation.extent(std::move(extent));
     }
-    operation.withRawPtr(ptr)
-        .unsafeNoAutomaticFlush()
-        .store()
-        .get();
+    operation.withRawPtr(ptr).unsafeNoAutomaticFlush().store().get();
 }
 
 template <typename T>
