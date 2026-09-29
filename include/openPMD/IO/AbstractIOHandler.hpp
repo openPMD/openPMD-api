@@ -339,6 +339,15 @@ public:
     virtual std::string backendName() const = 0;
     virtual bool fullSupportForVariableBasedEncoding() const;
 
+    /**
+     * Whether the backend supports storing chunks with a non-contiguous
+     * memory selection. Backends that do not support this must reject such
+     * chunks in the frontend (RecordComponent::storeChunk_impl()) instead of
+     * letting the backend throw at flush time, which would clear the whole IO
+     * queue and corrupt the output.
+     */
+    virtual bool supportsMemorySelection() const;
+
     std::string directory;
     /*
      * Originally, the reason for distinguishing these two was that during
