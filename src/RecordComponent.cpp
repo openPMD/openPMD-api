@@ -714,6 +714,27 @@ void RecordComponent::storeChunk_impl(
 {
     auto [o, e, memorySelection] = std::move(cfg);
     verifyChunk(dtype, o, e);
+    if (memorySelection.has_value())
+    {
+        auto const &mem_offset = memorySelection->offset;
+        auto const &mem_extent = memorySelection->extent;
+        if (mem_offset.size() != e.size() || mem_extent.size() != e.size())
+        {
+            throw error::WrongAPIUsage(
+                "Memory selection: dimensionality of memory offset and memory "
+                "extent must match the chunk extent.");
+        }
+        for (size_t i = 0; i < e.size(); ++i)
+        {
+            if (mem_offset[i] + e[i] > mem_extent[i])
+            {
+                throw error::WrongAPIUsage(
+                    "Memory selection: memory offset + chunk extent exceeds "
+                    "the memory extent (dimension " +
+                    std::to_string(i) + ").");
+            }
+        }
+    }
 
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
