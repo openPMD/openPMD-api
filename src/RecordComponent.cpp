@@ -718,6 +718,11 @@ void RecordComponent::storeChunk_impl(
     Parameter<Operation::WRITE_DATASET> dWrite;
     dWrite.offset = std::move(o);
     dWrite.extent = std::move(e);
+    if (memorySelection.has_value() && joinedDimension().has_value())
+    {
+        throw error::WrongAPIUsage(
+            "Memory selections are not supported for joined arrays.");
+    }
     dWrite.memorySelection = memorySelection;
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
