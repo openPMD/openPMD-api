@@ -65,7 +65,7 @@ class ConfigureLoadStore
 
 protected:
     ConfigureLoadStore(RecordComponent &);
-    RecordComponent &m_rc;
+    std::unique_ptr<RecordComponent> m_rc;
 
     std::optional<Offset> m_offset;
     std::optional<Extent> m_extent;
