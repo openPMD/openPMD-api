@@ -851,12 +851,13 @@ RecordComponent &RecordComponent::makeEmpty(uint8_t dimensions)
 template <typename T>
 std::shared_ptr<T> RecordComponent::loadChunk(Offset o, Extent e)
 {
-    uint8_t dim = getDimensionality();
     auto operation = prepareLoadStore();
 
     // default arguments
+    // we will take care of joined dimension handling later in computeOffset /
+    // computeExtent
     //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    if (o.size() != 1u || o.at(0) != 0u || dim <= 1u)
+    if (o.size() != 1u || o.at(0) != 0u)
     {
         operation.offset(std::move(o));
     }

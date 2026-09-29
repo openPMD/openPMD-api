@@ -102,9 +102,10 @@ auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
 
 auto ConfigureLoadStore::computeOffset() -> Offset const &
 {
+    auto joined_dim = m_rc.joinedDimension();
     if (!m_offset.has_value())
     {
-        if (m_rc.joinedDimension().has_value())
+        if (joined_dim.has_value())
         {
             m_offset = std::make_optional<Offset>();
         }
@@ -112,6 +113,11 @@ auto ConfigureLoadStore::computeOffset() -> Offset const &
         {
             m_offset = std::make_optional<Offset>(dim(), 0);
         }
+    }
+    else if (joined_dim.has_value() && !m_offset->empty())
+    {
+        throw error::WrongAPIUsage(
+            "Joined dimension: Must specify empty offset.");
     }
     return *m_offset;
 }
@@ -151,10 +157,10 @@ auto ConfigureLoadStore::computeExtent() -> Extent const &
             else
             {
                 std::stringstream error;
-                error << "Requesting to load a chunk of size "
+                error << "Requesting to load/store a chunk of size "
                       << requestedExtent << " (n-dimensional extent is ";
                 auxiliary::write_vec_to_stream(error, *m_extent)
-                    << ") to a buffer of size " << *buffer_size << ".";
+                    << ") to/from a buffer of size " << *buffer_size << ".";
                 throw error::WrongAPIUsage(error.str());
             }
         }
