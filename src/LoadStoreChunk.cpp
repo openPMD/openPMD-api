@@ -60,8 +60,15 @@ namespace
 } // namespace
 
 ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
-    : m_rc(std::make_unique<RecordComponent>(rc))
+    : m_rc(std::make_shared<RecordComponent>(rc))
 {}
+ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore const &other) =
+    default;
+ConfigureLoadStore &
+ConfigureLoadStore::operator=(ConfigureLoadStore const &other) = default;
+ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore &&) = default;
+ConfigureLoadStore &
+ConfigureLoadStore::operator=(ConfigureLoadStore &&) = default;
 
 auto ConfigureLoadStore::dim() const -> uint8_t
 {

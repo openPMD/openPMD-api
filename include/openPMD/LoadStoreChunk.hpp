@@ -65,13 +65,20 @@ class ConfigureLoadStore
 
 protected:
     ConfigureLoadStore(RecordComponent &);
-    std::unique_ptr<RecordComponent> m_rc;
+    std::shared_ptr<RecordComponent> m_rc;
 
     std::optional<Offset> m_offset;
     std::optional<Extent> m_extent;
 
     bool m_unsafeNoAutomaticFlush = false;
 
+public:
+    ConfigureLoadStore(ConfigureLoadStore const &other);
+    ConfigureLoadStore &operator=(ConfigureLoadStore const &other);
+    ConfigureLoadStore(ConfigureLoadStore &&);
+    ConfigureLoadStore &operator=(ConfigureLoadStore &&);
+
+protected:
     [[nodiscard]] auto dim() const -> uint8_t;
     auto storeChunkConfig() -> internal::LoadStoreConfig;
 
