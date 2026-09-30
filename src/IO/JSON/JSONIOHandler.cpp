@@ -20,40 +20,35 @@
  */
 
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 
 namespace openPMD
 {
 JSONIOHandler::~JSONIOHandler() = default;
 
 JSONIOHandler::JSONIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     openPMD::json::TracingJSON jsonCfg,
     JSONIOHandlerImpl::FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandler{
-          std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
+    : AbstractIOHandler{std::move(initialize_from), std::move(jsonCfg)}
     , m_impl{this, format, std::move(originalExtension)}
 {}
 
 #if openPMD_HAVE_MPI
 JSONIOHandler::JSONIOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     MPI_Comm comm,
     openPMD::json::TracingJSON jsonCfg,
     JSONIOHandlerImpl::FileFormat format,
     std::string originalExtension)
-    : AbstractIOHandler{
-          std::move(initialize_from), std::move(path), at, std::move(jsonCfg)}
+    : AbstractIOHandler{std::move(initialize_from), std::move(jsonCfg)}
     , m_impl{
           JSONIOHandlerImpl{this, comm, format, std::move(originalExtension)}}
 {}
 #endif
 
-std::future<void> JSONIOHandler::flush(internal::ParsedFlushParams &params)
+std::future<void> JSONIOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     return m_impl.flush(params);
 }

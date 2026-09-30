@@ -167,6 +167,12 @@ void write_test_zero_extent(
         Access::CREATE_LINEAR,
         MPI_COMM_WORLD);
 
+    if (o.flushImmediately() && !writeAllChunks)
+    {
+        // immediate flushing makes storeChunk collective, cannot do this
+        return;
+    }
+
     int const max_step = 100;
 
     for (int step = 0; step <= max_step; step += 20)
@@ -473,18 +479,73 @@ void available_chunks_test(std::string const &file_ending)
 }
 )END";
 
-    std::vector<int> data{2, 4, 6, 8};
+    std::vector<int> xdata{2, 4, 6, 8};
+    std::vector<int> ydata{0, 0, 0, 0, 0, //
+                           0, 1, 2, 3, 0, //
+                           0, 4, 5, 6, 0, //
+                           0, 7, 8, 9, 0, //
+                           0, 0, 0, 0, 0};
+    std::vector<int> ydata_firstandlastrow{-1, -1, -1};
+    // Equivalent contiguous representation of the 3x3 block with values 1..9
+    // for ADIOS2 versions that do not support memory selections.
+    std::vector<int> ydata_block{1, 2, 3, 4, 5, 6, 7, 8, 9};
     {
         Series write(name, Access::CREATE, MPI_COMM_WORLD, parameters.str());
         Iteration it0 = write.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
         E_x.resetDataset({Datatype::INT, {mpi_size, 4}});
-        E_x.storeChunk(data, {mpi_rank, 0}, {1, 4});
+        E_x.storeChunk(xdata, {mpi_rank, 0}, {1, 4});
+        auto E_y = it0.meshes["E"]["y"];
+        E_y.resetDataset({Datatype::INT, {5, 3ul * mpi_size}});
+        E_y.prepareLoadStore()
+            .withContiguousContainer(ydata_firstandlastrow)
+            .offset({0, 3ul * mpi_rank})
+            .extent({1, 3})
+            .unsafeNoAutomaticFlush(true)
+            .store()
+            .get();
+        // Memory selections can only be reset in ADIOS2 >= 2.10.1
+        // (https://github.com/ornladios/ADIOS2/pull/4169). Older versions
+        // reject them, so use an equivalent contiguous buffer there.
+        if constexpr (CanTheMemorySelectionBeReset)
+        {
+            // Take the 3x3 block (values 1..9) out of the 5x5 buffer `ydata`
+            // and store it non-contiguously.
+            E_y.prepareLoadStore()
+                .offset({1, 3ul * mpi_rank})
+                .extent({3, 3})
+                .withContiguousContainer(ydata)
+                .memorySelection({{1, 1}, {5, 5}})
+                .unsafeNoAutomaticFlush(true)
+                .store()
+                .get();
+        }
+        else
+        {
+            E_y.prepareLoadStore()
+                .withContiguousContainer(ydata_block)
+                .offset({1, 3ul * mpi_rank})
+                .extent({3, 3})
+                .unsafeNoAutomaticFlush(true)
+                .store()
+                .get();
+        }
+        E_y.prepareLoadStore()
+            .withContiguousContainer(ydata_firstandlastrow)
+            .offset({4, 3ul * mpi_rank})
+            .extent({1, 3})
+            .unsafeNoAutomaticFlush(true)
+            .store()
+            .get();
         it0.close();
     }
 
     {
-        Series read(name, Access::READ_ONLY, MPI_COMM_WORLD);
+        Series read(
+            name,
+            Access::READ_ONLY,
+            MPI_COMM_WORLD,
+            R"({"verify_homogeneous_extents": false})");
         Iteration it0 = read.iterations[0];
         auto E_x = it0.meshes["E"]["x"];
         ChunkTable table = E_x.availableChunks();
@@ -510,6 +571,35 @@ void available_chunks_test(std::string const &file_ending)
         for (int i = 0; i < int(ranks.size()); ++i)
         {
             REQUIRE(ranks[i] == i);
+        }
+
+        auto E_y = it0.meshes["E"]["y"];
+        auto width = E_y.getExtent()[1];
+        auto first_row_deferred =
+            E_y.prepareLoadStore().extent({1, width}).load<int>();
+        auto middle_rows_deferred = E_y.prepareLoadStore()
+                                        .offset({1, 0})
+                                        .extent({3, width})
+                                        .load<int>();
+        auto last_row_deferred =
+            E_y.prepareLoadStore().offset({4, 0}).load<int>();
+
+        auto first_row = first_row_deferred.get();
+        auto middle_rows = middle_rows_deferred.get();
+        auto last_row = last_row_deferred.get();
+
+        for (auto row : {&first_row, &last_row})
+        {
+            for (size_t i = 0; i < width; ++i)
+            {
+                REQUIRE(row->get()[i] == -1);
+            }
+        }
+        for (size_t i = 0; i < width * 3; ++i)
+        {
+            size_t row = i / width;
+            int required_value = row * 3 + (i % 3) + 1;
+            REQUIRE(middle_rows.get()[i] == required_value);
         }
     }
 }
@@ -861,8 +951,25 @@ void close_iteration_test(std::string const &file_ending)
         {
             REQUIRE(data[i % 4] == chunk.get()[i]);
         }
-        auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
-        // REQUIRE_THROWS(read.flush());
+        // Cannot write/read chunks to/from closed Iterations.
+        if (read.flushImmediately())
+        {
+#if openPMD_USE_INVASIVE_TESTS
+            REQUIRE_THROWS_WITH(
+                E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4}),
+                "Cannot write/read chunks to/from closed Iterations.");
+#else
+            REQUIRE_THROWS_WITH(
+                E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4}),
+                "Wrong API usage: [Series] Closed iteration (idx=1) must be "
+                "open()ed explicitly before interacting with it again.");
+#endif
+        }
+        else
+        {
+            auto read_again = E_x_read.loadChunk<int>({0, 0}, {mpi_size, 4});
+            // REQUIRE_THROWS(read.flush());
+        }
     }
 
     chunk_assignment::RankMeta compare;

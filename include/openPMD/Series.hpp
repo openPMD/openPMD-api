@@ -799,6 +799,18 @@ public:
             "Cannot call this on an instance of Series.");
     }
 
+    /**
+     * Query whether this Series was opened with the sync-flush option
+     * (Series option "flush_immediately" / OPENPMD_FLUSH_IMMEDIATELY), i.e.
+     * whether load/store operations of the legacy chunk API are flushed
+     * immediately upon being called. Note that operations of the chaining
+     * API (prepareLoadStore()) are not affected unless
+     * unsafeNoAutomaticFlush() is used.
+     *
+     * @return true if the sync-flush option is active.
+     */
+    [[nodiscard]] bool flushImmediately() const;
+
     // clang-format off
 OPENPMD_private
     // clang-format on
@@ -850,7 +862,7 @@ OPENPMD_private
         Attributable::setData(m_series);
     }
 
-    std::unique_ptr<ParsedInput> parseInput(std::string);
+    std::unique_ptr<ParsedInput> parseInput(std::string) const;
     /**
      * @brief Parse non-backend-specific configuration in JSON config.
      *
@@ -861,7 +873,8 @@ OPENPMD_private
      *         to include the JSON lib here
      */
     template <typename TracingJSON>
-    void parseJsonOptions(TracingJSON &options, ParsedInput &);
+    void parseJsonOptions(
+        TracingJSON &options, ParsedInput &, internal::GlobalParameters &);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     template <typename... MPI_Communicator>
@@ -871,10 +884,11 @@ OPENPMD_private
         std::string const &options,
         MPI_Communicator &&...);
     template <typename TracingJSON, typename... MPI_Communicator>
-    std::tuple<std::unique_ptr<ParsedInput>, TracingJSON> initIOHandler(
+    std::tuple<std::unique_ptr<ParsedInput>, TracingJSON>
+    prepareIOHandlerArguments(
+        internal::GlobalParameters &,
         std::string const &filepath,
         std::string const &options,
-        Access at,
         bool resolve_generic_extension,
         MPI_Communicator &&...);
     void initSeries(

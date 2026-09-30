@@ -1918,6 +1918,12 @@ void HDF5IOHandlerImpl::writeDataset(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
 
+    if (parameters.memorySelection.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5",
+            "Non-contiguous memory selections not supported in HDF5 backend.");
+    }
     File file = requireFile("writeDataset", writable, /* checkParent = */ true);
 
     herr_t status;
@@ -3597,37 +3603,31 @@ std::future<void> HDF5IOHandlerImpl::flush(internal::ParsedFlushParams &params)
 
 #if openPMD_HAVE_HDF5
 HDF5IOHandler::HDF5IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON config)
-    : AbstractIOHandler(
-          std::move(initialize_from), std::move(path), at, std::move(config))
+    : AbstractIOHandler(std::move(initialize_from), std::move(config))
     , m_impl{new HDF5IOHandlerImpl(this)}
 {}
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
+std::future<void> HDF5IOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     return m_impl->flush(params);
 }
 #else
 
 HDF5IOHandler::HDF5IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON config)
-    : AbstractIOHandler(
-          std::move(initialize_from), std::move(path), at, std::move(config))
+    : AbstractIOHandler(std::move(initialize_from), std::move(config))
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> HDF5IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

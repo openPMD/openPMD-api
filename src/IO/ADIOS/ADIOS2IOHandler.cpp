@@ -30,6 +30,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
@@ -51,6 +52,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -1247,6 +1249,7 @@ namespace detail
             adios2::Variable<T> variable = impl->verifyDataset<T>(
                 params.offset,
                 params.extent,
+                std::nullopt,
                 IO,
                 engine,
                 varName,
@@ -2612,38 +2615,28 @@ namespace detail
 #if openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    openPMD::Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     MPI_Comm comm,
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(
-          std::move(initialize_from),
-          std::move(path),
-          at,
-          std::move(options),
-          comm)
+    : AbstractIOHandler(std::move(initialize_from), std::move(options), comm)
     , m_impl{this, comm, std::move(engineType), std::move(specifiedExtension)}
 {}
 
 #endif
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON options,
     std::string engineType,
     std::string specifiedExtension)
-    : AbstractIOHandler(
-          std::move(initialize_from), std::move(path), at, std::move(options))
+    : AbstractIOHandler(std::move(initialize_from), std::move(options))
     , m_impl{this, std::move(engineType), std::move(specifiedExtension)}
 {}
 
 std::future<void>
-ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
+ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &flushParams)
 {
     return m_impl.flush(flushParams);
 }
@@ -2652,39 +2645,29 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     MPI_Comm comm,
     json::TracingJSON config,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(
-          std::move(initialize_from),
-          std::move(path),
-          at,
-          std::move(config),
-          comm)
+    : AbstractIOHandler(std::move(initialize_from), std::move(config), comm)
 {}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-    std::string path,
-    Access at,
+    internal::AbstractIOHandlerInitFrom &&initialize_from,
     json::TracingJSON config,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string,
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string)
-    : AbstractIOHandler(
-          std::move(initialize_from), std::move(path), at, std::move(config))
+    : AbstractIOHandler(std::move(initialize_from), std::move(config))
 {}
 
-std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

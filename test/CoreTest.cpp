@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include <stdexcept>
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1144,8 +1145,10 @@ TEST_CASE("wrapper_test", "[core]")
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == 1);
-    REQUIRE(mrc3.get().m_chunks.size() == 1);
+    size_t num_chunks = o.IOHandler()->m_flush_immediately ? 0 : 1;
+    REQUIRE(
+        o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == num_chunks);
+    REQUIRE(mrc3.get().m_chunks.size() == num_chunks);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
@@ -1198,9 +1201,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 1);
+            .m_chunks.size() == num_chunks);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
+        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() ==
+        num_chunks);
 #endif
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
@@ -1222,9 +1226,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 2);
+            .m_chunks.size() == num_chunks * 2);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
+        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() ==
+        num_chunks * 2);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
@@ -1267,11 +1272,13 @@ TEST_CASE("use_count_test", "[core]")
     std::shared_ptr<uint16_t> storeData = std::make_shared<uint16_t>(44);
     REQUIRE(storeData.use_count() == 1);
     mrc.storeChunk(storeData, {0}, {1});
-    REQUIRE(storeData.use_count() == 2);
+#if openPMD_USE_INVASIVE_TESTS
+    long additional_internal_use_count =
+        o.IOHandler()->m_flush_immediately ? 0 : 1;
+    REQUIRE(storeData.use_count() == (1 + additional_internal_use_count));
     o.flush();
     REQUIRE(storeData.use_count() == 1);
 
-#if openPMD_USE_INVASIVE_TESTS
     PatchRecordComponent pprc =
         o.iterations[6]
             .particles["electrons"]
@@ -1285,12 +1292,59 @@ TEST_CASE("use_count_test", "[core]")
         .resetDataset(dset);
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast<uint64_t>(1));
-    REQUIRE(
-        std::get<std::shared_ptr<void const>>(
-            static_cast<Parameter<Operation::WRITE_DATASET> *>(
-                pprc.get().m_chunks.front().parameter.get())
-                ->data.as_variant<auxiliary::WriteBufferTypes>())
-            .use_count() == 1);
+    if (o.IOHandler()->m_flush_immediately)
+    {
+        REQUIRE(pprc.get().m_chunks.empty());
+    }
+    else
+    {
+        REQUIRE(
+            std::get<std::shared_ptr<void>>(
+                static_cast<Parameter<Operation::WRITE_DATASET> *>(
+                    pprc.get().m_chunks.front().parameter.get())
+                    ->data.as_variant<auxiliary::WriteBufferTypes>())
+                .use_count() == 1);
+    }
+#endif
+}
+
+TEST_CASE("unsafe_no_automatic_flush_immediate_flush_test", "[core]")
+{
+    /*
+     * The chaining API (prepareLoadStore) normally bypasses the immediate
+     * flush setting for safety. When unsafeNoAutomaticFlush() is used, it
+     * should fall back to the legacy flushing semantics, i.e. honor
+     * OPENPMD_FLUSH_IMMEDIATELY.
+     */
+    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
+    mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
+    std::shared_ptr<uint16_t> storeData = std::make_shared<uint16_t>(44);
+#if openPMD_USE_INVASIVE_TESTS
+    // immediate flush enabled -> chunk is written right away
+    o.IOHandler()->m_flush_immediately = true;
+    mrc.prepareLoadStore()
+        .offset(Offset{0})
+        .extent(Extent{1})
+        .withSharedPtr(storeData)
+        .unsafeNoAutomaticFlush(true)
+        .store()
+        .get();
+    REQUIRE(mrc.get().m_chunks.empty());
+    o.flush();
+
+    // immediate flush disabled -> chunk is buffered until flush()
+    o.IOHandler()->m_flush_immediately = false;
+    mrc.prepareLoadStore()
+        .offset(Offset{0})
+        .extent(Extent{1})
+        .withSharedPtr(storeData)
+        .unsafeNoAutomaticFlush(true)
+        .store()
+        .get();
+    REQUIRE(mrc.get().m_chunks.size() == 1);
+    o.flush();
+    REQUIRE(mrc.get().m_chunks.empty());
 #endif
 }
 
@@ -1785,6 +1839,24 @@ TEST_CASE("unique_ptr", "[core]")
     UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
     UniquePtrWithLambda<int[]> arrptrFilledCustom{
         new int[5]{}, [](int const *p) { delete[] p; }};
+
+    auto ptr3 = UniquePtrWithLambda<int>(new int{5}).static_cast_<void>();
+    auto ptr4 = UniquePtrWithLambda<int>(new int{6}).static_cast_<void>();
+    auto ptr5 = new int{7};
+    ptr3.swap(ptr4);
+    REQUIRE(*reinterpret_cast<int *>(ptr3.get()) == 6);
+    REQUIRE(*reinterpret_cast<int *>(ptr4.get()) == 5);
+    // cannot hand a new pointer to a casted UniquePtrWithLambda
+    // so let's check that it throws
+    ptr3.reset(ptr5);
+    // (we could theoretically reinterpret_cast the new pointer back to the
+    // original type and apply the deleter, but let's not.)
+    REQUIRE_THROWS_AS(ptr3.get_deleter()(ptr3.get()), std::runtime_error);
+    // The pointer is now broken, so we need to replace the deleter
+    ptr3.get_deleter() =
+        auxiliary::CustomDelete<void>([](void const *ptr_in_lambda) {
+            delete reinterpret_cast<int const *>(ptr_in_lambda);
+        });
 }
 
 TEST_CASE("scalar_and_vector", "[core]")
