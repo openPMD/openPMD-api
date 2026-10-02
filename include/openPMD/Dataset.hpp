@@ -34,6 +34,18 @@ namespace openPMD
 using Extent = std::vector<std::uint64_t>;
 using Offset = std::vector<std::uint64_t>;
 
+/** Selection of a region of memory for storing chunks.
+ *
+ * Used to specify a non-contiguous memory region when storing
+ * data chunks. This allows writing data that is not contiguous
+ * in memory.
+ */
+struct MemorySelection
+{
+    Offset offset;
+    Extent extent;
+};
+
 class Dataset
 {
     friend class RecordComponent;

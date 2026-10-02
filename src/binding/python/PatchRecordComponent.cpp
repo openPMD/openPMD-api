@@ -130,7 +130,9 @@ void init_PatchRecordComponent(py::module &m)
                     switch (dtype)
                     {
                     case DT::BOOL:
-                        return prc.store(idx, *static_cast<bool *>(buf.ptr));
+                        throw std::runtime_error(
+                            "make_constant: "
+                            "Boolean type not supported!");
                         break;
                     case DT::SHORT:
                         return prc.store(idx, *static_cast<short *>(buf.ptr));

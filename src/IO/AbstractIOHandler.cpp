@@ -145,7 +145,22 @@ std::future<void> AbstractIOHandler::flush(internal::FlushParams const &params)
     return future;
 }
 
+std::future<void> AbstractIOHandler::flush(internal::ParsedFlushParams &params)
+{
+    auto res = this->flush_impl(params);
+    if (!m_work.empty())
+    {
+        throw error::Internal("flush() did not clear all work!");
+    }
+    return res;
+}
+
 bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
+{
+    return false;
+}
+
+bool AbstractIOHandler::supportsMemorySelection() const
 {
     return false;
 }

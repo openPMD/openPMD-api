@@ -21,6 +21,7 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
@@ -509,6 +510,7 @@ private:
     adios2::Variable<T> verifyDataset(
         Offset const &offset,
         Extent const &extent,
+        std::optional<MemorySelection> const &memorySelection,
         adios2::IO &IO,
         adios2::Engine &engine,
         std::string const &varName,
@@ -622,6 +624,28 @@ private:
         var.SetSelection(
             {adios2::Dims(offset.begin(), offset.end()),
              adios2::Dims(extent.begin(), extent.end())});
+
+        if (memorySelection.has_value())
+        {
+            if (!openPMD::CanTheMemorySelectionBeReset)
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    "Non-contiguous memory selections are not supported with "
+                    "this version of ADIOS2 (upstream since 2.11.0, backported "
+                    "to 2.10.1): A memory selection can not be reset once "
+                    "specified, which would silently affect subsequent put "
+                    "operations.");
+            }
+            var.SetMemorySelection(
+                {adios2::Dims(
+                     memorySelection->offset.begin(),
+                     memorySelection->offset.end()),
+                 adios2::Dims(
+                     memorySelection->extent.begin(),
+                     memorySelection->extent.end())});
+        }
+
         return var;
     }
 
@@ -942,7 +966,7 @@ public:
         try
         {
             auto params = internal::defaultParsedFlushParams;
-            this->flush(params);
+            this->flush_impl(params);
         }
         catch (std::exception const &ex)
         {
@@ -990,6 +1014,20 @@ public:
         return true;
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    bool supportsMemorySelection() const override
+    {
+#if openPMD_HAVE_ADIOS2
+        /*
+         * A memory selection that cannot be reset would silently leak into
+         * subsequent store operations of the same variable. That ability was
+         * added upstream in ADIOS2 v2.11.0 and backported to v2.10.1.
+         */
+        return openPMD::CanTheMemorySelectionBeReset;
+#else
+        return false;
+#endif
+    }
+
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

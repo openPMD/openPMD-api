@@ -408,6 +408,7 @@ set(CORE_SOURCE
         src/Format.cpp
         src/Iteration.cpp
         src/IterationEncoding.cpp
+        src/LoadStoreChunk.cpp
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
@@ -419,6 +420,7 @@ set(CORE_SOURCE
         src/version.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/Future.cpp
         src/auxiliary/JSON.cpp
         src/auxiliary/JSONMatcher.cpp
         src/auxiliary/Memory.cpp
@@ -856,6 +858,11 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/filebased_write_test.cpp
                 test/Files_SerialIO/issue_1744_unique_ptrs_at_close_time.cpp
                 test/Files_SerialIO/components_without_extent.cpp
+                test/Files_SerialIO/deferred_load_unrelated_flush.cpp
+                test/Files_SerialIO/container_buffer_size_1d_downsizes.cpp
+                test/Files_SerialIO/joined_dim_buffer_api.cpp
+                test/Files_SerialIO/memory_selection_rejected_before_flush.cpp
+                test/Files_SerialIO/memory_selection_old_adios2.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}
