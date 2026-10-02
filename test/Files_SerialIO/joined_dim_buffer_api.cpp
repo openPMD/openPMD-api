@@ -77,7 +77,8 @@ TEST_CASE("joined_dim_buffer_api", "[serial][json]")
     REQUIRE_THROWS_AS(
         epx.loadChunkRaw(buf.data(), {}, {-1u}), error::WrongAPIUsage);
     {
-        std::shared_ptr<type> sptr(new type[N], [](type *p) { delete[] p; });
+        std::shared_ptr<type> sptr(
+            new type[N], [](const type *p) { delete[] p; });
         std::fill(sptr.get(), sptr.get() + N, -1.f);
         REQUIRE_THROWS_AS(
             epx.loadChunk(sptr, {0}, {-1u}), error::WrongAPIUsage);
