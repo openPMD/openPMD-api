@@ -1016,12 +1016,16 @@ public:
 
     bool supportsMemorySelection() const override
     {
+#if openPMD_HAVE_ADIOS2
         /*
          * A memory selection that cannot be reset would silently leak into
          * subsequent store operations of the same variable. That ability was
          * added upstream in ADIOS2 v2.11.0 and backported to v2.10.1.
          */
         return openPMD::CanTheMemorySelectionBeReset;
+#else
+        return false;
+#endif
     }
 
     std::future<void> flush_impl(internal::ParsedFlushParams &) override;
