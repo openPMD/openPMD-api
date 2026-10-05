@@ -6,7 +6,7 @@ from .DataFrame import (
     iterations_to_dataframe,
     particles_to_dataframe,
 )
-from .openpmd_api_cxx import *  # noqa
+from .openpmd_api_cxx import *
 
 __version__ = cxx.__version__
 __doc__ = cxx.__doc__
@@ -14,11 +14,11 @@ __license__ = cxx.__license__
 # __author__ = cxx.__author__
 
 # extend CXX classes with extra methods
-ParticleSpecies.to_df = particles_to_dataframe  # noqa
-ParticleSpecies.to_dask = particles_to_daskdataframe  # noqa
-Record_Component.to_dask_array = record_component_to_daskarray  # noqa
-Series.to_df = iterations_to_dataframe  # noqa
-Series.to_cudf = iterations_to_cudf  # noqa
+ParticleSpecies.to_df = particles_to_dataframe
+ParticleSpecies.to_dask = particles_to_daskdataframe
+Record_Component.to_dask_array = record_component_to_daskarray
+Series.to_df = iterations_to_dataframe
+Series.to_cudf = iterations_to_cudf
 
 # TODO remove in future versions (deprecated)
-Access_Type = Access  # noqa
+Access_Type = Access

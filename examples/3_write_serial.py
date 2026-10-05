@@ -8,6 +8,7 @@ License: LGPLv3+
 """
 
 import numpy as np
+
 import openpmd_api as io
 
 if __name__ == "__main__":
@@ -17,12 +18,12 @@ if __name__ == "__main__":
     # matrix dataset to write with values 0...size*size-1
     data = np.arange(size * size, dtype=np.double).reshape(3, 3)
 
-    print("Set up a 2D square array ({0}x{1}) that will be written".format(size, size))
+    print(f"Set up a 2D square array ({size}x{size}) that will be written")
 
     # open file for writing
     series = io.Series("../samples/3_write_serial_py.h5", io.Access.create_linear)
 
-    print("Created an empty {0} Series".format(series.iteration_encoding))
+    print(f"Created an empty {series.iteration_encoding} Series")
 
     print(len(series.iterations))
     rho = series.snapshots()[1].meshes["rho"]
@@ -30,9 +31,7 @@ if __name__ == "__main__":
     dataset = io.Dataset(data.dtype, data.shape)
 
     print(
-        "Created a Dataset of size {0}x{1} and Datatype {2}".format(
-            dataset.extent[0], dataset.extent[1], dataset.dtype
-        )
+        f"Created a Dataset of size {dataset.extent[0]}x{dataset.extent[1]} and Datatype {dataset.dtype}"
     )
 
     rho.reset_dataset(dataset)

@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Read all available iterations and print electron position data.
     for index, iteration in series.snapshots().items():
-        print("Current iteration {}".format(index))
+        print(f"Current iteration {index}")
         electronPositions = iteration.particles["e"]["position"]
         loadedChunks = []
         shapes = []
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         for i in range(3):
             dim = dimensions[i]
             shape = shapes[i]
-            print("dim: {}".format(dim))
+            print(f"dim: {dim}")
             chunk = loadedChunks[i]
             print(chunk)
 
