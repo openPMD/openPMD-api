@@ -355,7 +355,7 @@ struct VisitorLoadVariant
 ConfigureStoreChunkFromBuffer::ConfigureStoreChunkFromBuffer(
     auxiliary::WriteBuffer buffer, Datatype dt, ConfigureLoadStore &&core)
     : ConfigureLoadStore(std::move(core))
-    , m_buffer(std::move(buffer))
+    , m_buffer(std::make_shared<auxiliary::WriteBuffer>(std::move(buffer)))
     , m_datatype(dt)
 {}
 
@@ -380,7 +380,7 @@ auto ConfigureStoreChunkFromBuffer::store()
     -> auxiliary::DeferredComputation<void>
 {
     this->m_rc->storeChunk_impl(
-        std::move(m_buffer), m_datatype, storeChunkConfig());
+        std::move(*m_buffer), m_datatype, storeChunkConfig());
     if (m_unsafeNoAutomaticFlush)
     {
         return auxiliary::DeferredComputation<void>(
@@ -394,7 +394,7 @@ auto ConfigureLoadStoreFromBuffer::load()
     -> auxiliary::DeferredComputation<void>
 {
     auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
-        &this->m_buffer.as_variant<auxiliary::WriteBufferTypes>());
+        &this->m_buffer->as_variant<auxiliary::WriteBufferTypes>());
     if (!shared_ptr)
     {
         throw std::runtime_error(
