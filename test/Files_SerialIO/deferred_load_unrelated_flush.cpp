@@ -43,7 +43,9 @@ using namespace openPMD;
 
 TEST_CASE("deferred_load_unrelated_flush", "[serial][json]")
 {
-    constexpr int N = 4;
+    // cant get MSVC to use a constexpr int inside the lambda down below, so
+    // #define it is
+#define N 4
     std::vector<int> data{1, 2, 3, 4};
     std::string const name = "../samples/deferred_load_unrelated_flush.json";
 
