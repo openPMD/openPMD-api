@@ -348,6 +348,16 @@ uintptr_t Attributable::memoryID() const
     return reinterpret_cast<uintptr_t>(&retrieveSeries().Attributable::get());
 }
 
+bool Attributable::flushImmediately() const
+{
+    auto ioHandler = IOHandler();
+    if (!ioHandler)
+    {
+        return false;
+    }
+    return ioHandler->m_flush_immediately;
+}
+
 template <bool flush_entire_series>
 void Attributable::seriesFlush_impl(
     internal::FlushParams const &flushParams, bool flush_io_handler)
