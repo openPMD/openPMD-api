@@ -10,6 +10,7 @@ License: LGPLv3+
 from pathlib import Path
 
 import numpy as np
+
 from openpmd_api import Access, Dataset, Series, Unit_Dimension
 
 if __name__ == "__main__":

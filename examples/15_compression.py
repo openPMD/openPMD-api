@@ -20,6 +20,7 @@
 #
 
 import numpy as np
+
 import openpmd_api as opmd
 
 try:
@@ -68,7 +69,7 @@ def write(filename, config):
 def main():
 
     # We start with two examples for ADIOS2.
-    if "adios2" in opmd.variants and opmd.variants["adios2"]:
+    if opmd.variants.get("adios2"):
         simple_adios2_config = {
             # Backend can either be inferred from the filename ending, or
             # specified explicitly. In the latter case, the filename ending can
@@ -189,7 +190,7 @@ def main():
     # Filters are additionally distinguished by how tightly they integrate with
     # HDF5. The most tightly-integrated filter is Zlib, which has its own API
     # calls and hence also a special JSON/TOML configuration in openPMD:
-    if "hdf5" in opmd.variants and opmd.variants["hdf5"]:
+    if opmd.variants.get("hdf5"):
         hdf5_zlib_config = {
             "backend": "hdf5",
             "hdf5": {
