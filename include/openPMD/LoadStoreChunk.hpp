@@ -268,7 +268,8 @@ class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
     friend class ConfigureLoadStore;
 
 protected:
-    auxiliary::WriteBuffer m_buffer;
+    // shared_ptr to make this config object copyable
+    std::shared_ptr<auxiliary::WriteBuffer> m_buffer;
     Datatype m_datatype;
     std::optional<MemorySelection> m_mem_select;
     std::optional<size_t> m_buffer_size;
