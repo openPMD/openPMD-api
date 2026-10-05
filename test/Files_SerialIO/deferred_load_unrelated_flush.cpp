@@ -56,7 +56,7 @@ TEST_CASE("deferred_load_unrelated_flush", "[serial][json]")
         write.flush();
     }
 
-    auto read_one = [&name, &data](bool const allocating) {
+    auto read_one = [&](bool const allocating) {
         Series read(name, Access::READ_ONLY);
         auto E_x = read.iterations[0].meshes["E"]["x"];
         if (allocating)
