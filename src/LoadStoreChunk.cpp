@@ -442,12 +442,36 @@ auto ConfigureLoadStoreFromBuffer::load()
 
 void ConfigureLoadStore::extent_impl(Extent extent)
 {
-    m_extent = std::make_optional<Extent>(std::move(extent));
+    /*
+     * The legacy (non-chaining) overloads interpret an extent of {-1u} as
+     * "select the full dataset extent" and an offset of {0} as "no offset",
+     * expanding both to the dataset dimensionality. Accept the same sentinels
+     * in the chaining API so that migrating e.g.
+     * storeChunk(data, {0}, {-1u}) to .offset({0}).extent({-1u}) does not
+     * change the operation's meaning. Specifying the sentinel is equivalent to
+     * not specifying the value at all.
+     */
+    if (extent.size() == 1u && extent.at(0) == -1u)
+    {
+        m_extent.reset();
+    }
+    else
+    {
+        m_extent = std::make_optional<Extent>(std::move(extent));
+    }
 }
 
 void ConfigureLoadStore::offset_impl(Offset offset)
 {
-    m_offset = std::make_optional<Offset>(std::move(offset));
+    // See extent_impl() for the rationale. An offset of {0} means "no offset".
+    if (offset.size() == 1u && offset.at(0) == 0u)
+    {
+        m_offset.reset();
+    }
+    else
+    {
+        m_offset = std::make_optional<Offset>(std::move(offset));
+    }
 }
 
 void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
