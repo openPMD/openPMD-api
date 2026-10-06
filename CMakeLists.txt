@@ -1003,6 +1003,8 @@ if(openPMD_INSTALL)
         FILES_MATCHING
             PATTERN "*.hpp"
             PATTERN "*.tpp"
+            # used by the standalone Python bindings build
+            PATTERN "*.H"
     )
     install(
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
