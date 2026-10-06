@@ -376,11 +376,36 @@ auto ConfigureStoreChunkFromBuffer::getBufferSize() -> std::optional<size_t>
     return m_buffer_size;
 }
 
+auto ConfigureStoreChunkFromBuffer::consumeBuffer() -> auxiliary::WriteBuffer
+{
+    if (*m_buffer_consumed)
+    {
+        throw error::WrongAPIUsage(
+            "This buffer configuration has already been used for a store or "
+            "load operation. Buffer configurations are single-use; create a "
+            "new one via prepareLoadStore() for another operation.");
+    }
+    *m_buffer_consumed = true;
+    return std::move(*m_buffer);
+}
+
+void ConfigureStoreChunkFromBuffer::checkAndMarkBufferConsumed()
+{
+    if (*m_buffer_consumed)
+    {
+        throw error::WrongAPIUsage(
+            "This buffer configuration has already been used for a store or "
+            "load operation. Buffer configurations are single-use; create a "
+            "new one via prepareLoadStore() for another operation.");
+    }
+    *m_buffer_consumed = true;
+}
+
 auto ConfigureStoreChunkFromBuffer::store()
     -> auxiliary::DeferredComputation<void>
 {
     this->m_rc->storeChunk_impl(
-        std::move(*m_buffer), m_datatype, storeChunkConfig());
+        consumeBuffer(), m_datatype, storeChunkConfig());
     if (m_unsafeNoAutomaticFlush)
     {
         return auxiliary::DeferredComputation<void>(
@@ -393,6 +418,7 @@ auto ConfigureStoreChunkFromBuffer::store()
 auto ConfigureLoadStoreFromBuffer::load()
     -> auxiliary::DeferredComputation<void>
 {
+    this->checkAndMarkBufferConsumed();
     auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
         &this->m_buffer->as_variant<auxiliary::WriteBufferTypes>());
     if (!shared_ptr)
