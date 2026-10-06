@@ -568,3 +568,41 @@ TEST_CASE("future_test", "[auxiliary]")
     REQUIRE(counter == 1);
     REQUIRE_THROWS_AS(move_assigned(), error::WrongAPIUsage);
 }
+
+TEST_CASE("future_move_assignment", "[auxiliary]")
+{
+    using task_type = auxiliary::DeferredComputation<std::string>;
+
+    // Move-assigning over a handle that still holds a pending task must not
+    // silently drop that task: it is executed before being overwritten.
+    size_t overwritten_counter = 0;
+    size_t source_counter = 0;
+    task_type target{[&overwritten_counter]() {
+        ++overwritten_counter;
+        return "overwritten";
+    }};
+    task_type source{[&source_counter]() {
+        ++source_counter;
+        return "source";
+    }};
+
+    target = std::move(source);
+    REQUIRE(overwritten_counter == 1);
+    REQUIRE(source_counter == 0);
+
+    // The moved-in task is now the target's task.
+    REQUIRE(target() == "source");
+    REQUIRE(source_counter == 1);
+    REQUIRE_THROWS_AS(target(), error::WrongAPIUsage);
+
+    // Self-move-assignment must not execute the task.
+    size_t self_counter = 0;
+    task_type self{[&self_counter]() {
+        ++self_counter;
+        return "self";
+    }};
+    auto &self_ref = self;
+    self = std::move(self_ref);
+    REQUIRE(self_counter == 0);
+    REQUIRE(self() == "self");
+}

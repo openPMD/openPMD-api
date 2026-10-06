@@ -99,6 +99,13 @@ public:
     DeferredComputation(DeferredComputation &&) noexcept(noexcept_move);
     DeferredComputation(DeferredComputation const &) = delete;
 
+    /** Move-assign, executing any still-pending task of the target first.
+     *
+     * Like the destructor, the assignment does not silently drop a pending
+     * computation: a task already held by the target is executed (and any
+     * exception logged to standard error) before the source's task is moved
+     * in.
+     */
     auto operator=(DeferredComputation &&) noexcept(noexcept_move)
         -> DeferredComputation &;
     auto operator=(DeferredComputation const &)
@@ -153,5 +160,13 @@ public:
      * @return true if the computation has not been invalidated
      */
     [[nodiscard]] auto valid() const noexcept -> bool;
+
+private:
+    /** Execute the stored task if it is still valid, then mark it as consumed.
+     *
+     * Exceptions are caught and logged to standard error, since this runs from
+     * destructors and move-assignment operators which must not throw.
+     */
+    void executeIfValid() noexcept;
 };
 } // namespace openPMD::auxiliary
