@@ -85,18 +85,33 @@ DeferredComputation<T>::DeferredComputation(DeferredComputation &&) noexcept(
     noexcept_move) = default;
 
 template <typename T>
-auto DeferredComputation<T>::operator=(DeferredComputation &&) noexcept(
-    noexcept_move) -> DeferredComputation & = default;
+auto DeferredComputation<T>::operator=(DeferredComputation &&other) noexcept(
+    noexcept_move) -> DeferredComputation &
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+    /*
+     * The target of the assignment might still hold a pending task. As with
+     * the destructor, that task represents a data operation (and possibly a
+     * collective flush) that must not be silently dropped, so run it before
+     * overwriting it.
+     */
+    this->executeIfValid();
+    this->m_task = std::move(other.m_task);
+    return *this;
+}
 
 template <typename T>
-DeferredComputation<T>::~DeferredComputation()
+void DeferredComputation<T>::executeIfValid() noexcept
 {
     try
     {
         std::visit(
             auxiliary::overloaded{
                 [](detail::OneTimeTask<T> &task) {
-                    if (task.members.m_task_valid)
+                    if (task.members.m_task_valid && task.members.m_task)
                     {
                         std::move(task)();
                     }
@@ -114,6 +129,12 @@ DeferredComputation<T>::~DeferredComputation()
         std::cerr << "[DeferredComputation] Unknown error in destructor."
                   << std::endl;
     }
+}
+
+template <typename T>
+DeferredComputation<T>::~DeferredComputation()
+{
+    this->executeIfValid();
 }
 
 template <typename T>
