@@ -1,8 +1,80 @@
 # Python bindings #############################################################
 #
-# This directory is added by the top-level CMakeLists.txt when Python bindings
-# are enabled (openPMD_HAVE_PYTHON). It builds the pybind11 extension module
-# `openPMD.py` against the openPMD C++ core library.
+# This directory can be configured in two ways:
+#
+#  1. As part of the main openPMD-api build. The top-level CMakeLists.txt adds
+#     this directory when Python bindings are enabled. In this case the C++
+#     core library is built as part of the same project.
+#
+#  2. Standalone, against an already installed openPMD-api C++ library. This
+#     makes it possible to build the Python bindings for several Python
+#     versions without rebuilding the C++ core each time, and lets pure C++
+#     dependents avoid a dependency on Python. Point CMake at this source
+#     directory, e.g.:
+#
+#         cmake -S <openPMD-api>/src/binding/python -B build-python \
+#               -DopenPMD_DIR=<prefix>/lib/cmake/openPMD
+#         cmake --build build-python
+#
+#     See https://github.com/openPMD/openPMD-api/issues/1455
+
+# Detect whether we are configured as part of the main openPMD-api C++ build
+# (the `openPMD::openPMD` target already exists) or standalone against an
+# installed C++ library.
+set(openPMD_python_standalone TRUE)
+if(TARGET openPMD::openPMD)
+    set(openPMD_python_standalone FALSE)
+endif()
+
+if(openPMD_python_standalone)
+    cmake_minimum_required(VERSION 3.22.0)
+    project(openPMD-python LANGUAGES CXX)
+
+    # let us reuse the module functions of the main project
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake")
+    include(openPMDFunctions)
+
+    if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+        set(CMAKE_BUILD_TYPE "Release")
+    endif()
+
+    # path to the C++ sources/project root (for shared auxiliary files)
+    set(openPMD_ROOT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+    set(openPMD_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(openPMD_BINARY_DIR "${CMAKE_BINARY_DIR}")
+
+    set(openPMD_USE_PYTHON ON CACHE STRING "Enable Python bindings")
+    option(openPMD_USE_INTERNAL_PYBIND11
+        "Use internally shipped pybind11" OFF)
+    option(openPMD_INSTALL "Add installation targets" ON)
+    option(openPMD_INSTALL_RPATH "Add RPATHs to installed binaries" ON)
+    option(openPMD_USE_FILESYSTEM_HEADER
+        "Enable filesystem header. May be disabled for old compiler versions."
+        OFF)
+    mark_as_advanced(openPMD_USE_FILESYSTEM_HEADER)
+    option(openPMD_BUILD_NO_CFG_SUBPATH
+        "For multi-config builds, do not append the config to build dir" OFF)
+    mark_as_advanced(openPMD_BUILD_NO_CFG_SUBPATH)
+    option(openPMD_BUILD_CLI_TOOLS "Install the Python command line tools" OFF)
+
+    get_property(isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+
+    include(GNUInstallDirs)
+    if(WIN32)
+        set(openPMD_INSTALL_LIBDIR "Lib")
+    else()
+        set(openPMD_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+    endif()
+    set(openPMD_INSTALL_BINDIR "${CMAKE_INSTALL_BINDIR}")
+
+    # locate the installed C++ core library (defines openPMD::openPMD and sets
+    # openPMD_HAVE_MPI / openPMD_HAVE_HDF5 / openPMD_HAVE_ADIOS2)
+    find_package(openPMD CONFIG REQUIRED)
+
+    # Python interpreter and pybind11
+    include(${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/dependencies/pybind11.cmake)
+endif()
+
 if(openPMD_HAVE_PYTHON)
     add_library(openPMD.py MODULE
         openPMD.cpp
@@ -153,4 +225,42 @@ if(openPMD_HAVE_PYTHON)
         pipe/__init__.py pipe/__main__.py
     )
 
+    # Standalone install logic. In the main build, the install rules for the
+    # Python bindings live in the top-level CMakeLists.txt.
+    if(openPMD_python_standalone AND openPMD_INSTALL)
+        # RPATHs for the Python extension: it links against the (possibly
+        # shared) C++ core library and needs to find it at runtime.
+        if(openPMD_INSTALL_RPATH)
+            if(NOT DEFINED CMAKE_INSTALL_RPATH)
+                if(APPLE)
+                    set_target_properties(openPMD.py PROPERTIES
+                        INSTALL_RPATH "@loader_path")
+                elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+                    set_target_properties(openPMD.py PROPERTIES
+                        INSTALL_RPATH "$ORIGIN")
+                endif()
+            endif()
+            if(NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
+                set_target_properties(openPMD.py PROPERTIES
+                    INSTALL_RPATH_USE_LINK_PATH ON)
+            endif()
+        endif()
+
+        install(
+            DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/openpmd_api
+            DESTINATION ${openPMD_INSTALL_PYTHONDIR}
+            PATTERN "*pyc" EXCLUDE
+            PATTERN "__pycache__" EXCLUDE
+        )
+        install(TARGETS openPMD.py
+            DESTINATION ${openPMD_INSTALL_PYTHONDIR}/openpmd_api
+        )
+        if(openPMD_BUILD_CLI_TOOLS)
+            install(
+                PROGRAMS ${openPMD_ROOT_SOURCE_DIR}/src/cli/pipe.py
+                DESTINATION ${openPMD_INSTALL_BINDIR}
+                RENAME openpmd-pipe
+            )
+        endif()
+    endif()
 endif()
