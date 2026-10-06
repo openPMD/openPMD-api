@@ -303,7 +303,7 @@ jobs:
         find ../../../build/samples/          \
             ! -path '*thetaMode*'             \
             ! -path '*/many_iterations/*'     \
-            ! -path '/*custom_hierarchy/*'    \
+            ! -path '*/custom_hierarchy/*'    \
             ! -name 'profiling.json'          \
             ! -name '*config.json'            \
             ! -path '*/file_state_lifetime/*' \
