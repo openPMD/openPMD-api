@@ -26,6 +26,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/HierarchyVisitorImpl.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
@@ -121,7 +122,15 @@ void Container<T, T_key, T_container>::syncContainers(
 }
 
 #define OPENPMD_COMMA ,
+// Only MSVC (and clang-cl, which defines _MSC_VER) needs -- and accepts --
+// dllexport on explicit class template instantiations to export them from the
+// DLL.  GCC/Clang do not allow attributes on explicit instantiations.
+#if defined(_MSC_VER)
+#define OPENPMD_INSTANTIATE(type)                                              \
+    template class OPENPMDAPI_EXPORT Container<type>;
+#else
 #define OPENPMD_INSTANTIATE(type) template class Container<type>;
+#endif
 
 OPENPMD_INSTANTIATE(Mesh)
 OPENPMD_INSTANTIATE(MeshRecordComponent)
