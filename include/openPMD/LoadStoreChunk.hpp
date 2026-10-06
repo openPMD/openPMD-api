@@ -131,7 +131,8 @@ public:
     /** Set the offset within the dataset
      *
      * Optional. The operation will apply without offset by default (i.e. offset
-     * = (0, 0, ...)).
+     * = (0, 0, ...)). As in the legacy storeChunk() / loadChunk() overloads,
+     * passing {0} explicitly is equivalent to leaving the offset unset.
      *
      * @param offset Offset within the dataset
      * @return Reference to this object for chaining
@@ -144,7 +145,9 @@ public:
     /** Set the extent within the dataset
      *
      * Optional. The operation will apply to the entire dataset by default (i.e.
-     * operation extent = global dataset extent - operation offset).
+     * operation extent = global dataset extent - operation offset). As in the
+     * legacy storeChunk() / loadChunk() overloads, passing {-1u} explicitly is
+     * equivalent to leaving the extent unset.
      *
      * @param extent Extent within the dataset, counted from the offset
      * @return Reference to this object for chaining
@@ -323,7 +326,8 @@ public:
     /** Set the offset within the dataset
      *
      * Optional. The operation will apply without offset by default (i.e. offset
-     * = (0, 0, ...)).
+     * = (0, 0, ...)). As in the legacy storeChunk() / loadChunk() overloads,
+     * passing {0} explicitly is equivalent to leaving the offset unset.
      *
      * @param offset Offset within the dataset
      * @return Reference to this object for chaining
@@ -337,7 +341,9 @@ public:
     /** Set the extent within the dataset
      *
      * Optional. The operation will apply to the entire dataset by default (i.e.
-     * operation extent = global dataset extent - operation offset).
+     * operation extent = global dataset extent - operation offset). As in the
+     * legacy storeChunk() / loadChunk() overloads, passing {-1u} explicitly is
+     * equivalent to leaving the extent unset.
      *
      * @param extent Extent within the dataset, counted from the offset
      * @return Reference to this object for chaining
@@ -457,7 +463,8 @@ public:
     /** Set the offset within the dataset
      *
      * Optional. The operation will apply without offset by default (i.e. offset
-     * = (0, 0, ...)).
+     * = (0, 0, ...)). As in the legacy storeChunk() / loadChunk() overloads,
+     * passing {0} explicitly is equivalent to leaving the offset unset.
      *
      * @param offset Offset within the dataset
      * @return Reference to this object for chaining
@@ -471,7 +478,9 @@ public:
     /** Set the extent within the dataset
      *
      * Optional. The operation will apply to the entire dataset by default (i.e.
-     * operation extent = global dataset extent - operation offset).
+     * operation extent = global dataset extent - operation offset). As in the
+     * legacy storeChunk() / loadChunk() overloads, passing {-1u} explicitly is
+     * equivalent to leaving the extent unset.
      *
      * @param extent Extent within the dataset, counted from the offset
      * @return Reference to this object for chaining
