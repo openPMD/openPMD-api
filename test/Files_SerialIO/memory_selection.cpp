@@ -20,30 +20,26 @@
  */
 
 /*
- * Bug: rejecting a memory selection inside the IO task (at flush time)
- * corrupts the whole output file.
+ * Backend support for memory selections.
  *
- * The HDF5 and JSON backends do not support non-contiguous memory selections.
- * They used to throw error::OperationUnsupportedInBackend from within
- * writeDataset(), i.e. while flushing an IO task. AbstractIOHandlerImpl::flush
- * reacts to an exception in an IO task by clearing the whole IO queue and
- * rethrowing ("Clearing IO queue and passing on the exception"), so every
- * other pending chunk and the file's root attributes were dropped. Subsequent
- * flush() and close() then "succeeded", but the file could not be read back
- * (AttributeNotFound: openPMD).
+ * Memory selections require the ability to reset them, since a stale memory
+ * selection would otherwise silently leak into subsequent store operations of
+ * the same variable (see https://github.com/ornladios/ADIOS2/pull/4169). The
+ * reset capability was added upstream in ADIOS2 v2.11.0 and backported to
+ * v2.10.1; older versions must reject memory selections instead. The HDF5 and
+ * JSON backends never support them.
  *
- * The capability is known when the chunk is enqueued, so storeChunk_impl()
- * now checks it up front and throws before anything is queued. This test
- * verifies that:
- *  1. the unsupported store throws immediately (not at flush time), and
- *  2. a valid chunk stored in the same Series survives and can be read back.
- *
- * The ADIOS2 backend does support memory selections, so the corresponding
- * store must not throw there.
+ * Rejecting a memory selection inside the IO task (at flush time) used to
+ * corrupt the whole output file: the throw from within writeDataset() caused
+ * AbstractIOHandlerImpl::flush to clear the whole IO queue and rethrow
+ * ("Clearing IO queue and passing on the exception"), dropping every other
+ * pending chunk and the file's root attributes. The capability is known when
+ * the chunk is enqueued, so storeChunk_impl() now checks it up front and
+ * throws before anything is queued.
  */
-
 #include "SerialIOTests.hpp"
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/macros.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -151,3 +147,32 @@ TEST_CASE("memory_selection_rejected_before_flush", "[serial]")
         read.close();
     }
 }
+
+#if openPMD_HAVE_ADIOS2
+TEST_CASE("memory_selection_old_adios2", "[serial][adios2]")
+{
+    std::string const name = "../samples/memorySelectionOldAdios2.bp";
+    Series s(name, Access::CREATE, R"({"backend": "adios2"})");
+    auto rc = s.iterations[0].meshes["E"]["x"];
+    rc.resetDataset({Datatype::INT, {5, 5}});
+    std::vector<int> data(25, 1);
+    auto store = [&]() {
+        rc.prepareLoadStore()
+            .withContiguousContainer(data)
+            .offset({1, 1})
+            .extent({2, 2})
+            .memorySelection({{1, 1}, {5, 5}})
+            .store()
+            .get();
+    };
+    if (CanTheMemorySelectionBeReset)
+    {
+        store();
+        SUCCEED("Memory selections supported by this ADIOS2 version.");
+    }
+    else
+    {
+        REQUIRE_THROWS_AS(store(), error::OperationUnsupportedInBackend);
+    }
+}
+#endif
