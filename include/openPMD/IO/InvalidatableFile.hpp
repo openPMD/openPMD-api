@@ -70,6 +70,11 @@ struct InvalidatableFile
 
     explicit operator bool() const;
 
+    /*
+     *
+     * Enables using InvalidatableFile in ordered containers like std::set
+     * for consistent ordering across parallel processes.
+     */
     bool operator<(InvalidatableFile const &f) const;
 };
 } // namespace openPMD

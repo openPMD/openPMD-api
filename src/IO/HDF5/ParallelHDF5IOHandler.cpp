@@ -76,7 +76,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
 std::future<void>
-ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &params)
+ParallelHDF5IOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     if (auto hdf5_config_it = params.backendConfig.json().find("hdf5");
         hdf5_config_it != params.backendConfig.json().end())
@@ -462,7 +462,8 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
-std::future<void> ParallelHDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void>
+ParallelHDF5IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }
