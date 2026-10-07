@@ -861,12 +861,11 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/read_while_writing.cpp
                 test/Files_SerialIO/file_state_lifetime.cpp
                 test/Files_SerialIO/deferred_load_unrelated_flush.cpp
-                test/Files_SerialIO/container_buffer_size_1d_downsizes.cpp
+                test/Files_SerialIO/container_buffer_size.cpp
                 test/Files_SerialIO/buffer_config_single_use.cpp
                 test/Files_SerialIO/builder_sentinels.cpp
                 test/Files_SerialIO/joined_dim_buffer_api.cpp
-                test/Files_SerialIO/memory_selection_rejected_before_flush.cpp
-                test/Files_SerialIO/memory_selection_old_adios2.cpp
+                test/Files_SerialIO/memory_selection.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}
