@@ -103,7 +103,7 @@ TEST_CASE("container_buffer_size_1d_downsizes", "[serial][json]")
 {
     // 1-D dataset, default (full) extent, container smaller than the dataset:
     // the selection is downsized to the buffer size, no throw.
-    constexpr int N = 100;
+    constexpr size_t N = 100;
     std::string const name = "../samples/issue3_1d_downsize.json";
     {
         Series write(name, Access::CREATE);
