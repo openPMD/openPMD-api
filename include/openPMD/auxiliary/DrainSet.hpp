@@ -3,6 +3,14 @@
 namespace openPMD::auxiliary
 {
 
+/*
+ * std::set<> normally allows only const access to its members, because
+ * modification of the value would generally also invalidate the value's lookup
+ * logic in the set. However, when clearing a set, it is fine to modify values,
+ * because we are discarding the set anyway. Below is a helper to simplify doing
+ * this automatically in a for loop.
+ */
+
 template <class Set>
 class drain_view
 {
