@@ -761,18 +761,7 @@ OPENPMD_protected
      */
     void setWritten(bool val, EnqueueAsynchronously);
 
-    /*
-     * Declared under an explicit access specifier rather than the
-     * OPENPMD_protected macro: on the MSVC ABI the access specifier is part of
-     * the mangled name. Invasive test translation units redefine
-     * OPENPMD_protected to public:, which would make their references to this
-     * virtual (via emitted vtables) use a different mangling than the export
-     * from the library, causing LNK2001 for Attributable::visitHierarchyImpl.
-     */
-    // clang-format off
-protected:
-    // clang-format on
-    OPENPMDAPI_EXPORT virtual void
+    virtual OPENPMDAPI_EXPORT void
     visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
 
 private:

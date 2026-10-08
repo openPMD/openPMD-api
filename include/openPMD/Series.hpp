@@ -1051,17 +1051,6 @@ OPENPMD_private
 
     std::vector<std::string> availableDatasets();
 
-    /*
-     * Declared under an explicit access specifier rather than the
-     * OPENPMD_private macro: the MSVC ABI includes the access specifier in the
-     * mangled name, and invasive test translation units redefine
-     * OPENPMD_private to public:, which would otherwise make their emitted
-     * vtables reference a differently mangled Series::visitHierarchyImpl than
-     * the one exported from the library.
-     */
-    // clang-format off
-private:
-    // clang-format on
     OPENPMDAPI_EXPORT void
     visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Series
