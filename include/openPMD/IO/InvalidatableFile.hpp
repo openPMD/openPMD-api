@@ -56,6 +56,7 @@ public:
     auto operator->() -> FileState *;
     auto operator*() const -> FileState const &;
     auto operator->() const -> FileState const *;
+    auto operator<(SharedFileState const &) const -> bool;
 
     void reset_optional();
 
@@ -64,15 +65,3 @@ public:
     using ptr_type::operator=;
 };
 } // namespace openPMD::internal
-
-template <>
-struct std::less<openPMD::internal::SharedFileState>
-{
-    using first_argument_type = openPMD::internal::SharedFileState;
-    using second_argument_type = first_argument_type;
-    using result_type = bool;
-
-    auto
-    operator()(first_argument_type const &, second_argument_type const &) const
-        -> result_type;
-};
