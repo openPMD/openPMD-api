@@ -1051,8 +1051,8 @@ OPENPMD_private
 
     std::vector<std::string> availableDatasets();
 
-    OPENPMDAPI_EXPORT void
-    visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
+protected:
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Series
 
 namespace debug
