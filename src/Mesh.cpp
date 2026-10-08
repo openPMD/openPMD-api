@@ -37,9 +37,9 @@
 
 namespace openPMD
 {
-void Mesh::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Mesh::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Mesh>(v, recursive);
+    visitHierarchyContainer<Mesh>(v, recursive);
 }
 
 Mesh::Mesh() = default;
@@ -446,15 +446,18 @@ void Mesh::flush_impl(
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
         auto &m = get();
-        if (m.m_datasetDefined)
+        if (m.datasetDefined())
         {
             T_RecordComponent::flush(SCALAR, flushParams);
         }
         else
         {
+            customHierarchyFlush(
+                flushParams, /* managed_as_custom_object = */ false);
             for (auto &comp : *this)
                 comp.second.flush(comp.first, flushParams);
         }
+        // TODO why is there no unsetDirty operation here?
     }
     else
     {
@@ -470,6 +473,9 @@ void Mesh::flush_impl(
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
+
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = &this->writable();
@@ -485,6 +491,8 @@ void Mesh::flush_impl(
             }
             else
             {
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                     comp.second.flush(comp.first, flushParams);
             }
@@ -497,7 +505,6 @@ void Mesh::read()
 {
     internal::HomogenizeExtents homogenizeExtents(
         IOHandler()->m_verify_homogeneous_extents);
-    internal::EraseStaleEntries<Mesh> map{*this};
 
     if (scalar())
     {
@@ -506,6 +513,7 @@ void Mesh::read()
     }
     else
     {
+        internal::EraseStaleEntries<Mesh> map{*this};
         Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
         IOHandler()->flush(internal::defaultFlushParams);
@@ -516,7 +524,7 @@ void Mesh::read()
             MeshRecordComponent &rc = map[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            rc.get().m_isConstant = true;
+            rc.get().isConstant() = true;
             try
             {
                 rc.read();

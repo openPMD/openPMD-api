@@ -40,13 +40,13 @@ public:
     PatchRecord &setUnitDimension(unit_representations::AsArray const &udim);
     ~PatchRecord() override = default;
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
 private:
     PatchRecord() = default;
 
     void
     flush_impl(std::string const &, internal::FlushParams const &) override;
     void read();
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // PatchRecord
 } // namespace openPMD

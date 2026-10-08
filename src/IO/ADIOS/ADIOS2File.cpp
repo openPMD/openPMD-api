@@ -1356,7 +1356,12 @@ static std::vector<std::string> availableAttributesOrVariablesPrefixed(
     {
         if (auxiliary::starts_with(it->first, var))
         {
-            ret.emplace_back(auxiliary::replace_first(it->first, var, ""));
+            if (it->first.size() > var.size())
+            {
+                ret.emplace_back(auxiliary::replace_first(it->first, var, ""));
+            }
+            // else we have just found the prefix itself.
+            // might happen if prefix == "/"
         }
         else
         {

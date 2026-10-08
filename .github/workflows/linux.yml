@@ -299,7 +299,8 @@ jobs:
         # meshesPath and the JSON schema needs to hardcode that.
         find ../../../build/samples/      \
             ! -path '*thetaMode*'         \
-            ! -path '/*many_iterations/*' \
+            ! -path '*/many_iterations/*' \
+            ! -path '*/custom_hierarchy/*' \
             ! -name 'profiling.json'      \
             ! -name '*config.json'        \
             -iname '*.json'               \

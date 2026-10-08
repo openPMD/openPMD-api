@@ -97,6 +97,8 @@ namespace auxiliary
          */
         [[nodiscard]] size_t index() const;
 
+        void print() const;
+
         T_DTYPES dtype;
 
     private:
