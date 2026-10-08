@@ -761,8 +761,8 @@ OPENPMD_protected
      */
     void setWritten(bool val, EnqueueAsynchronously);
 
-    virtual OPENPMDAPI_EXPORT void
-    visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
+protected:
+    virtual void visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
 
 private:
     /**

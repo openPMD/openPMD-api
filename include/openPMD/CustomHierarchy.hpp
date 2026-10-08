@@ -262,7 +262,6 @@ private:
     void printRecursively(std::string indent);
 
 protected:
-    OPENPMDAPI_EXPORT void
-    visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 } // namespace openPMD
