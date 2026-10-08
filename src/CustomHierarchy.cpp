@@ -161,16 +161,8 @@ void ConvertibleContainer<MappedType>::refresh()
         [&](auto &group_data) { this->syncContainers(group_data); });
 }
 
-// Only MSVC (and clang-cl, which defines _MSC_VER) needs -- and accepts --
-// dllexport on explicit class template instantiations to export them from the
-// DLL.  GCC/Clang do not allow attributes on explicit instantiations.
-#if defined(_MSC_VER)
-template class OPENPMDAPI_EXPORT ConvertibleContainer<CustomHierarchy>;
-template class OPENPMDAPI_EXPORT ConvertibleContainer<CustomDataset>;
-#else
 template class ConvertibleContainer<CustomHierarchy>;
 template class ConvertibleContainer<CustomDataset>;
-#endif
 
 CustomHierarchy::CustomHierarchy() : ConvertibleContainer(NoInit{})
 {
