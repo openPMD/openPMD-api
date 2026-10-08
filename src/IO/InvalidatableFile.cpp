@@ -53,20 +53,16 @@ auto SharedFileState::operator->() const -> FileState const *
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     return &*ptr_type::operator*();
 }
+auto SharedFileState::operator<(SharedFileState const &other) const -> bool
+{
+    if (!*this || !other)
+    {
+        return std::less<>()(this->get(), other.get());
+    }
+    return operator*().name < other->name;
+}
 void SharedFileState::reset_optional()
 {
     ptr_type::operator*().reset();
 }
 } // namespace openPMD::internal
-
-auto std::less<openPMD::internal::SharedFileState>::operator()(
-    first_argument_type const &first, second_argument_type const &second) const
-    -> result_type
-{
-    if (!first || !second)
-    {
-        return std::less<>()(first.get(), second.get());
-    }
-    // If possible, compare by name
-    return less<>()((*first).name, (*second).name);
-}
