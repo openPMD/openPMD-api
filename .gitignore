@@ -127,6 +127,12 @@ docs/source/_static/doxyhtml/
 ################
 samples/
 
+#######
+# Nix #
+#######
+/result
+/result-*
+
 ################
 # Binaries #
 ################
