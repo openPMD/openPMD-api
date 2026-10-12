@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include "openPMD/Error.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -276,6 +277,17 @@ TEST_CASE("versions_test", "[core]")
 
     auto const featureVariants = getVariants();
     REQUIRE(featureVariants.at("json") == true);
+}
+
+TEST_CASE("dataset_initialization", "[core]")
+{
+    Series s("f.json", Access::CREATE);
+    auto rc = s.iterations[0].meshes["E"]["x"];
+    rc.getDatatype();
+    auto scalar_rc = s.iterations[0].meshes["theta"];
+    REQUIRE_THROWS_AS(scalar_rc.getDatatype(), error::WrongAPIUsage);
+    scalar_rc.resetDataset(Dataset{Datatype::INT, {5}});
+    scalar_rc.getDatatype();
 }
 
 TEST_CASE("attribute_dtype_test", "[core]")

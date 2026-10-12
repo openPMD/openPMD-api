@@ -46,31 +46,49 @@ namespace internal
         operator=(BaseRecordComponentData const &) = delete;
         BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
-        internal::object_type::DatasetMetaData *m_dataset_meta = nullptr;
+        internal::object_type::DatasetMetaData *m_dataset_meta_ptr = nullptr;
 
         void setDatasetDefined()
         {
-            m_dataset_meta = (**this).m_writable.objectType.initDataset();
+            m_dataset_meta_ptr = (**this).m_writable.objectType.initDataset();
         }
 
         BaseRecordComponentData() = default;
 
+        auto dataset_meta() const
+            -> internal::object_type::DatasetMetaData const *
+        {
+            if (!m_dataset_meta_ptr)
+            {
+                throw error::WrongAPIUsage(
+                    "Requesting dataset properties on an object that has no "
+                    "dataset defined.");
+            }
+            return m_dataset_meta_ptr;
+        }
+        auto dataset_meta() -> internal::object_type::DatasetMetaData *
+        {
+            return const_cast<internal::object_type::DatasetMetaData *>(
+                static_cast<BaseRecordComponentData const *>(this)
+                    ->dataset_meta());
+        }
+
         [[nodiscard]] inline auto dataset() const -> auto const &
         {
-            return m_dataset_meta->m_dataset;
+            return dataset_meta()->m_dataset;
         }
         inline auto dataset() -> auto &
         {
-            return m_dataset_meta->m_dataset;
+            return dataset_meta()->m_dataset;
         }
 
         [[nodiscard]] inline auto isConstant() const -> auto const &
         {
-            return m_dataset_meta->m_isConstant;
+            return dataset_meta()->m_isConstant;
         }
         inline auto isConstant() -> auto &
         {
-            return m_dataset_meta->m_isConstant;
+            return dataset_meta()->m_isConstant;
         }
 
         [[nodiscard]] inline auto datasetDefined() const -> bool
@@ -81,7 +99,7 @@ namespace internal
         virtual void reset()
         {
             (**this).m_writable.objectType.initGroup();
-            m_dataset_meta = nullptr;
+            m_dataset_meta_ptr = nullptr;
         }
 
         template <typename Arg>
