@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include <openPMD/auxiliary/StringManip.hpp>
 #include <openPMD/openPMD.hpp>
 
 #include <algorithm>
@@ -73,6 +74,25 @@ int main()
             loadedChunks[i] = rc.loadChunkVariant(
                 Offset(rc.getDimensionality(), 0), rc.getExtent());
             extents[i] = rc.getExtent();
+        }
+
+        auto e_patches = iteration.particles["e"].particlePatches;
+        for (auto key :
+             {"numParticles", "numParticlesOffset", "offset", "extent"})
+        {
+            for (auto &rc : e_patches[key])
+            {
+                std::cout << "Chunks for '" << rc.second.myPath().openPMDPath()
+                          << "':";
+                for (auto const &chunk : rc.second.availableChunks())
+                {
+                    std::cout << "\n\tRank " << chunk.sourceID << "\t"
+                              << auxiliary::vec_as_string(chunk.offset)
+                              << "\t– "
+                              << auxiliary::vec_as_string(chunk.extent);
+                }
+                std::cout << std::endl;
+            }
         }
 
         // The iteration can be closed in order to help free up resources.

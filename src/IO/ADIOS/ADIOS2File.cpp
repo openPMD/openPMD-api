@@ -112,7 +112,25 @@ void WriteDataset::call(ADIOS2File &ba, detail::BufferedPut &bp)
                     std::nullopt,
                     ba.variables());
 
-                engine.Put(var, ptr);
+                // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
+                if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
+                {
+                    if (bp.param.extent != Extent{1})
+                    {
+                        throw error::OperationUnsupportedInBackend(
+                            "ADIOS2",
+                            "Can only write a single element to LocalValue "
+                            "variables (extent == Extent{1}, but extent of '" +
+                                bp.name + " was " +
+                                auxiliary::vec_as_string(bp.param.extent) +
+                                "').");
+                    }
+                    engine.Put(var, *ptr);
+                }
+                else
+                {
+                    engine.Put(var, ptr);
+                }
             }
             else if constexpr (
                 std::is_same_v<
@@ -175,7 +193,24 @@ struct RunUniquePtrPut
             bufferedPut.name,
             std::nullopt,
             ba.variables());
-        engine.Put(var, ptr);
+        // https://adios2.readthedocs.io/en/v2.9.2/components/components.html#shapes
+        if (var.Shape() == adios2::Dims{adios2::LocalValueDim})
+        {
+            if (bufferedPut.extent != Extent{1})
+            {
+                throw error::OperationUnsupportedInBackend(
+                    "ADIOS2",
+                    "Can only write a single element to LocalValue "
+                    "variables (extent == Extent{1}, but extent of '" +
+                        bufferedPut.name + " was " +
+                        auxiliary::vec_as_string(bufferedPut.extent) + "').");
+            }
+            engine.Put(var, *ptr);
+        }
+        else
+        {
+            engine.Put(var, ptr);
+        }
     }
 
     static constexpr char const *errorMsg = "RunUniquePtrPut";
