@@ -34,6 +34,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -392,10 +393,38 @@ public:
     std::pair<iterator, bool> insert(value_type &&value);
     iterator insert(const_iterator hint, value_type const &value);
     iterator insert(const_iterator hint, value_type &&value);
+    /**
+     * Insert all elements in the range [first, last) in a single batch,
+     * keeping the front and backend containers synchronized.
+     *
+     * The initializer_list overload below is implemented in terms of this
+     * one.
+     */
     template <class InputIt>
     void insert(InputIt first, InputIt last)
     {
-        container().insert(first, last);
+        std::vector<
+            internal::object_type::GroupMetaData::children_map_t::value_type>
+            internal_insert_list;
+        auto &cont = container_back();
+        for (auto it = first; it != last; ++it)
+        {
+            decltype(auto) key = key_as_string(it->first);
+            auto back_it = cont.find(key);
+            if (back_it == cont.end())
+            {
+                internal_insert_list.emplace_back(key, *it->second.m_attri);
+            }
+            else
+            {
+                // backend value is older, so it gets seniority
+                it->second.m_attri->asSharedPtrOfAttributable() =
+                    back_it->second;
+                it->second.preferCurrentBackpointer();
+            }
+        }
+        container_front().insert(first, last);
+        cont.insert(internal_insert_list.begin(), internal_insert_list.end());
     }
     void insert(std::initializer_list<value_type> ilist);
 

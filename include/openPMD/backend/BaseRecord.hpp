@@ -405,6 +405,18 @@ namespace detail
 } // namespace detail
 
 template <typename T_elem>
+template <typename InputIt>
+auto BaseRecord<T_elem>::insert(InputIt first, InputIt last) -> void
+{
+    detail::verifyNonscalar(this);
+    T_Container::insert(first, last);
+    /*
+     * We skip checking for the SCALAR key as that would change the runtime of
+     * this call from O(last-first) to O(container().size()).
+     */
+}
+
+template <typename T_elem>
 template <typename... Args>
 auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
 {

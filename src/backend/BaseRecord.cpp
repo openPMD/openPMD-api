@@ -703,63 +703,10 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
 }
 
 template <typename T_elem>
-template <typename InputIt>
-auto BaseRecord<T_elem>::insert(InputIt first, InputIt last) -> void
-{
-    detail::verifyNonscalar(this);
-    this->container().insert(first, last);
-    /*
-     * We skip this check as it changes the runtime of this call from
-     * O(last-first) to O(container().size()).
-     */
-    // for (auto it = this->container().begin(); it != end; ++it)
-    // {
-    //     if (it->first == RecordComponent::SCALAR)
-    //     {
-    //         this->container().erase(it);
-    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
-    //     }
-    // }
-}
-
-template <typename T_elem>
 auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 {
     detail::verifyNonscalar(this);
-    std::vector<
-        internal::object_type::GroupMetaData::children_map_t::value_type>
-        internal_insert_list;
-    internal_insert_list.reserve(ilist.size());
-    auto &cont = this->container_back();
-    for (auto &v : ilist)
-    {
-        decltype(auto) key = this->key_as_string(v.first);
-        auto it = cont.find(key);
-        if (it == cont.end())
-        {
-            internal_insert_list.emplace_back(key, *v.second.m_attri);
-        }
-        else
-        {
-            // backend value is older, so it gets seniority
-            v.second.m_attri->asSharedPtrOfAttributable() = it->second;
-            v.second.preferCurrentBackpointer();
-        }
-    }
-    this->container_front().insert(std::move(ilist));
-    cont.insert(internal_insert_list.begin(), internal_insert_list.end());
-    /*
-     * We skip this check as it changes the runtime of this call from
-     * O(last-first) to O(container().size()).
-     */
-    // for (auto it = this->container().begin(); it != end; ++it)
-    // {
-    //     if (it->first == RecordComponent::SCALAR)
-    //     {
-    //         this->container().erase(it);
-    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
-    //     }
-    // }
+    this->insert(ilist.begin(), ilist.end());
 }
 
 template <typename T_elem>

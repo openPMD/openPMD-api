@@ -319,6 +319,21 @@ TEST_CASE("container_access_test", "[auxiliary]")
     REQUIRE(c.erase(c.find("4fourthWidget")) == c.end());
     REQUIRE(c.size() == 0);
     REQUIRE(c.empty());
+
+    // Range insert, both the iterator-pair and the initializer_list overloads.
+    std::vector<Container<Widget>::value_type> widgets;
+    widgets.emplace_back("6sixthWidget", Widget(6));
+    widgets.emplace_back("7seventhWidget", Widget(7));
+    c.insert(widgets.begin(), widgets.end());
+    REQUIRE(c.size() == 2);
+    REQUIRE(c.contains("6sixthWidget"));
+    REQUIRE(c.contains("7seventhWidget"));
+    c.insert(
+        {Container<Widget>::value_type{"8eighthWidget", Widget(8)},
+         Container<Widget>::value_type{"9ninthWidget", Widget(9)}});
+    REQUIRE(c.size() == 4);
+    REQUIRE(c.contains("8eighthWidget"));
+    REQUIRE(c.contains("9ninthWidget"));
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
 #endif

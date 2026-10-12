@@ -1319,6 +1319,15 @@ TEST_CASE("baserecord_test", "[core]")
     auto inserted = B.insert(B.find("x"), std::pair{"y", E["y"]});
     REQUIRE(inserted->first == "y");
     B.erase(inserted);
+
+    // Range insert overload of BaseRecord, in a single batch.
+    {
+        std::vector<Mesh::value_type> components;
+        components.emplace_back("y", E["y"]);
+        B.insert(components.begin(), components.end());
+        REQUIRE(B.contains("y"));
+        B.erase("y");
+    }
 }
 
 TEST_CASE("use_count_test", "[core]")
