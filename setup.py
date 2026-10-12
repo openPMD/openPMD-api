@@ -60,6 +60,10 @@ class CMakeBuild(build_ext):
                 "-DPython_FIND_VERSION_EXACT=" + ("FALSE" if emscripten else "TRUE"),
                 "-DPython_FIND_STRATEGY=LOCATION",
             ]
+            # Free-threaded (PEP 703) gil_disabled is OFF by default
+            #   https://cmake.org/cmake/help/latest/module/FindPython.html#variable:Python_FIND_ABI
+            if sysconfig.get_config_var("Py_GIL_DISABLED"):
+                cmake_args.append("-DPython_FIND_ABI=OFF;OFF;OFF;ON")
         if emscripten:
             cmake_args += [
                 "-DPython_INCLUDE_DIR=" + sysconfig.get_config_var("INCLUDEPY")
