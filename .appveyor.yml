@@ -81,14 +81,21 @@ install:
   - cmd: set PYTHONUNBUFFERED=1
 
   # Add our channels.
+  # x64: use conda-forge only. Adding Anaconda's commercial `defaults` channel
+  #   makes the classic solver backtrack for a very long time while reconciling
+  #   the two channels (the job is killed before the solve finishes).
+  # x86: `defaults` must stay, as it is the only source of Python 3.10 for
+  #   win-32 (conda-forge stopped at Python 3.6).
   - cmd: conda config --set show_channel_urls true
-  - cmd: conda config --add channels defaults
-  - cmd: conda config --append channels conda-forge
+  - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
+  - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
 
   # Configure the VM.
-  - cmd: conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
-  # ADIOS2 build only for 64bit Windows
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes adios2 python=%CONDA_PY%
+  # On x64 this also bumps conda from the preinstalled C:\Miniconda37 release
+  # (4.5.11) to the current conda-forge build (which brings the libmamba
+  # solver). ADIOS2 is only built for 64-bit Windows.
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda cython numpy cmake hdf5 adios2 python=%CONDA_PY%
+  - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
   - cmd: cd C:\projects\openpmd-api
