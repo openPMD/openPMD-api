@@ -76,7 +76,8 @@ void Record::flush_impl(
             for (auto &comp : *this)
                 comp.second.flush(comp.first, flushParams);
         }
-        // TODO why is there no unsetDirty operation here?
+        // Dirty flags are unset centrally by BaseRecord::flush() after
+        // flush_impl() returns, so no unsetDirty operation is needed here.
     }
     else
     {

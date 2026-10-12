@@ -70,7 +70,8 @@ void PatchRecord::flush_impl(
     }
     else
         T_RecordComponent::flush(path, flushParams);
-    determineUnsetDirty(flushParams.flushLevel);
+    // Dirty flags are unset centrally by BaseRecord::flush() after
+    // flush_impl() returns, so no unsetDirty operation is needed here.
 }
 
 void PatchRecord::read()
