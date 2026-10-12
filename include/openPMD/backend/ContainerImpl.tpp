@@ -228,28 +228,7 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::insert(
     std::initializer_list<value_type> ilist) -> void
 {
-    std::vector<
-        internal::object_type::GroupMetaData::children_map_t::value_type>
-        internal_insert_list;
-    internal_insert_list.reserve(ilist.size());
-    auto &cont = container_back();
-    for (auto &v : ilist)
-    {
-        decltype(auto) key = key_as_string(v.first);
-        auto it = cont.find(key);
-        if (it == cont.end())
-        {
-            internal_insert_list.emplace_back(key, *v.second.m_attri);
-        }
-        else
-        {
-            // backend value is older, so it gets seniority
-            v.second.m_attri->asSharedPtrOfAttributable() = it->second;
-            v.second.preferCurrentBackpointer();
-        }
-    }
-    container_front().insert(std::move(ilist));
-    cont.insert(internal_insert_list.begin(), internal_insert_list.end());
+    insert(ilist.begin(), ilist.end());
 }
 
 template <typename T, typename T_key, typename T_container>
