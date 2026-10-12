@@ -94,7 +94,7 @@ install:
   # On x64 this also bumps conda from the preinstalled C:\Miniconda37 release
   # (4.5.11) to the current conda-forge build (which brings the libmamba
   # solver). ADIOS2 is only built for 64-bit Windows.
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda cython numpy cmake hdf5 adios2 python=%CONDA_PY%
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda "cmake>=3.22" cython numpy hdf5 adios2 python=%CONDA_PY%
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
