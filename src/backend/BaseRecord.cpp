@@ -779,9 +779,12 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     this->flush_impl(name, flushParams);
+    /*
+     * The dirty flag is unset centrally here, after flush_impl() has updated
+     * the middle-end state. The flush_impl() overrides (Mesh, Record,
+     * PatchRecord) must therefore not unset dirty flags themselves.
+     */
     this->determineUnsetDirty(flushParams.flushLevel);
-    // flush_impl must take care to correctly set the dirty() flag so this
-    // method doesn't do it
 }
 
 template <typename T_elem>
