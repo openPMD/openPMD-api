@@ -195,6 +195,7 @@ auto resource(T &t) -> attribute_types &
 RecordComponent::RecordComponent() : BaseRecordComponent(NoInit())
 {
     setData(std::make_shared<Data_t>());
+    setDatasetDefined(*m_recordComponentData);
 }
 
 RecordComponent::RecordComponent(NoInit) : BaseRecordComponent(NoInit())

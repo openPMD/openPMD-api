@@ -74,36 +74,36 @@ namespace internal
 
         [[nodiscard]] auto constantValue() const -> auto const &
         {
-            return m_dataset_meta->m_constantValue;
+            return dataset_meta()->m_constantValue;
         }
         auto constantValue() -> auto &
         {
-            return m_dataset_meta->m_constantValue;
+            return dataset_meta()->m_constantValue;
         }
         [[nodiscard]] auto isEmpty() const -> auto const &
         {
-            return m_dataset_meta->m_isEmpty;
+            return dataset_meta()->m_isEmpty;
         }
         auto isEmpty() -> auto &
         {
-            return m_dataset_meta->m_isEmpty;
+            return dataset_meta()->m_isEmpty;
         }
         [[nodiscard]] auto hasBeenExtended() const -> auto const &
         {
-            return m_dataset_meta->m_hasBeenExtended;
+            return dataset_meta()->m_hasBeenExtended;
         }
         auto hasBeenExtended() -> auto &
         {
-            return m_dataset_meta->m_hasBeenExtended;
+            return dataset_meta()->m_hasBeenExtended;
         }
 
         [[nodiscard]] auto chunks() const -> auto const &
         {
-            return m_dataset_meta->m_chunks;
+            return dataset_meta()->m_chunks;
         }
         auto chunks() -> auto &
         {
-            return m_dataset_meta->m_chunks;
+            return dataset_meta()->m_chunks;
         }
 
         void push_chunk(IOTask &&task);

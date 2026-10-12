@@ -73,10 +73,8 @@ void PatchRecordComponent::read()
     internal::ScientificDefaults::readDefaults(*this, IOHandler()->m_standard);
 }
 
-PatchRecordComponent::PatchRecordComponent() : RecordComponent(NoInit())
-{
-    setData(std::make_shared<Data_t>());
-}
+PatchRecordComponent::PatchRecordComponent() : RecordComponent()
+{}
 
 PatchRecordComponent::PatchRecordComponent(NoInit) : RecordComponent(NoInit())
 {}
