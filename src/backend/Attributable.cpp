@@ -235,25 +235,22 @@ void Attributable::customHierarchyFlush(
                     "hierarchy contained "
                     "an object that should be flushed conventionally.");
             }
-            if (subpath.writable().objectType.isGroup())
-            {
-                if (!subpath.written())
-                {
-                    pCreate.path = name;
-                    IOHandler()->enqueue(IOTask(&subpath, pCreate));
-                }
-                subpath.customHierarchyFlush(flushParams, true);
-            }
-            else if (subpath.writable().objectType.isDataset())
-            {
-                subpath.asDataset().flush(name, flushParams);
-            }
-            else
-            {
-                throw error::Internal(
-                    "Object managed as custom hierarchy is neither a group nor "
-                    "a dataset.");
-            }
+            std::visit(
+                auxiliary::overloaded{
+                    [&, &name_lambda = name](
+                        internal::object_type::GroupMetaData const &) {
+                        if (!subpath.written())
+                        {
+                            pCreate.path = name_lambda;
+                            IOHandler()->enqueue(IOTask(&subpath, pCreate));
+                        }
+                        subpath.customHierarchyFlush(flushParams, true);
+                    },
+                    [&, name_lambda = name](
+                        internal::object_type::DatasetMetaData const &) {
+                        subpath.asDataset().flush(name_lambda, flushParams);
+                    }},
+                subpath.writable().objectType);
         }
     });
 
