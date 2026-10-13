@@ -93,6 +93,16 @@ void write(
             .asDataset();
     fully_custom_constant_dataset.makeConstant(67);
     fully_custom_constant_dataset.resetDataset({{10, 10}});
+
+    /*
+     * A group that has contained objects cannot be reinterpreted as a dataset.
+     */
+    {
+        CustomHierarchy custom_group =
+            iteration.customHierarchies()["fully"]["custom"];
+        REQUIRE(custom_group.contains("dataset"));
+        REQUIRE_THROWS_AS(custom_group.asDataset(), error::WrongAPIUsage);
+    }
     iteration.close();
 }
 
