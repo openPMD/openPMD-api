@@ -90,11 +90,15 @@ install:
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
 
-  # Configure the VM.
-  # On x64 this also bumps conda from the preinstalled C:\Miniconda37 release
-  # (4.5.11) to the current conda-forge build (which brings the libmamba
-  # solver). ADIOS2 is only built for 64-bit Windows.
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda "cmake>=3.22" cython numpy hdf5 adios2 python=%CONDA_PY%
+  # Configure the VM. ADIOS2 is only built for 64-bit Windows.
+  # The image ships conda 4.5.11. Its classic solver cannot resolve a
+  # minimum-version CMake (>= 3.22): that drags in a newer MSVC runtime and the
+  # solve backtracks until the job is killed. So first bootstrap a current
+  # conda plus the libmamba solver (a plain solve the old solver handles), then
+  # install CMake with the fast libmamba solver.
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda conda-libmamba-solver cython numpy hdf5 adios2 python=%CONDA_PY%
+  - cmd: if "%TARGET_ARCH%"=="x64" conda config --set solver libmamba
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge "cmake>=3.22"
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
