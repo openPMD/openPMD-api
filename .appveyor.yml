@@ -97,7 +97,9 @@ install:
   # conda plus the libmamba solver (a plain solve the old solver handles), then
   # install CMake with the fast libmamba solver.
   - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda conda-libmamba-solver cython numpy hdf5 adios2 python=%CONDA_PY%
-  - cmd: if "%TARGET_ARCH%"=="x64" conda config --set solver libmamba
+  # conda < 22.11 spells the option "experimental_solver", newer releases use
+  # "solver"; set whichever this conda understands.
+  - cmd: if "%TARGET_ARCH%"=="x64" (conda config --set solver libmamba 2>nul || conda config --set experimental_solver libmamba)
   - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge "cmake>=3.22"
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
