@@ -103,6 +103,18 @@ void write(
         REQUIRE(custom_group.contains("dataset"));
         REQUIRE_THROWS_AS(custom_group.asDataset(), error::WrongAPIUsage);
     }
+
+    /*
+     * Erasing an object that is managed as custom hierarchy must remove it from
+     * the backend as well, otherwise it would be re-created upon flushing.
+     */
+    {
+        CustomHierarchy custom_objects = iteration.customHierarchies();
+        custom_objects["to_erase"]["nested"].setAttribute("a", "b");
+        REQUIRE(custom_objects.contains("to_erase"));
+        REQUIRE(custom_objects.erase("to_erase") == 1);
+        REQUIRE(!custom_objects.contains("to_erase"));
+    }
     iteration.close();
 }
 
@@ -185,6 +197,12 @@ void read(
         }
         // The custom dataset must be part of the traversal at all.
         REQUIRE(visit_counts.count("/data/0/fully/custom/dataset") == 1);
+    }
+
+    // The object that was erased in write() must not reappear here.
+    {
+        CustomHierarchy reopened = iteration.customHierarchies();
+        REQUIRE(!reopened.contains("to_erase"));
     }
 
     iteration.close();
