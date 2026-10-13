@@ -70,19 +70,6 @@ size_t Variant<T_DTYPES, variant_types...>::index() const
     return getVariant<std::variant<variant_types...>>().index();
 }
 
-template <typename T>
-void do_print(T const &val)
-{
-    if constexpr (auxiliary::IsVector_v<T> || auxiliary::IsArray_v<T>)
-    {
-        auxiliary::write_vec_to_stream(std::cout, val) << std::endl;
-    }
-    else
-    {
-        std::cout << val << std::endl;
-    }
-}
-
 template <typename T_DTYPES, typename... variant_types>
 void Variant<T_DTYPES, variant_types...>::print() const
 {
