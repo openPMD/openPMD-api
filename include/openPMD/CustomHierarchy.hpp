@@ -49,10 +49,15 @@ namespace internal
 
 class CustomDataset : public RecordComponent
 {
+    template <typename, typename, typename>
+    friend class Container;
     template <typename>
     friend class ConvertibleContainer;
     friend class CustomHierarchy;
     friend class Attributable;
+
+private:
+    CustomDataset() = default;
 };
 
 /*
@@ -217,6 +222,7 @@ private:
     }
 
 protected:
+    CustomHierarchy();
     CustomHierarchy(NoInit);
     CustomHierarchy(std::shared_ptr<internal::SharedAttributableData> other);
     CustomHierarchy(Attributable const &other);
@@ -233,8 +239,6 @@ protected:
     void linkHierarchy(Writable &w) override;
 
 public:
-    CustomHierarchy();
-
     CustomHierarchy(CustomHierarchy const &other) = default;
     CustomHierarchy(CustomHierarchy &&other) = default;
 

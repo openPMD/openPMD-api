@@ -400,9 +400,6 @@ public:
      */
     void iterationFlush(std::string backendConfig = "{}");
 
-    void customHierarchyFlush(
-        internal::FlushParams const &, bool managed_as_custom_object);
-
     /** String serialization to describe an Attributable
      *
      * This object contains the Series data path as well as the openPMD object
@@ -547,6 +544,9 @@ OPENPMD_protected
     void seriesFlush_impl(internal::FlushParams const &, bool flush_io_handler);
 
     void flushAttributes(internal::FlushParams const &);
+
+    void customHierarchyFlush(
+        internal::FlushParams const &, bool managed_as_custom_object);
 
     enum ReadMode
     {
