@@ -209,7 +209,7 @@ class Container : virtual public Attributable
 {
     static_assert(
         internal::isDerivedFromAttributable<T>,
-        "Type of container element must be derived from Writable");
+        "Type of container element must be derived from Attributable");
 
     friend class Iteration;
     friend class ParticleSpecies;

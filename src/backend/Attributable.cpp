@@ -250,7 +250,9 @@ void Attributable::customHierarchyFlush(
             }
             else
             {
-                throw std::runtime_error("Unreachable!");
+                throw error::Internal(
+                    "Object managed as custom hierarchy is neither a group nor "
+                    "a dataset.");
             }
         }
     });
