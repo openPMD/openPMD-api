@@ -334,6 +334,17 @@ TEST_CASE("container_access_test", "[auxiliary]")
     REQUIRE(c.size() == 4);
     REQUIRE(c.contains("8eighthWidget"));
     REQUIRE(c.contains("9ninthWidget"));
+
+    // Post-increment/decrement must yield the *previous* iterator position.
+    {
+        auto it = c.begin();
+        auto old = it++;
+        REQUIRE(old->first == "6sixthWidget");
+        REQUIRE(it != c.begin());
+        auto back = it--;
+        REQUIRE(it == c.begin());
+        REQUIRE(back->first != "6sixthWidget");
+    }
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
 #endif

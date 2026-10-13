@@ -148,10 +148,11 @@ namespace internal
             base_iterator::operator++();
             return *this;
         }
-        auto operator++(int) -> self_t &
+        auto operator++(int) -> self_t
         {
-            base_iterator::operator++(0);
-            return *this;
+            self_t res(*this);
+            base_iterator::operator++();
+            return res;
         }
 
         auto operator--() -> self_t &
@@ -159,10 +160,11 @@ namespace internal
             base_iterator::operator--();
             return *this;
         }
-        auto operator--(int) -> self_t &
+        auto operator--(int) -> self_t
         {
-            base_iterator::operator--(0);
-            return *this;
+            self_t res(*this);
+            base_iterator::operator--();
+            return res;
         }
 
         auto operator->() const -> value_t *
