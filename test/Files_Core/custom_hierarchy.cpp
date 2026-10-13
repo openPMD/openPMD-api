@@ -30,8 +30,11 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/backend/HierarchyVisitorImpl.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+
+#include <map>
 namespace custom_hierarchy
 {
 using namespace openPMD;
@@ -151,6 +154,29 @@ void read(
     {
         REQUIRE(custom_constant_data.get()[i] == 67);
     }
+
+    /*
+     * HierarchyVisitor must traverse every object of the hierarchy exactly
+     * once, including objects managed as custom hierarchy. Regression test for
+     * a bug where custom-managed objects were visited once per traversal path,
+     * i.e. at least twice.
+     */
+    {
+        std::map<std::string, size_t> visit_counts;
+        iteration.visitHierarchyFromLambda(
+            [&visit_counts](auto &obj) {
+                ++visit_counts[obj.myPath().openPMDPath()];
+            },
+            /* recursive = */ true);
+        for (auto const &[path, count] : visit_counts)
+        {
+            INFO("visited path: " << path);
+            REQUIRE(count == 1);
+        }
+        // The custom dataset must be part of the traversal at all.
+        REQUIRE(visit_counts.count("/data/0/fully/custom/dataset") == 1);
+    }
+
     iteration.close();
 }
 

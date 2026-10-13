@@ -397,7 +397,35 @@ void CustomHierarchy::printRecursively(std::string indent)
 
 void CustomHierarchy::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyContainer<CustomHierarchy>(v, recursive);
+    /*
+     * The frontend container of a CustomHierarchy mirrors the backend group's
+     * children, which is a superset of the objects in
+     * GroupMetaData::m_children_managed_as_custom_hierarchy: The latter holds
+     * only those objects that were *created* by a CustomHierarchy (and hence
+     * must be kept alive by it), while the frontend container additionally
+     * aliases objects that are managed as part of the regular openPMD
+     * hierarchy (e.g. Meshes, Particles and their descendants).
+     *
+     * Attributable::visitHierarchy() recurses into the managed map after
+     * calling this method. To visit every object exactly once, only traverse
+     * those frontend children that are *not* part of the managed map here, and
+     * leave the rest to the base class.
+     */
+    if (recursive)
+    {
+        writable().objectType.ifGroup([&](auto &group_metadata) {
+            auto const &managed =
+                group_metadata.m_children_managed_as_custom_hierarchy;
+            for (auto &pair : *this)
+            {
+                if (managed.find(pair.first) == managed.end())
+                {
+                    pair.second.visitHierarchy(v, recursive);
+                }
+            }
+        });
+    }
+    v(*this);
 }
 } // namespace openPMD
 
