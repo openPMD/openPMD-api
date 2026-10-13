@@ -598,6 +598,25 @@ TEST_CASE("output_constructor_test", "[core]")
     o.setParticlesPath("particles");
 }
 
+TEST_CASE("optional_attribute_test", "[core]")
+{
+    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+
+    // Missing attributes yield an empty optional instead of throwing.
+    REQUIRE(!o.getAttributeOptional("meshesPath").has_value());
+    REQUIRE(!o.meshesPathOptional().has_value());
+    REQUIRE(!o.particlesPathOptional().has_value());
+    REQUIRE_THROWS_AS(o.getAttribute("meshesPath"), no_such_attribute_error);
+
+    o.setMeshesPath("customMeshes").setParticlesPath("customParticles");
+    REQUIRE(o.getAttributeOptional("meshesPath").has_value());
+    REQUIRE(o.meshesPathOptional() == "customMeshes/");
+    REQUIRE(o.particlesPathOptional() == "customParticles/");
+    // getAttribute still throws for a missing key, returns for a present one.
+    REQUIRE(o.getAttribute("meshesPath").get<std::string>() == "customMeshes/");
+    o.iterations[0];
+}
+
 TEST_CASE("output_modification_test", "[core]")
 {
     Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
