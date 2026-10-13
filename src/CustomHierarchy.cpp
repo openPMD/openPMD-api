@@ -105,6 +105,12 @@ auto ConvertibleContainer<MappedType>::asDataset() -> CustomDataset
     }
     else
     {
+        if (this->writable().objectType.isGroup() && !this->empty())
+        {
+            throw error::WrongAPIUsage(
+                "Can't cast a group that has contained objects into a "
+                "dataset.");
+        }
         if (this->writable().objectType.isDataset() ||
             access::write(this->IOHandler()->m_frontendAccess) ||
             this->IOHandler()->m_seriesStatus ==
