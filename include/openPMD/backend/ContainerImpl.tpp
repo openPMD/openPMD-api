@@ -290,6 +290,14 @@ auto Container<T, T_key, T_container>::erase(key_type const &key) -> size_type
         IOHandler()->enqueue(IOTask(&res->second, pDelete));
         IOHandler()->flush(internal::defaultFlushParams);
     }
+    /*
+     * Also drop the entry from the storage of objects that are managed as
+     * custom hierarchy. Otherwise, the object would be re-created upon the
+     * next flush.
+     */
+    writable()
+        .objectType.requireGroup()
+        ->m_children_managed_as_custom_hierarchy.erase(key_as_string(key));
     return container().for_both_to_string([&key](auto &map, auto &&to_string) {
         return map.erase(to_string(key));
     });
@@ -310,6 +318,15 @@ auto Container<T, T_key, T_container>::erase(iterator res) -> iterator
         IOHandler()->flush(internal::defaultFlushParams);
     }
     container_back().erase(key_as_string(res->first));
+    /*
+     * Also drop the entry from the storage of objects that are managed as
+     * custom hierarchy. Otherwise, the object would be re-created upon the
+     * next flush.
+     */
+    writable()
+        .objectType.requireGroup()
+        ->m_children_managed_as_custom_hierarchy.erase(
+            key_as_string(res->first));
     return container_front().erase(res);
 }
 
@@ -321,6 +338,9 @@ auto Container<T, T_key, T_container>::clear_unchecked() -> void
             "Clearing a written container not (yet) implemented.");
 
     container().for_both([](auto &map) { map.clear(); });
+    writable()
+        .objectType.requireGroup()
+        ->m_children_managed_as_custom_hierarchy.clear();
 }
 
 template <typename T, typename T_key, typename T_container>
