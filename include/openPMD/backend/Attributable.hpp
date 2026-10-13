@@ -325,10 +325,9 @@ public:
 
     /** Retrieve value of Attribute stored with provided key.
      *
-     * @throw   no_such_attribute_error If no Attribute is currently stored with
-     * the provided key.
      * @param   key Key (i.e. name) of the Attribute to retrieve value for.
-     * @return  If found, the stored Attribute in Variant form.
+     * @return  If found, the stored Attribute in Variant form. Otherwise, an
+     *          empty std::optional.
      */
     std::optional<Attribute> getAttributeOptional(std::string const &key) const;
 
