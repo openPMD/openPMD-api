@@ -39,6 +39,10 @@ EXTENSIONS = (
 # inside the quotes is allowed for the config-file syntax (`"@../samples/x"`).
 LITERAL = re.compile(r'"([^"]*?\.(?:' + "|".join(EXTENSIONS) + r'))\s*"')
 
+# Filenames are often assembled dynamically, e.g.
+# ``"../samples/foo_" + extension``. Catch these prefixes as well.
+PREFIX_LITERAL = re.compile(r'"(\.\./samples[^"]*)"\s*\+')
+
 # Heuristics for "this filename is opened for writing".
 WRITE_HINT = re.compile(
     r"Access::CREATE"
@@ -120,6 +124,9 @@ def main():
                 if not WRITE_HINT.search(window):
                     continue
                 path = normalize(literal)
+                outputs.setdefault(path, set()).add(filename)
+            for match in PREFIX_LITERAL.finditer(line):
+                path = normalize(match.group(1))
                 outputs.setdefault(path, set()).add(filename)
 
     ok = 0
