@@ -535,7 +535,7 @@ TEST_CASE("myPath", "[core]")
 TEST_CASE("output_default_test", "[core]")
 {
     using IE = IterationEncoding;
-    Series o = Series("./new_openpmd_output_%T.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output_%T.json", Access::CREATE);
 
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -555,7 +555,7 @@ TEST_CASE("output_default_test", "[core]")
 TEST_CASE("output_constructor_test", "[core]")
 {
     using IE = IterationEncoding;
-    Series o = Series("./MyCustomOutput.json", Access::CREATE);
+    Series o = Series("../samples/MyCustomOutput.json", Access::CREATE);
 
     o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -584,7 +584,7 @@ TEST_CASE("output_constructor_test", "[core]")
 
 TEST_CASE("output_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     o.setOpenPMD("1.0.0");
     REQUIRE(o.openPMD() == "1.0.0");
@@ -615,7 +615,7 @@ TEST_CASE("output_modification_test", "[core]")
 
 TEST_CASE("iteration_default_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     Iteration &i = o.iterations[42];
 
@@ -632,7 +632,7 @@ TEST_CASE("iteration_default_test", "[core]")
 
 TEST_CASE("iteration_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     Iteration &i = o.iterations[42];
 
@@ -650,7 +650,7 @@ TEST_CASE("iteration_modification_test", "[core]")
 
 TEST_CASE("particleSpecies_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     auto &particles = o.iterations[42].particles;
     REQUIRE(0 == particles.numAttributes());
@@ -680,7 +680,7 @@ TEST_CASE("particleSpecies_modification_test", "[core]")
 
 TEST_CASE("record_constructor_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record &r = ps["record"];
@@ -712,7 +712,7 @@ TEST_CASE("record_constructor_test", "[core]")
 
 TEST_CASE("record_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     auto species = o.iterations[42].particles["species"];
     Record &r = species["position"];
@@ -737,7 +737,7 @@ TEST_CASE("record_modification_test", "[core]")
 
 TEST_CASE("recordComponent_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record &r = ps["record"];
@@ -761,7 +761,7 @@ TEST_CASE("recordComponent_modification_test", "[core]")
 
 TEST_CASE("mesh_constructor_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -801,7 +801,7 @@ TEST_CASE("mesh_constructor_test", "[core]")
 
 TEST_CASE("mesh_modification_test", "[core]")
 {
-    Series o = Series("./MyOutput_%T.json", Access::CREATE);
+    Series o = Series("../samples/MyOutput_%T.json", Access::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"].resetDataset(globalDataset);
@@ -844,7 +844,7 @@ TEST_CASE("mesh_modification_test", "[core]")
 TEST_CASE("structure_test", "[core]")
 {
 #if openPMD_USE_INVASIVE_TESTS
-    Series o = Series("./new_openpmd_output_%T.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output_%T.json", Access::CREATE);
 
     REQUIRE(o.IOHandler());
     REQUIRE(o.iterations.IOHandler());
@@ -1061,7 +1061,7 @@ TEST_CASE("structure_test", "[core]")
 
 TEST_CASE("wrapper_test", "[core]")
 {
-    Series o = Series("./new_openpmd_output_%T.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output_%T.json", Access::CREATE);
 
     o.setOpenPMDextension(42);
     o.setIterationEncoding(IterationEncoding::fileBased);
@@ -1260,7 +1260,7 @@ TEST_CASE("baserecord_test", "[core]")
 
 TEST_CASE("use_count_test", "[core]")
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output.json", Access::CREATE);
 
     MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
     mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
@@ -1296,7 +1296,7 @@ TEST_CASE("use_count_test", "[core]")
 
 TEST_CASE("empty_record_test", "[core]")
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output.json", Access::CREATE);
 
     o.iterations[1].meshes["E"].setComment(
         "No assumption about contained RecordComponents will be made");
@@ -1312,7 +1312,7 @@ TEST_CASE("empty_record_test", "[core]")
 
 TEST_CASE("zero_extent_component", "[core]")
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output.json", Access::CREATE);
 
     auto E_x = o.iterations[1].meshes["E"]["x"];
     E_x.setComment("Datasets must contain dimensions.");
@@ -1729,7 +1729,9 @@ TEST_CASE("unavailable_backend", "[core]")
     {
         auto fail = []() {
             Series(
-                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS2"})");
+                "../samples/unavailable_core.bp",
+                Access::CREATE,
+                R"({"backend": "ADIOS2"})");
         };
         REQUIRE_THROWS_WITH(
             fail(),
@@ -1739,7 +1741,9 @@ TEST_CASE("unavailable_backend", "[core]")
 #endif
 #if !openPMD_HAVE_ADIOS2
     {
-        auto fail = []() { Series("unavailable.bp", Access::CREATE); };
+        auto fail = []() {
+            Series("../samples/unavailable_core.bp", Access::CREATE);
+        };
         REQUIRE_THROWS_WITH(
             fail(),
             "Wrong API usage: openPMD-api built without support for backend "
@@ -1749,7 +1753,10 @@ TEST_CASE("unavailable_backend", "[core]")
 #if !openPMD_HAVE_HDF5
     {
         auto fail = []() {
-            Series("unavailable.h5", Access::CREATE, R"({"backend": "HDF5"})");
+            Series(
+                "../samples/unavailable_core.h5",
+                Access::CREATE,
+                R"({"backend": "HDF5"})");
         };
         REQUIRE_THROWS_WITH(
             fail(),
@@ -1797,7 +1804,7 @@ TEST_CASE("scalar_and_vector", "[core]")
             E.makeEmpty(Datatype::FLOAT, 3), error::WrongAPIUsage);
     }
     {
-        Series series("scalar_and_vector.json", Access::CREATE);
+        Series series("../samples/scalar_and_vector.json", Access::CREATE);
         auto E = series.iterations[0].meshes["E"];
         E.makeEmpty(Datatype::FLOAT, 3);
         REQUIRE_THROWS_AS(E["x"], error::WrongAPIUsage);
