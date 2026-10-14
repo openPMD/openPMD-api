@@ -940,8 +940,10 @@ namespace host_info
     }
 
 #if openPMD_HAVE_MPI
-    chunk_assignment::RankMeta byMethodCollective(MPI_Comm comm, Method method)
+    chunk_assignment::RankMeta
+    byMethodCollective(std::any communicator, Method method)
     {
+        auto comm = std::any_cast<MPI_Comm>(communicator);
         auto myHostname = byMethod(method);
         chunk_assignment::RankMeta res;
         auto allHostnames =

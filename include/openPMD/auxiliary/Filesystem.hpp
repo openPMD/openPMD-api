@@ -20,15 +20,12 @@
  */
 #pragma once
 
+#include <any>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "openPMD/config.hpp"
-
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
 
 namespace openPMD
 {
@@ -111,7 +108,7 @@ namespace auxiliary
 
 #if openPMD_HAVE_MPI
 
-    std::string collective_file_read(std::string const &path, MPI_Comm);
+    std::string collective_file_read(std::string const &path, std::any);
 
 #endif
 } // namespace auxiliary

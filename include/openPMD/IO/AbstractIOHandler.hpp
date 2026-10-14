@@ -28,10 +28,7 @@
 #include "openPMD/version.hpp"
 #include <ostream>
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include <any>
 #include <future>
 #include <memory>
 #include <queue>
@@ -282,6 +279,11 @@ protected:
     std::unique_ptr<json::JsonMatcher> jsonMatcher;
 
 public:
+    /*
+     * The MPI communicator is passed type-erased as `std::any` so that this
+     * public header does not need to include <mpi.h>. The backends cast it
+     * back to `MPI_Comm` where needed.
+     */
 #if openPMD_HAVE_MPI
     template <typename TracingJSON>
     AbstractIOHandler(
@@ -289,7 +291,7 @@ public:
         std::string path,
         Access at,
         TracingJSON &&jsonConfig,
-        MPI_Comm);
+        std::any communicator);
 #endif
 
     template <typename TracingJSON>

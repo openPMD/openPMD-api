@@ -38,10 +38,7 @@
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include <any>
 #include <cstdint> // uint64_t
 #include <deque>
 #include <functional>
@@ -52,6 +49,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -246,12 +244,12 @@ namespace internal
 
         void close();
 
-#if openPMD_HAVE_MPI
         /*
-         * @todo Once we have separate MPI headers, move this there.
+         * The MPI communicator, stored type-erased as `std::any` so that this
+         * header does not need to include <mpi.h>. Empty if no communicator
+         * was passed.
          */
-        std::optional<MPI_Comm> m_communicator;
-#endif
+        std::any m_communicator;
 
         struct NoSourceSpecified
         {};
@@ -301,12 +299,29 @@ class Series : public Attributable
     template <typename T, typename Series_type>
     friend T &internal::makeOwning(T &self, Series_type);
 
+    /**
+     * @brief Internal constructor taking a type-erased MPI communicator.
+     *
+     * Used by the public templated communicator constructor. Defined in the
+     * library so that `MPI_Comm` is only named in the implementation.
+     */
+    Series(
+        std::string const &filepath,
+        Access at,
+        std::string const &options,
+        std::any communicator);
+
 public:
     explicit Series();
 
-#if openPMD_HAVE_MPI
     /**
-     * @brief Construct a new Series
+     * @brief Construct a new MPI-parallel Series.
+     *
+     * The communicator is passed type-erased so that this header does not need
+     * to include `<mpi.h>`. The parameter is a constrained template so that it
+     * does not clash with the `options` overload below (string-like arguments
+     * are excluded). Passing an `MPI_Comm` (e.g. `MPI_COMM_WORLD`) selects this
+     * overload.
      *
      * For further details, refer to the documentation of the non-MPI overload.
      *
@@ -317,12 +332,18 @@ public:
      *      May be specified as a JSON-formatted string directly, or as a path
      *      to a JSON textfile, prepended by an at sign '@'.
      */
+    template <
+        typename Comm,
+        typename = std::enable_if_t<
+            !std::is_convertible_v<std::decay_t<Comm>, std::string>>>
     Series(
         std::string const &filepath,
         Access at,
-        MPI_Comm comm,
-        std::string const &options = "{}");
-#endif
+        Comm &&comm,
+        std::string const &options = "{}")
+        : Series(
+              filepath, at, options, std::any(std::forward<Comm>(comm)))
+    {}
 
     /**
      * @brief Construct a new Series.
@@ -481,17 +502,12 @@ public:
      * @param collective Run this read operation collectively.
                 There might be an enormous IO overhead if running this
                 operation non-collectively.
-                To make this explicit to users, there is no default parameter.
                 Parameter is ignored if compiling without MPI support, (it is
                 present for the sake of a consistent API).
      * @return  Vector with a String per (writing) MPI rank, indicating user-
      *          defined meta information per rank. Example: host name.
      */
-#if openPMD_HAVE_MPI
-    chunk_assignment::RankMeta rankTable(bool collective);
-#else
     chunk_assignment::RankMeta rankTable(bool collective = false);
-#endif
 
     /**
      * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with

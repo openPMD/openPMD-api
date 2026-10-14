@@ -757,9 +757,10 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
 std::string merge(
     std::string const &defaultValue,
     std::string const &overwrite,
-    MPI_Comm comm)
+    std::any communicator)
 {
-    return merge_impl(defaultValue, overwrite, comm);
+    return merge_impl(
+        defaultValue, overwrite, std::any_cast<MPI_Comm>(communicator));
 }
 #endif
 

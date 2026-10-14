@@ -240,8 +240,9 @@ bool remove_file(std::string const &path)
 
 #if openPMD_HAVE_MPI
 
-std::string collective_file_read(std::string const &path, MPI_Comm comm)
+std::string collective_file_read(std::string const &path, std::any communicator)
 {
+    auto comm = std::any_cast<MPI_Comm>(communicator);
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);

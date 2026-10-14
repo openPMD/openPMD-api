@@ -157,7 +157,7 @@ AbstractIOHandler::AbstractIOHandler(
     std::string path,
     Access at,
     json::TracingJSON &&jsonConfig,
-    MPI_Comm)
+    std::any)
     : AbstractIOHandler(std::move(initialize_from))
 {
     jsonMatcher = std::make_unique<json::JsonMatcher>(std::move(jsonConfig));

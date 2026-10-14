@@ -25,10 +25,7 @@
 #include "openPMD/Dataset.hpp" // Offset, Extent
 #include "openPMD/auxiliary/BlockSlicer.hpp"
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include <any>
 #include <map>
 #include <memory>
 #include <string>
@@ -591,7 +588,7 @@ namespace host_info
      *         for all MPI ranks known to the communicator.
      *         The result is returned on all ranks.
      */
-    chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
+    chunk_assignment::RankMeta byMethodCollective(std::any, Method);
 #endif
 } // namespace host_info
 } // namespace openPMD
