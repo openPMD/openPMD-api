@@ -341,8 +341,7 @@ public:
         Access at,
         Comm &&comm,
         std::string const &options = "{}")
-        : Series(
-              filepath, at, options, std::any(std::forward<Comm>(comm)))
+        : Series(filepath, at, options, std::any(std::forward<Comm>(comm)))
     {}
 
     /**
