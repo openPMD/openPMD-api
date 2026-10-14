@@ -15,7 +15,7 @@ SCALAR = Mesh_Record_Component.SCALAR
 
 if __name__ == "__main__":
     # open file for writing
-    f = Series("working/directory/2D_simData_py.h5", Access.create)
+    f = Series("../samples/2D_simData_py.h5", Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
