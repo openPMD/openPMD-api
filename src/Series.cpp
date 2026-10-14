@@ -1168,7 +1168,7 @@ auto Series::initIOHandler(
     series.m_parseLazily = at == Access::READ_LINEAR;
 
     // now check for user-specified options
-    parseJsonOptions(optionsJson, *input);
+    parseJsonOptions(optionsJson, *input, at);
 
     if (resolve_generic_extension && !input->filenameExtension.has_value())
     {
@@ -1317,6 +1317,14 @@ Given file pattern: ')END"
         if (input->iterationEncoding != IterationEncoding::fileBased)
         {
             break;
+        }
+        if (series.m_appendAfterSnapshot.has_value())
+        {
+            throw error::OperationUnsupportedInBackend(
+                IOHandler()->backendName(),
+                "Appending after a selected snapshot "
+                "('append.after_snapshot') is not implemented for file-based "
+                "iteration encoding.");
         }
         int padding = autoDetectPadding(
             matcher(
@@ -1663,8 +1671,27 @@ void Series::flushGorVBased(
                 case FE::No:
                     initDefaults(iterationEncoding(), /* initAll = */ true);
                     break;
-                case FE::Yes:
+                case FE::Yes: {
+                    /*
+                     * Drop what this Series does not append to: the
+                     * snapshots after `append.after_snapshot` if specified,
+                     * and incomplete output of a writer that was killed.
+                     */
+                    Parameter<Operation::TRUNCATE_FILE> truncate;
+                    truncate.name = series.m_name;
+                    truncate.snapshotsPath =
+                        auxiliary::replace_first(basePath(), "%T/", "");
+                    truncate.afterSnapshot = series.m_appendAfterSnapshot;
+                    IOHandler()->enqueue(IOTask(this, truncate));
+                    IOHandler()->flush(internal::defaultFlushParams);
+                    using Result = Parameter<Operation::TRUNCATE_FILE>::Result;
+                    if (*truncate.result == Result::Emptied)
+                    {
+                        // No snapshot is kept, the file is created anew
+                        initDefaults(iterationEncoding(), /* initAll = */ true);
+                    }
                     break;
+                }
                 }
             }
             Parameter<Operation::CREATE_FILE> fCreate;
@@ -3193,7 +3220,8 @@ namespace
 } // namespace
 
 template <typename TracingJSON>
-void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
+void Series::parseJsonOptions(
+    TracingJSON &options, ParsedInput &input, Access at)
 {
     auto &series = get();
     getJsonOption<bool>(
@@ -3290,6 +3318,43 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                     {"iteration_encoding"},
                     "Unknown iteration encoding specified: " +
                         iterationEncoding);
+            }
+        }
+    }
+    // append.after_snapshot key
+    // only read in the append modes, reported as unused otherwise
+    if (access::append(at) && options.json().contains("append"))
+    {
+        auto appendOptions = options["append"];
+        if (!appendOptions.json().is_object())
+        {
+            throw error::BackendConfigSchema(
+                {"append"}, "Must be a JSON object / TOML table.");
+        }
+        if (appendOptions.json().contains("after_snapshot"))
+        {
+            auto afterSnapshotOption = appendOptions["after_snapshot"];
+            auto const &afterSnapshot = afterSnapshotOption.json();
+            auto asString = afterSnapshot.is_string()
+                ? json::asLowerCaseStringDynamic(afterSnapshot)
+                : std::nullopt;
+            if (afterSnapshot.is_number_unsigned() ||
+                (afterSnapshot.is_number_integer() &&
+                 afterSnapshot.template get<int64_t>() >= 0))
+            {
+                series.m_appendAfterSnapshot =
+                    afterSnapshot.template get<IterationIndex_t>();
+            }
+            else if (asString.has_value() && *asString == "last")
+            {
+                series.m_appendAfterSnapshot = std::nullopt;
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    {"append", "after_snapshot"},
+                    "Must be the index of a snapshot (non-negative integer) "
+                    "or \"last\".");
             }
         }
     }
