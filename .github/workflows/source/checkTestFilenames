@@ -60,6 +60,14 @@ WRITE_HINT = re.compile(
 # handler in unit tests), not an output file.
 EXTENSION_ONLY = re.compile(r"\.\w+$")
 
+# Tests that create or clean up an output directory. Sharing such a directory
+# between two source files leads to the same races as sharing a filename, and
+# would otherwise slip through when the filenames inside are built dynamically.
+DIRECTORY_HINT = re.compile(
+    r"remove_directory|create_directories|directory_exists"
+)
+DIRECTORY_LITERAL = re.compile(r'"([^"]*)"')
+
 # The co-load reproducer is a stand-alone diagnostic script, not part of the
 # regular test or example suite.
 IGNORE_FILES = {os.path.join("test", "python", "coload_repro.py")}
@@ -90,21 +98,25 @@ def main():
     os.chdir(root)
 
     outputs = {}
+    directories = {}
     for filename in sorted(source_files(root)):
         if filename in IGNORE_FILES:
             continue
         with open(filename, errors="replace") as handle:
             lines = handle.read().splitlines()
         for index, line in enumerate(lines):
+            # Look for a write access in the statement the literal is part
+            # of. A small window is used to also catch wrapped statements.
+            window = "\n".join(lines[max(0, index - 1) : index + 4])
+            if DIRECTORY_HINT.search(window):
+                for match in DIRECTORY_LITERAL.finditer(line):
+                    directory = normalize(match.group(1))
+                    if directory.startswith("../samples"):
+                        directories.setdefault(directory, set()).add(filename)
             for match in LITERAL.finditer(line):
                 literal = match.group(1)
                 if EXTENSION_ONLY.fullmatch(literal):
                     continue
-                # Look for a write access in the statement the literal is part
-                # of. A small window is used to also catch wrapped statements.
-                window = "\n".join(
-                    lines[max(0, index - 1) : index + 4]
-                )
                 if not WRITE_HINT.search(window):
                     continue
                 path = normalize(literal)
@@ -132,12 +144,24 @@ def main():
             for filename in sorted(outputs[path]):
                 print(f"#       {filename}")
 
+    shared_directories = sorted(
+        path for path, files in directories.items() if len(files) > 1
+    )
+    if shared_directories:
+        ok = 1
+        print("# Output directories shared by more than one source file:")
+        for path in shared_directories:
+            print(f"#   {path}")
+            for filename in sorted(directories[path]):
+                print(f"#       {filename}")
+
     if ok:
         print("#")
         print("# SUMMARY")
         print("# -------")
-        print("# Write output files below ../samples and give each one a unique")
-        print("# name so that parallel test runs do not race.")
+        print("# Write output files below ../samples into directories and under")
+        print("# names that are unique to each test/example executable, so that")
+        print("# parallel test runs do not race.")
 
     return ok
 
