@@ -1685,9 +1685,18 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     std::vector<detail::PreloadAdiosAttributes> preload;
 
     preload.reserve(totalNumSteps);
-    adios2::StepStatus status;
+    /*
+     * Read the steps that the random-access engine sees, and do not wait for
+     * further steps. A file that is still being written, or whose writer was
+     * killed, is marked as active, and BeginStep() without a timeout would
+     * wait for the next step, forever in the case of a killed writer.
+     * StepStatus::NotReady then means that there are no further steps yet.
+     */
+    adios2::StepStatus status = adios2::StepStatus::OK;
     size_t step = 0;
-    while ((status = engine.BeginStep()) == adios2::StepStatus::OK)
+    while (step < totalNumSteps &&
+           (status = engine.BeginStep(adios2::StepMode::Read, 0.0f)) ==
+               adios2::StepStatus::OK)
     {
         auto &new_entry = preload.emplace_back();
         new_entry.preloadAttributes(IO);
@@ -1698,7 +1707,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         engine.EndStep();
         ++step;
     }
-    if (status != adios2::StepStatus::EndOfStream)
+    if (status == adios2::StepStatus::OtherError)
     {
         throw std::runtime_error(
             "[ADIOS2IOHandlerImpl::readAttributeAllsteps] Unexpected step "
