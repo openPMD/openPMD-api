@@ -104,6 +104,7 @@ namespace
         case Operation::ADVANCE:
         case Operation::CREATE_FILE:
         case Operation::CHECK_FILE:
+        case Operation::TRUNCATE_FILE:
         case Operation::OPEN_FILE:
         case Operation::CLOSE_FILE:
         case Operation::DELETE_FILE:
@@ -188,6 +189,24 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
                     "] CHECK_FILE: ",
                     parameter.name);
                 checkFile(i.writable, parameter);
+                break;
+            }
+            case O::TRUNCATE_FILE: {
+                auto &parameter =
+                    deref_dynamic_cast<Parameter<O::TRUNCATE_FILE>>(
+                        i.parameter.get());
+                writeToStderr(
+                    "[",
+                    i.writable->parent,
+                    "->",
+                    i.writable,
+                    "] TRUNCATE_FILE: ",
+                    parameter.name,
+                    " after snapshot ",
+                    parameter.afterSnapshot.has_value()
+                        ? std::to_string(*parameter.afterSnapshot)
+                        : std::string("last"));
+                truncateFile(i.writable, parameter);
                 break;
             }
             case O::CREATE_PATH: {
@@ -578,6 +597,20 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
     }
     writeToStderr("FLUSHED\n");
     return std::future<void>();
+}
+
+void AbstractIOHandlerImpl::truncateFile(
+    Writable *, Parameter<Operation::TRUNCATE_FILE> &param)
+{
+    if (!param.afterSnapshot.has_value())
+    {
+        *param.result = Parameter<Operation::TRUNCATE_FILE>::Result::Unchanged;
+        return;
+    }
+    throw error::OperationUnsupportedInBackend(
+        m_handler->backendName(),
+        "Appending after a selected snapshot ('append.after_snapshot') is "
+        "not implemented in this backend.");
 }
 
 void AbstractIOHandlerImpl::readAttributeAllsteps(
