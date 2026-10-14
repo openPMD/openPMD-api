@@ -154,6 +154,9 @@ public:
 
     void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) override;
 
+    void
+    truncateFile(Writable *, Parameter<Operation::TRUNCATE_FILE> &) override;
+
     // MPI Collective
     bool checkFile(std::string fullFilePath) const;
 
@@ -374,6 +377,15 @@ private:
      * This allows to overwrite a file later without error.
      */
     int nameCounter{0};
+
+    /*
+     * Files for which Operation::TRUNCATE_FILE found steps to drop.
+     * Maps the full path of the file to the number of steps to keep.
+     * Used and removed by detail::ADIOS2File::getEngine() when it opens the
+     * engine in adios2::Mode::Append: zero steps to keep means to create the
+     * file anew.
+     */
+    std::unordered_map<std::string, size_t> m_stepsToKeepInAppendMode;
 
     std::map<std::string, adios2::Operator> m_operators;
 

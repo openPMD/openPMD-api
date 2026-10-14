@@ -802,8 +802,45 @@ adios2::Engine &ADIOS2File::getEngine()
              */
             tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
                                                  : adios2::Mode::Write;
-            [[fallthrough]];
 #endif
+            /*
+             * Operation::TRUNCATE_FILE found steps to drop from this file:
+             * keep the first steps only, or create the file anew if none are
+             * to be kept.
+             */
+            if (auto stepsToKeep =
+                    m_impl->m_stepsToKeepInAppendMode.find(m_file);
+                stepsToKeep != m_impl->m_stepsToKeepInAppendMode.end())
+            {
+                if (stepsToKeep->second == 0)
+                {
+                    tempMode = adios2::Mode::Write;
+                }
+                else
+                {
+                    for (auto const &parameter : m_IO.Parameters())
+                    {
+                        if (auxiliary::lowerCase(
+                                std::string(parameter.first)) ==
+                            "appendaftersteps")
+                        {
+                            throw error::BackendConfigSchema(
+                                {"adios2",
+                                 "engine",
+                                 "parameters",
+                                 parameter.first},
+                                "Cannot be combined with the option "
+                                "'append.after_snapshot', which sets this "
+                                "parameter.");
+                        }
+                    }
+                    m_IO.SetParameter(
+                        "AppendAfterSteps",
+                        std::to_string(stepsToKeep->second));
+                }
+                m_impl->m_stepsToKeepInAppendMode.erase(stepsToKeep);
+            }
+            [[fallthrough]];
         case adios2::Mode::Write: {
             // usesSteps attribute only written upon ::advance()
             // this makes sure that the attribute is only put in case

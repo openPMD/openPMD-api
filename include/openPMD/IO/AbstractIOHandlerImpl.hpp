@@ -59,6 +59,24 @@ public:
      */
     virtual void checkFile(Writable *, Parameter<Operation::CHECK_FILE> &) = 0;
 
+    /**
+     * Drop the snapshots of the existing file specified by the parameter
+     * that a Series does not append to: the snapshots after the one selected
+     * with the option `append.after_snapshot`, and output that a writer left
+     * incomplete, e.g. because it was killed.
+     * The Writable is irrelevant for this method.
+     * Called by the frontend when appending to a Series, after
+     * Operation::CHECK_FILE has found the file and before
+     * Operation::CREATE_FILE opens it for writing.
+     * A backend may defer the removal until the file is opened and must then
+     * report in the out parameter what the removal will do.
+     *
+     * Has a default implementation that keeps the file as it is, and throws
+     * error::OperationUnsupportedInBackend if a snapshot is selected.
+     */
+    virtual void
+    truncateFile(Writable *, Parameter<Operation::TRUNCATE_FILE> &);
+
     /** Advance the file/stream that this writable belongs to.
      *
      * If the backend is based around usage of IO steps (especially streaming

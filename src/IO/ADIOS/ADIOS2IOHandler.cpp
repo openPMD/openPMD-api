@@ -848,6 +848,263 @@ bool ADIOS2IOHandlerImpl::checkFile(std::string fullFilePath) const
     return fileExists;
 }
 
+namespace
+{
+    template <typename T>
+    bool readSnapshotsAs(
+        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
+    {
+        if (IO.AttributeType(name) != adios2::GetType<T>())
+        {
+            return false;
+        }
+        auto attribute = IO.InquireAttribute<T>(name);
+        if (!attribute)
+        {
+            return false;
+        }
+        for (T const &snapshot : attribute.Data())
+        {
+            res.push_back(static_cast<uint64_t>(snapshot));
+        }
+        return true;
+    }
+
+    template <typename... T>
+    bool readSnapshotsAsAnyOf(
+        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
+    {
+        return (readSnapshotsAs<T>(IO, name, res) || ...);
+    }
+
+    /*
+     * Read the snapshots of the current step from the snapshot attribute.
+     * Returns false if there is no such attribute of integer type.
+     */
+    bool readSnapshotsOfCurrentStep(
+        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
+    {
+        res.clear();
+        return readSnapshotsAsAnyOf<
+            uint64_t,
+            int64_t,
+            uint32_t,
+            int32_t,
+            uint16_t,
+            int16_t,
+            uint8_t,
+            int8_t>(IO, name, res);
+    }
+} // namespace
+
+void ADIOS2IOHandlerImpl::truncateFile(
+    Writable *, Parameter<Operation::TRUNCATE_FILE> &parameters)
+{
+    using Result = Parameter<Operation::TRUNCATE_FILE>::Result;
+    std::string const name =
+        fullPath(parameters.name + fileSuffix(/* verbose = */ false));
+
+    bool fileEngineWithSteps = false;
+    for (auto const &engine : {"file", "filestream", "bp", "bp4", "bp5"})
+    {
+        fileEngineWithSteps = fileEngineWithSteps || realEngineType() == engine;
+    }
+
+    auto openForReadingSteps = [&name](adios2::IO &IO) {
+        // the generic file engine detects the format of the existing file
+        IO.SetEngine("file");
+        // needed in BP4 for seeing attributes as they were in each step
+        IO.SetParameter("StreamReader", "ON");
+        IO.SetParameter("OpenTimeoutSecs", "0");
+        return IO.Open(name, adios2::Mode::Read);
+    };
+    /*
+     * Do not wait for further steps. A file whose writer was killed is still
+     * marked as being written, and BeginStep() without a timeout would wait
+     * forever for a step that never comes. No other writer can be active
+     * now, since this Series is about to write to the file itself.
+     */
+    auto beginStep = [](adios2::Engine &engine) {
+        return engine.BeginStep(adios2::StepMode::Read, 0.0f);
+    };
+
+#if openPMD_HAVE_MPI
+    auto adios = [&]() {
+        if (m_communicator.has_value())
+        {
+            return adios2::ADIOS(*m_communicator);
+        }
+        else
+        {
+            return adios2::ADIOS{};
+        }
+    }();
+#else
+    adios2::ADIOS adios;
+#endif
+    auto IO = adios.DeclareIO("TruncateFile");
+
+    if (!parameters.afterSnapshot.has_value())
+    {
+        /*
+         * Keep all snapshots. A file without a complete step holds none,
+         * e.g. if its writer was killed before it finished the first step:
+         * it also lacks the attributes of the Series, so create it anew.
+         */
+        bool hasSteps = true;
+        if (fileEngineWithSteps)
+        {
+            try
+            {
+                auto engine = openForReadingSteps(IO);
+                hasSteps = beginStep(engine) == adios2::StepStatus::OK;
+                if (hasSteps)
+                {
+                    engine.EndStep();
+                }
+                engine.Close();
+            }
+            catch (std::exception const &)
+            {
+                // leave it to the engine that appends to the file
+                hasSteps = true;
+            }
+        }
+        if (!hasSteps)
+        {
+            m_stepsToKeepInAppendMode[name] = 0;
+        }
+        *parameters.result = hasSteps ? Result::Unchanged : Result::Emptied;
+        return;
+    }
+
+    uint64_t const afterSnapshot = *parameters.afterSnapshot;
+    std::string const errorPrefix = "Cannot append to '" + name +
+        "' after snapshot " + std::to_string(afterSnapshot) + ": ";
+    if (!fileEngineWithSteps)
+    {
+        throw error::OperationUnsupportedInBackend(
+            "ADIOS2",
+            errorPrefix + "Not supported by the engine '" + realEngineType() +
+                "'.");
+    }
+
+    // e.g. "/data/" or "/data" -> "/data/snapshot"
+    std::string snapshotAttribute = parameters.snapshotsPath;
+    while (auxiliary::ends_with(snapshotAttribute, '/'))
+    {
+        snapshotAttribute.pop_back();
+    }
+    if (!auxiliary::starts_with(snapshotAttribute, '/'))
+    {
+        snapshotAttribute = "/" + snapshotAttribute;
+    }
+    snapshotAttribute += "/snapshot";
+
+    auto engine = openForReadingSteps(IO);
+    std::string const engineOnDisk = engine.Type();
+
+    size_t numSteps = 0;
+    // index of the first step that holds a snapshot after `afterSnapshot`
+    std::optional<size_t> firstStepToDrop;
+    // snapshots up to `afterSnapshot` in the steps that would be dropped
+    std::set<uint64_t> wronglyDroppedSnapshots;
+    std::vector<uint64_t> snapshots;
+    adios2::StepStatus status;
+    while ((status = beginStep(engine)) == adios2::StepStatus::OK)
+    {
+        if (!readSnapshotsOfCurrentStep(IO, snapshotAttribute, snapshots))
+        {
+            engine.Close();
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS2",
+                errorPrefix + "Step " + std::to_string(numSteps) +
+                    " does not define the integer attribute '" +
+                    snapshotAttribute +
+                    "', so its snapshots are not known. (Was the file "
+                    "written without ADIOS2 steps?)");
+        }
+        if (!firstStepToDrop.has_value() &&
+            std::any_of(
+                snapshots.begin(), snapshots.end(), [&](uint64_t snapshot) {
+                    return snapshot > afterSnapshot;
+                }))
+        {
+            firstStepToDrop = numSteps;
+        }
+        if (firstStepToDrop.has_value())
+        {
+            for (uint64_t snapshot : snapshots)
+            {
+                if (snapshot <= afterSnapshot)
+                {
+                    wronglyDroppedSnapshots.emplace(snapshot);
+                }
+            }
+        }
+        engine.EndStep();
+        ++numSteps;
+    }
+    engine.Close();
+    if (status == adios2::StepStatus::OtherError)
+    {
+        throw error::ReadError(
+            error::AffectedObject::File,
+            error::Reason::Other,
+            "ADIOS2",
+            errorPrefix + "Failed to read step " + std::to_string(numSteps) +
+                ".");
+    }
+    // StepStatus::NotReady: last step of a file that was not closed
+
+    if (numSteps == 0)
+    {
+        // e.g. a writer that was killed before it finished its first step
+        m_stepsToKeepInAppendMode[name] = 0;
+        *parameters.result = Result::Emptied;
+        return;
+    }
+    if (!firstStepToDrop.has_value())
+    {
+        *parameters.result = Result::Unchanged;
+        return;
+    }
+    if (!wronglyDroppedSnapshots.empty())
+    {
+        std::stringstream error;
+        error << errorPrefix << "Steps can only be dropped as a whole from the "
+              << "end of the file. Dropping the snapshots after "
+              << afterSnapshot << " means dropping all steps from step "
+              << *firstStepToDrop << " on, which would also drop the "
+              << "snapshot(s)";
+        for (uint64_t snapshot : wronglyDroppedSnapshots)
+        {
+            error << ' ' << snapshot;
+        }
+        error << ".";
+        throw error::OperationUnsupportedInBackend("ADIOS2", error.str());
+    }
+    if (*firstStepToDrop == 0)
+    {
+        m_stepsToKeepInAppendMode[name] = 0;
+        *parameters.result = Result::Emptied;
+        return;
+    }
+    if (!auxiliary::starts_with(
+            auxiliary::lowerCase(std::string(engineOnDisk)), "bp5"))
+    {
+        throw error::OperationUnsupportedInBackend(
+            "ADIOS2",
+            errorPrefix +
+                "The file has later snapshots, and only the BP5 "
+                "engine can drop steps from an existing file "
+                "(found: " +
+                engineOnDisk + ").");
+    }
+    m_stepsToKeepInAppendMode[name] = *firstStepToDrop;
+    *parameters.result = Result::Truncated;
+}
+
 void ADIOS2IOHandlerImpl::createPath(
     Writable *writable, const Parameter<Operation::CREATE_PATH> &parameters)
 {

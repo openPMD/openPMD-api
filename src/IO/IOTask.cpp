@@ -45,6 +45,9 @@ std::ostream &operator<<(std::ostream &os, Operation op)
     case Operation::CHECK_FILE:
         os << "CHECK_FILE";
         break;
+    case Operation::TRUNCATE_FILE:
+        os << "TRUNCATE_FILE";
+        break;
     case Operation::OPEN_FILE:
         os << "OPEN_FILE";
         break;
@@ -296,6 +299,9 @@ namespace internal
             break;
         case Operation::CHECK_FILE:
             return "CHECK_FILE";
+            break;
+        case Operation::TRUNCATE_FILE:
+            return "TRUNCATE_FILE";
             break;
         case Operation::READ_ATT_ALLSTEPS:
             return "READ_ATT_ALLSTEPS";

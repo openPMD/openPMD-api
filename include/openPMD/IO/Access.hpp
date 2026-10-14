@@ -78,9 +78,15 @@ enum class Access
      */
     CREATE_LINEAR = 4,
     /** write new iterations to an existing series without reading
+     *
+     * By default, the new iterations are appended after the last one that
+     * was written. Use the JSON/TOML option `append.after_snapshot` to
+     * continue after a selected iteration and drop the later ones.
      */
     APPEND_RANDOM_ACCESS = 5,
     /** write new iterations to an existing series without reading
+     *
+     * @see APPEND_RANDOM_ACCESS for continuing after a selected iteration.
      */
     APPEND_LINEAR = 6,
     READ_RANDOM_ACCESS = READ_ONLY, //!< more explicit alias for READ_ONLY
