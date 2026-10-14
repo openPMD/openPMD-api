@@ -17,6 +17,8 @@ jobs:
       run: .github/workflows/source/hasTabs
     - name: End-of-Line whitespaces
       run: .github/workflows/source/hasEOLwhiteSpace
+    - name: Test/Example Filenames
+      run: .github/workflows/source/checkTestFilenames
 
   static-analysis:
     runs-on: ubuntu-22.04
