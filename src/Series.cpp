@@ -3393,7 +3393,7 @@ Series::Series(
 }
 
 #if openPMD_HAVE_MPI
-template Series::Series<MPI_Comm, void>(
+template Series::Series(
     std::string const &, Access, MPI_Comm, std::string const &);
 #endif
 
