@@ -940,12 +940,10 @@ namespace host_info
     }
 
 #if openPMD_HAVE_MPI
-    namespace internal
-    {
+    template <typename Communicator>
     chunk_assignment::RankMeta
-    byMethodCollective(std::any communicator, Method method)
+    byMethodCollective(Communicator comm, Method method)
     {
-        auto comm = std::any_cast<MPI_Comm>(communicator);
         auto myHostname = byMethod(method);
         chunk_assignment::RankMeta res;
         auto allHostnames =
@@ -956,7 +954,9 @@ namespace host_info
         }
         return res;
     }
-    } // namespace internal
+
+    template chunk_assignment::RankMeta
+    byMethodCollective<MPI_Comm>(MPI_Comm, Method);
 
     std::string mpi_processor_name()
     {

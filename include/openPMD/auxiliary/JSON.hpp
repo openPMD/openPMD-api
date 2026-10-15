@@ -23,9 +23,7 @@
 
 #include "openPMD/config.hpp"
 
-#include <any>
 #include <string>
-#include <type_traits>
 
 namespace openPMD
 {
@@ -71,18 +69,6 @@ namespace json
     merge(std::string const &defaultValue, std::string const &overwrite);
 
 #if openPMD_HAVE_MPI
-    namespace internal
-    {
-        /*
-         * Internal, type-erased entry point for the MPI-collective merge.
-         * Use the templated public overload below instead.
-         */
-        std::string merge(
-            std::string const &defaultValue,
-            std::string const &overwrite,
-            std::any communicator);
-    } // namespace internal
-
     /**
      * @brief Merge two JSON/TOML datasets into one, reading `@`-prefixed files
      *        collectively with the given MPI communicator.
@@ -103,20 +89,11 @@ namespace json
      *        `overwrite` was a JSON dataset, then as a JSON string, otherwise
      *        as a TOML string.
      */
-    template <
-        typename Communicator,
-        typename = std::enable_if_t<
-            !std::is_convertible_v<std::decay_t<Communicator>, std::string>>>
+    template <typename Communicator>
     std::string merge(
         std::string const &defaultValue,
         std::string const &overwrite,
-        Communicator &&communicator)
-    {
-        return internal::merge(
-            defaultValue,
-            overwrite,
-            std::any(std::forward<Communicator>(communicator)));
-    }
+        Communicator communicator);
 #endif
 } // namespace json
 } // namespace openPMD

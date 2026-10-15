@@ -25,11 +25,9 @@
 #include "openPMD/Dataset.hpp" // Offset, Extent
 #include "openPMD/auxiliary/BlockSlicer.hpp"
 
-#include <any>
 #include <map>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace openPMD
@@ -579,15 +577,6 @@ namespace host_info
     std::string byMethod(Method);
 
 #if openPMD_HAVE_MPI
-    namespace internal
-    {
-        /*
-         * Internal, type-erased entry point. Use the templated public overload
-         * below instead.
-         */
-        chunk_assignment::RankMeta byMethodCollective(std::any, Method);
-    } // namespace internal
-
     /**
      * @brief Retrieve the hostname information on all MPI ranks and distribute
      *        a map of "rank -> hostname" to all ranks.
@@ -602,11 +591,7 @@ namespace host_info
      */
     template <typename Communicator>
     chunk_assignment::RankMeta
-    byMethodCollective(Communicator &&communicator, Method method)
-    {
-        return internal::byMethodCollective(
-            std::any(std::forward<Communicator>(communicator)), method);
-    }
+    byMethodCollective(Communicator communicator, Method method);
 #endif
 } // namespace host_info
 } // namespace openPMD

@@ -150,6 +150,23 @@ bool AbstractIOHandler::fullSupportForVariableBasedEncoding() const
     return false;
 }
 
+#if openPMD_HAVE_MPI
+template <>
+AbstractIOHandler::AbstractIOHandler(
+    std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
+    std::string path,
+    Access at,
+    json::TracingJSON &&jsonConfig,
+    MPI_Comm)
+    : AbstractIOHandler(std::move(initialize_from))
+{
+    jsonMatcher = std::make_unique<json::JsonMatcher>(std::move(jsonConfig));
+    directory = std::move(path);
+    m_backendAccess = at;
+    m_frontendAccess = at;
+}
+#endif
+
 template <>
 AbstractIOHandler::AbstractIOHandler(
     std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,

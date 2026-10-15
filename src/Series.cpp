@@ -3378,27 +3378,24 @@ namespace internal
 Series::Series() : Attributable(NoInit()), iterations{}
 {}
 
+template <typename Communicator, typename>
 Series::Series(
     std::string const &filepath,
     Access at,
-    std::string const &options,
-    std::any communicator)
+    Communicator communicator,
+    std::string const &options)
     : Attributable(NoInit())
 {
     auto data = std::make_shared<internal::SeriesData>();
-    data->m_communicator = communicator;
+    data->m_communicator = std::any(communicator);
     setData(std::move(data));
-#if openPMD_HAVE_MPI
-    if (communicator.has_value())
-    {
-        init(filepath, at, options, std::any_cast<MPI_Comm>(communicator));
-    }
-    else
-#endif
-    {
-        init(filepath, at, options);
-    }
+    init(filepath, at, options, communicator);
 }
+
+#if openPMD_HAVE_MPI
+template Series::Series<MPI_Comm, void>(
+    std::string const &, Access, MPI_Comm, std::string const &);
+#endif
 
 Series::Series(
     std::string const &filepath, Access at, std::string const &options)

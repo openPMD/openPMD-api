@@ -754,17 +754,17 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
 }
 
 #if openPMD_HAVE_MPI
-namespace internal
+template <typename Communicator>
+std::string merge(
+    std::string const &defaultValue,
+    std::string const &overwrite,
+    Communicator communicator)
 {
-    std::string merge(
-        std::string const &defaultValue,
-        std::string const &overwrite,
-        std::any communicator)
-    {
-        return merge_impl(
-            defaultValue, overwrite, std::any_cast<MPI_Comm>(communicator));
-    }
-} // namespace internal
+    return merge_impl(defaultValue, overwrite, communicator);
+}
+
+template std::string
+merge<MPI_Comm>(std::string const &, std::string const &, MPI_Comm);
 #endif
 
 nlohmann::json &

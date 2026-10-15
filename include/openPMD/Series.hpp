@@ -299,28 +299,16 @@ class Series : public Attributable
     template <typename T, typename Series_type>
     friend T &internal::makeOwning(T &self, Series_type);
 
-    /**
-     * @brief Internal constructor taking a type-erased MPI communicator.
-     *
-     * Used by the public templated communicator constructor. Defined in the
-     * library so that `MPI_Comm` is only named in the implementation.
-     */
-    Series(
-        std::string const &filepath,
-        Access at,
-        std::string const &options,
-        std::any communicator);
-
 public:
     explicit Series();
 
     /**
      * @brief Construct a new MPI-parallel Series.
      *
-     * The communicator is accepted as a template parameter (and type-erased
-     * internally) so that this header does not need to include `<mpi.h>`. The
-     * parameter is constrained so that it does not clash with the `options`
-     * overload below (string-like arguments are excluded). Passing an
+     * The communicator is accepted as a template parameter so that this header
+     * does not need to include `<mpi.h>`; it is type-erased only for internal
+     * storage. The parameter is constrained so that it does not clash with the
+     * `options` overload below (string-like arguments are excluded). Passing an
      * `MPI_Comm` (e.g. `MPI_COMM_WORLD`) selects this overload.
      *
      * For further details, refer to the documentation of the non-MPI overload.
@@ -333,16 +321,14 @@ public:
      *      to a JSON textfile, prepended by an at sign '@'.
      */
     template <
-        typename Comm,
+        typename Communicator,
         typename = std::enable_if_t<
-            !std::is_convertible_v<std::decay_t<Comm>, std::string>>>
+            !std::is_convertible_v<std::decay_t<Communicator>, std::string>>>
     Series(
         std::string const &filepath,
         Access at,
-        Comm &&comm,
-        std::string const &options = "{}")
-        : Series(filepath, at, options, std::any(std::forward<Comm>(comm)))
-    {}
+        Communicator communicator,
+        std::string const &options = "{}");
 
     /**
      * @brief Construct a new Series.

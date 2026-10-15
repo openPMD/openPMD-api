@@ -281,10 +281,9 @@ protected:
 public:
 #if openPMD_HAVE_MPI
     /*
-     * The MPI communicator is accepted as a template parameter so that this
-     * public header does not need to include <mpi.h>. It is not used by the
-     * base class (the backends store it) and only keeps this constructor
-     * overload distinct.
+     * The communicator is a template parameter, analogous to TracingJSON, so
+     * that this public header does not need to include <mpi.h>. The
+     * instantiation for MPI_Comm is provided by the implementation.
      */
     template <typename TracingJSON, typename Communicator>
     AbstractIOHandler(
@@ -292,13 +291,7 @@ public:
         std::string path,
         Access at,
         TracingJSON &&jsonConfig,
-        Communicator &&)
-        : AbstractIOHandler(
-              std::move(initialize_from),
-              std::move(path),
-              at,
-              std::forward<TracingJSON>(jsonConfig))
-    {}
+        Communicator communicator);
 #endif
 
     template <typename TracingJSON>
