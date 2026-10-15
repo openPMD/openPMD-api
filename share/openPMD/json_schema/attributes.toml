@@ -18,7 +18,26 @@ type = "object"
 required = ["value", "datatype"]
 maxProperties = 2
 
-properties.value.anyOf = [
+# Complex values are represented as a two-element array of the real and the
+# imaginary part. For vectors of complex numbers, the datatype disambiguates
+# the nested arrays, so they are allowed here.
+[oneOf.patternProperties.".*".then.if]
+required = ["datatype"]
+properties.datatype.enum = [
+    "VEC_CFLOAT",
+    "VEC_CDOUBLE",
+    "VEC_CLONG_DOUBLE",
+]
+
+[oneOf.patternProperties.".*".then.then.properties.value]
+type = "array"
+items.type = "array"
+items.items.type = "number"
+items.minItems = 2
+items.maxItems = 2
+
+[oneOf.patternProperties.".*".then.else.properties.value]
+anyOf = [
     # Any primitive value
     { not = { anyOf = [
         { type = "object", title = "An object" },
