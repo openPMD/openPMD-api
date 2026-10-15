@@ -1323,6 +1323,24 @@ TEST_CASE("use_count_test", "[core]")
                 pprc.get().m_chunks.front().parameter.get())
                 ->data.as_variant<auxiliary::WriteBufferTypes>())
             .use_count() == 1);
+    /*
+     * Fill the remaining standard particle patch components. The openPMD
+     * standard requires all of numParticles, numParticlesOffset, offset and
+     * extent to be present once particlePatches are written.
+     */
+    auto patches = o.iterations[6].particles["electrons"].particlePatches;
+    patches["numParticlesOffset"][RecordComponent::SCALAR].resetDataset(
+        Dataset(determineDatatype<uint64_t>(), {4}));
+    patches["numParticlesOffset"][RecordComponent::SCALAR].store(
+        0, static_cast<uint64_t>(0));
+    patches["numParticlesOffset"][RecordComponent::SCALAR].store(
+        1, static_cast<uint64_t>(1));
+    for (auto const &patchName : {"offset", "extent"})
+    {
+        patches[patchName]["x"].resetDataset(Dataset(Datatype::DOUBLE, {7}));
+        patches[patchName]["x"].store(0, 123.);
+        patches[patchName]["x"].store(1, 123.);
+    }
 #endif
 }
 
