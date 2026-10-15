@@ -40,3 +40,7 @@ namespace read_while_writing
 {
 auto read_while_writing() -> void;
 }
+namespace file_state_lifetime
+{
+auto file_state_lifetime() -> void;
+}
