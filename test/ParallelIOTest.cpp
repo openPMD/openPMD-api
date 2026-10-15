@@ -1515,7 +1515,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
             {
                 std::fstream file;
                 file.open(
-                    "../samples/read_config_parallel.json", std::ios_base::out);
+                    "../samples/read_parallel_config.json", std::ios_base::out);
                 file << config;
                 file.flush();
             }
@@ -1524,7 +1524,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
                 filename,
                 openPMD::Access::READ_ONLY,
                 MPI_COMM_WORLD,
-                "  @   ../samples/read_config_parallel.json     ");
+                "  @   ../samples/read_parallel_config.json     ");
             auto E_x = series.iterations[0].meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 2);
             REQUIRE(E_x.getExtent()[0] == unsigned(size));
