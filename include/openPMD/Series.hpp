@@ -313,9 +313,10 @@ public:
      *
      * For further details, refer to the documentation of the non-MPI overload.
      *
+     * @tparam Communicator The communicator type, e.g. \c MPI_Comm.
      * @param filepath The file path.
      * @param at Access mode.
-     * @param comm The MPI communicator.
+     * @param communicator The MPI communicator.
      * @param options Advanced backend configuration via JSON.
      *      May be specified as a JSON-formatted string directly, or as a path
      *      to a JSON textfile, prepended by an at sign '@'.

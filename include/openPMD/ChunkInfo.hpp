@@ -583,6 +583,7 @@ namespace host_info
      *
      * This call is MPI collective.
      *
+     * @tparam Communicator The communicator type, e.g. \c MPI_Comm.
      * @param communicator The MPI communicator.
      * @param method The method used for retrieving the hostname.
      * @return chunk_assignment::RankMeta Hostname / processor name information

@@ -955,8 +955,10 @@ namespace host_info
         return res;
     }
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
     template chunk_assignment::RankMeta
         byMethodCollective<MPI_Comm>(MPI_Comm, Method);
+#endif
 
     std::string mpi_processor_name()
     {

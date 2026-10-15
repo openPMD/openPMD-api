@@ -3393,8 +3393,10 @@ Series::Series(
 }
 
 #if openPMD_HAVE_MPI
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 template Series::Series(
     std::string const &, Access, MPI_Comm, std::string const &);
+#endif
 #endif
 
 Series::Series(

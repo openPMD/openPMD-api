@@ -763,8 +763,10 @@ std::string merge(
     return merge_impl(defaultValue, overwrite, communicator);
 }
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 template std::string
 merge<MPI_Comm>(std::string const &, std::string const &, MPI_Comm);
+#endif
 #endif
 
 nlohmann::json &

@@ -75,6 +75,7 @@ namespace json
      *
      * For further details, refer to the documentation of the non-MPI overload.
      *
+     * @tparam Communicator The communicator type, e.g. \c MPI_Comm.
      * @param defaultValue A string containing either a JSON or a TOML dataset.
      *        If the string begins with an `@`, the JSON/TOML dataset will be
      *        read in parallel (using the MPI Communicator)

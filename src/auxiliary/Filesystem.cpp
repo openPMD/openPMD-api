@@ -289,8 +289,10 @@ std::string collective_file_read(std::string const &path, Communicator comm)
     return res;
 }
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 template std::string
 collective_file_read<MPI_Comm>(std::string const &, MPI_Comm);
+#endif
 
 #endif
 
