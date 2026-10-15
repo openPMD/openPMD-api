@@ -50,6 +50,7 @@
 #include <algorithm>
 #include <any>
 #include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <deque>
 #include <initializer_list>
@@ -1154,8 +1155,8 @@ void ADIOS2IOHandlerImpl::closeFile(
     }
     auto &file = *maybe_file;
 
-    auto erase_file = auxiliary::defer([&]() {
-        m_files.erase(file.name);
+    auto erase_file = auxiliary::defer([&, name = file.name]() {
+        m_files.erase(name);
         m_dirty.erase(maybe_file);
     });
 

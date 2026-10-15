@@ -546,8 +546,7 @@ void JSONIOHandlerImpl::createFile(
                 auxiliary::directory_exists(path))
             {
                 throw std::runtime_error(
-                    "[ADIOS2] Can only overwrite existing file in CREATE "
-                    "mode.");
+                    "[JSON] Can only overwrite existing file in CREATE mode.");
             }
         }
 
@@ -1024,6 +1023,7 @@ void JSONIOHandlerImpl::deleteFile(
         it->second.reset_optional();
         m_files.erase(it);
     }
+    std::remove(fullPath(name).c_str());
 
     writable->written = false;
 }
