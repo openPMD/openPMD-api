@@ -650,7 +650,9 @@ void close_and_copy_attributable_test(std::string const &file_ending)
     using position_t = int;
 
     // open file for writing
-    Series series("electrons." + file_ending, Access::CREATE_LINEAR);
+    Series series(
+        "../samples/close_and_copy_attributable." + file_ending,
+        Access::CREATE_LINEAR);
 
     Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
