@@ -5407,6 +5407,11 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
     }
 }
 
+TEST_CASE("read_while_writing", "[serial][adios2]")
+{
+    read_while_writing::read_while_writing();
+}
+
 namespace epsilon
 {
 template <typename T>

@@ -1685,10 +1685,46 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     std::vector<detail::PreloadAdiosAttributes> preload;
 
     preload.reserve(totalNumSteps);
-    adios2::StepStatus status;
-    size_t step = 0;
-    while ((status = engine.BeginStep()) == adios2::StepStatus::OK)
+    /*
+     * Random access means: read the steps that are on disk when the file is
+     * opened and do not wait for further steps. A file that is still being
+     * written, or whose writer was killed, is marked as active, so
+     * BeginStep() without a timeout would wait for a next step that may never
+     * come. Use a timeout of zero: the random-access engine already told us how
+     * many steps there are (`totalNumSteps`), and this second engine is only
+     * used to pre-parse attributes, so there is nothing to stream from.
+     * If a step cannot be read (StepStatus::NotReady) or the stream ends early
+     * (StepStatus::EndOfStream), stop here and warn. The pre-parsed steps are
+     * then a prefix of the steps that the random-access engine reports, and the
+     * parsing routines treat the missing steps as absent.
+     */
+    for (size_t step = 0; step < totalNumSteps; ++step)
     {
+        auto status = engine.BeginStep(adios2::StepMode::Read, 0.0f);
+        if (status == adios2::StepStatus::OtherError)
+        {
+            engine.Close();
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::Other,
+                "ADIOS2",
+                "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error "
+                "occurred while reading step " +
+                    std::to_string(step) + " of " +
+                    std::to_string(totalNumSteps) + " steps of '" +
+                    fullPath(*file) + "'.");
+        }
+        if (status != adios2::StepStatus::OK)
+        {
+            char const *statusName = status == adios2::StepStatus::NotReady
+                ? "NotReady"
+                : "EndOfStream";
+            std::cerr << "[ADIOS2 backend] Could read only " << step
+                      << " of the " << totalNumSteps << " steps of '"
+                      << fullPath(*file) << "' (step status: " << statusName
+                      << "). The remaining steps will be skipped." << std::endl;
+            break;
+        }
         auto &new_entry = preload.emplace_back();
         new_entry.preloadAttributes(IO);
         if (requires_variable_preparsing)
@@ -1696,13 +1732,6 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             preparseVariablesForStep(step, IO, preparsedVariableData);
         }
         engine.EndStep();
-        ++step;
-    }
-    if (status != adios2::StepStatus::EndOfStream)
-    {
-        throw std::runtime_error(
-            "[ADIOS2IOHandlerImpl::readAttributeAllsteps] Unexpected step "
-            "status while beginning a step.");
     }
     engine.Close();
     // some debugging output below
