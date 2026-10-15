@@ -488,12 +488,13 @@ public:
      * @param collective Run this read operation collectively.
                 There might be an enormous IO overhead if running this
                 operation non-collectively.
+                To make this explicit to users, there is no default parameter.
                 Parameter is ignored if compiling without MPI support, (it is
                 present for the sake of a consistent API).
      * @return  Vector with a String per (writing) MPI rank, indicating user-
      *          defined meta information per rank. Example: host name.
      */
-    chunk_assignment::RankMeta rankTable(bool collective = false);
+    chunk_assignment::RankMeta rankTable(bool collective);
 
     /**
      * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
