@@ -2496,6 +2496,18 @@ class APITest(unittest.TestCase):
             num_particles_comp.reset_dataset(dset)
             num_particles_comp.store(1, np.uint64(20))
 
+            # just store something here to satisfy verifiers
+            component = particles.particle_patches["numParticlesOffset"]
+            component.reset_dataset(dset)
+            component.store(0, np.uint64(0))
+            component.store(1, np.uint64(1))
+            for key in ["offset", "extent"]:
+                for dim in ["x", "y", "z"]:
+                    component = particles.particle_patches[key][dim]
+                    component.reset_dataset(dset)
+                    component.store(0, np.uint64(123))
+                    component.store(1, np.uint64(123))
+
             iteration.populate_missing_metadata(recursive=True)
             del iteration
             del particles
