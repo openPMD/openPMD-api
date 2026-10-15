@@ -580,6 +580,10 @@ TEST_CASE("output_constructor_test", "[core]")
                 iterationEncoding, iterationFormat, date, software,
                 softwareVersion */
     REQUIRE(o.name() == "MyCustomOutput");
+
+    // Reset the custom paths so that the written file is a valid openPMD file.
+    o.setMeshesPath("meshes");
+    o.setParticlesPath("particles");
 }
 
 TEST_CASE("output_modification_test", "[core]")
@@ -609,6 +613,10 @@ TEST_CASE("output_modification_test", "[core]")
 
     o.iterations.setAttribute<int>("test2", 2);
     REQUIRE(o.snapshots().getAttribute("test2").get<int>() == 2);
+
+    // Reset the custom paths so that the written file is a valid openPMD file.
+    o.setMeshesPath("meshes");
+    o.setParticlesPath("particles");
 
     o.iterations[0];
 }
@@ -1226,6 +1234,30 @@ TEST_CASE("wrapper_test", "[core]")
     REQUIRE(
         pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
 #endif
+    /*
+     * Fill the remaining standard particle patch components. The openPMD
+     * standard requires all of numParticles, numParticlesOffset, offset and
+     * extent to be present once particlePatches are written.
+     */
+    auto patchDset = Dataset(determineDatatype<uint64_t>(), {4});
+    o.iterations[6]
+        .particles["electrons"]
+        .particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+        .resetDataset(patchDset);
+    o.iterations[6]
+        .particles["electrons"]
+        .particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+        .store(idx, uint64_t(0));
+    o.iterations[6]
+        .particles["electrons"]
+        .particlePatches["numParticlesOffset"][RecordComponent::SCALAR]
+        .store(idx + 1, uint64_t(1));
+    for (auto const &patchName : {"offset", "extent"})
+    {
+        pp[patchName]["x"].resetDataset(Dataset(Datatype::DOUBLE, {7}));
+        pp[patchName]["x"].store(idx, 123.);
+        pp[patchName]["x"].store(idx + 1, 123.);
+    }
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
     REQUIRE(o.iterations[6]
