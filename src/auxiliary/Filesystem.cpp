@@ -240,6 +240,8 @@ bool remove_file(std::string const &path)
 
 #if openPMD_HAVE_MPI
 
+namespace internal
+{
 std::string collective_file_read(std::string const &path, std::any communicator)
 {
     auto comm = std::any_cast<MPI_Comm>(communicator);
@@ -288,6 +290,7 @@ std::string collective_file_read(std::string const &path, std::any communicator)
     }
     return res;
 }
+} // namespace internal
 
 #endif
 

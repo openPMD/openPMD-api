@@ -23,6 +23,7 @@
 #include <any>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "openPMD/config.hpp"
@@ -108,7 +109,29 @@ namespace auxiliary
 
 #if openPMD_HAVE_MPI
 
-    std::string collective_file_read(std::string const &path, std::any);
+    namespace internal
+    {
+        /*
+         * Internal, type-erased entry point. Use the templated public overload
+         * below instead.
+         */
+        std::string collective_file_read(std::string const &path, std::any);
+    } // namespace internal
+
+    /**
+     * @brief Read a file collectively with the given MPI communicator.
+     *
+     * @param path Path of the file to read.
+     * @param communicator The MPI communicator.
+     * @return std::string The file content.
+     */
+    template <typename Communicator>
+    std::string collective_file_read(
+        std::string const &path, Communicator &&communicator)
+    {
+        return internal::collective_file_read(
+            path, std::any(std::forward<Communicator>(communicator)));
+    }
 
 #endif
 } // namespace auxiliary

@@ -621,8 +621,10 @@ Parameters:
 
     m.def(
          "merge_json",
-         py::overload_cast<std::string const &, std::string const &>(
-             &json::merge),
+         [](std::string const &default_value,
+            std::string const &overwrite) {
+             return json::merge(default_value, overwrite);
+         },
          py::arg("default_value") = "{}",
          py::arg("overwrite") = "{}",
          docs_merge_json)

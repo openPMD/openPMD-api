@@ -29,6 +29,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace openPMD
@@ -578,17 +579,34 @@ namespace host_info
     std::string byMethod(Method);
 
 #if openPMD_HAVE_MPI
+    namespace internal
+    {
+        /*
+         * Internal, type-erased entry point. Use the templated public overload
+         * below instead.
+         */
+        chunk_assignment::RankMeta byMethodCollective(std::any, Method);
+    } // namespace internal
+
     /**
      * @brief Retrieve the hostname information on all MPI ranks and distribute
      *        a map of "rank -> hostname" to all ranks.
      *
      * This call is MPI collective.
      *
+     * @param communicator The MPI communicator.
+     * @param method The method used for retrieving the hostname.
      * @return chunk_assignment::RankMeta Hostname / processor name information
      *         for all MPI ranks known to the communicator.
      *         The result is returned on all ranks.
      */
-    chunk_assignment::RankMeta byMethodCollective(std::any, Method);
+    template <typename Communicator>
+    chunk_assignment::RankMeta
+    byMethodCollective(Communicator &&communicator, Method method)
+    {
+        return internal::byMethodCollective(
+            std::any(std::forward<Communicator>(communicator)), method);
+    }
 #endif
 } // namespace host_info
 } // namespace openPMD

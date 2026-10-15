@@ -940,6 +940,8 @@ namespace host_info
     }
 
 #if openPMD_HAVE_MPI
+    namespace internal
+    {
     chunk_assignment::RankMeta
     byMethodCollective(std::any communicator, Method method)
     {
@@ -954,6 +956,7 @@ namespace host_info
         }
         return res;
     }
+    } // namespace internal
 
     std::string mpi_processor_name()
     {
