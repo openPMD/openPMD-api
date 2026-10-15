@@ -81,26 +81,21 @@ install:
   - cmd: set PYTHONUNBUFFERED=1
 
   # Add our channels.
-  # x64: use conda-forge only. Adding Anaconda's commercial `defaults` channel
-  #   makes the classic solver backtrack for a very long time while reconciling
-  #   the two channels (the job is killed before the solve finishes).
-  # x86: `defaults` must stay, as it is the only source of Python 3.10 for
-  #   win-32 (conda-forge stopped at Python 3.6).
+  # x64: use conda-forge only, drop the defaults channel.
+  # x86: `defaults` must stay, as conda-forge is unmaintained for Win32.
   - cmd: conda config --set show_channel_urls true
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
 
-  # Configure the VM. ADIOS2 is only built for 64-bit Windows.
-  # The image ships conda 4.5.11. Its classic solver cannot resolve a
-  # minimum-version CMake (>= 3.22): that drags in a newer MSVC runtime and the
-  # solve backtracks until the job is killed. So first bootstrap a current
-  # conda plus the libmamba solver (a plain solve the old solver handles), then
-  # install CMake with the fast libmamba solver.
+  # Bootstrap a current conda plus the libmamba solver,
+  # then install CMake with the fast libmamba solver.
   - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda conda-libmamba-solver cython numpy hdf5 adios2 python=%CONDA_PY%
   # conda < 22.11 spells the option "experimental_solver", newer releases use
   # "solver"; set whichever this conda understands.
   - cmd: if "%TARGET_ARCH%"=="x64" (conda config --set solver libmamba 2>nul || conda config --set experimental_solver libmamba)
   - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge "cmake>=3.22"
+
+  # Plain install with default solver on Win32 and defaults channel.
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
