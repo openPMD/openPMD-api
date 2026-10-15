@@ -5407,55 +5407,9 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
     }
 }
 
-/*
- * A file whose writer is still open is marked as being written, as is the file
- * of a writer that was killed. Random access must see the steps that are on
- * disk and not wait for further steps.
- * https://github.com/openPMD/openPMD-api/issues/1946
- */
-void variableBasedRandomAccessWhileWriting(std::string const &file)
+TEST_CASE("read_while_writing", "[serial][adios2]")
 {
-    std::vector<Series::IterationIndex_t> const written{0, 10, 20};
-    Series writeSeries(
-        file,
-        Access::CREATE_LINEAR,
-        R"({"iteration_encoding": "variable_based"})");
-    for (auto index : written)
-    {
-        auto iteration = writeSeries.snapshots()[index];
-        auto E_x = iteration.meshes["E"]["x"];
-        E_x.resetDataset({Datatype::INT, {1}});
-        E_x.storeChunk(std::make_unique<int>(int(index)), {0}, {1});
-        // ends the ADIOS2 step
-        iteration.close();
-    }
-
-    {
-        Series readSeries(file, Access::READ_RANDOM_ACCESS);
-        std::vector<Series::IterationIndex_t> read;
-        for (auto &[index, iteration] : readSeries.snapshots())
-        {
-            read.push_back(index);
-            auto chunk = iteration.meshes["E"]["x"].loadChunk<int>();
-            iteration.close();
-            REQUIRE(*chunk == int(index));
-        }
-        REQUIRE(read == written);
-    }
-
-    writeSeries.close();
-}
-
-TEST_CASE("variableBasedRandomAccessWhileWriting", "[serial][adios2]")
-{
-    for (auto const &t : testedFileExtensions())
-    {
-        if (t == "bp" || t == "bp4" || t == "bp5")
-        {
-            variableBasedRandomAccessWhileWriting(
-                "../samples/variableBasedRandomAccessWhileWriting." + t);
-        }
-    }
+    read_while_writing::read_while_writing();
 }
 
 namespace epsilon

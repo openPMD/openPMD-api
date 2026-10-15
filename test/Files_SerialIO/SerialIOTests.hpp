@@ -36,3 +36,7 @@ namespace components_without_extent
 {
 auto components_without_extent() -> void;
 }
+namespace read_while_writing
+{
+auto read_while_writing() -> void;
+}
