@@ -317,11 +317,11 @@ public:
     /**
      * @brief Construct a new MPI-parallel Series.
      *
-     * The communicator is passed type-erased so that this header does not need
-     * to include `<mpi.h>`. The parameter is a constrained template so that it
-     * does not clash with the `options` overload below (string-like arguments
-     * are excluded). Passing an `MPI_Comm` (e.g. `MPI_COMM_WORLD`) selects this
-     * overload.
+     * The communicator is accepted as a template parameter (and type-erased
+     * internally) so that this header does not need to include `<mpi.h>`. The
+     * parameter is constrained so that it does not clash with the `options`
+     * overload below (string-like arguments are excluded). Passing an
+     * `MPI_Comm` (e.g. `MPI_COMM_WORLD`) selects this overload.
      *
      * For further details, refer to the documentation of the non-MPI overload.
      *
