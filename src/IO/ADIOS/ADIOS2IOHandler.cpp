@@ -803,7 +803,11 @@ void ADIOS2IOHandlerImpl::createPath(
     /* Sanitize path */
     if (!auxiliary::starts_with(parameters.path, '/'))
     {
-        path = filePositionToString(setAndGetFilePosition(writable)) + "/" +
+        auto file_position =
+            filePositionToString(setAndGetFilePosition(writable));
+        path =
+            (auxiliary::ends_with(file_position, '/') ? file_position
+                                                      : file_position + "/") +
             auxiliary::removeSlashes(parameters.path);
     }
     else

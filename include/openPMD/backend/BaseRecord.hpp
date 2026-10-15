@@ -368,7 +368,7 @@ public:
     bool scalar() const;
 
 private:
-    void flush(std::string const &, internal::FlushParams const &) final;
+    void flush(std::string const &, internal::FlushParams const &);
     virtual void
     flush_impl(std::string const &, internal::FlushParams const &) = 0;
 
@@ -405,14 +405,29 @@ namespace detail
 } // namespace detail
 
 template <typename T_elem>
+template <typename InputIt>
+auto BaseRecord<T_elem>::insert(InputIt first, InputIt last) -> void
+{
+    detail::verifyNonscalar(this);
+    T_Container::insert(first, last);
+    /*
+     * We skip checking for the SCALAR key as that would change the runtime of
+     * this call from O(last-first) to O(container().size()).
+     */
+}
+
+template <typename T_elem>
 template <typename... Args>
 auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->container().emplace(std::forward<Args>(args)...);
+    auto res = this->syncInsertResult(
+        this->container_front().emplace(std::forward<Args>(args)...));
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res.first);
+        auto const key = res.first->first;
+        this->container_back().erase(key);
+        this->container_front().erase(res.first);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
