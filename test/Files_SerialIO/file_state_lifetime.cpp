@@ -186,6 +186,13 @@ void failed_open()
     REQUIRE_THROWS(fixture.handler->flush(internal::defaultFlushParams));
 
     /*
+     * The failed attempt must not leave a registered file behind in the
+     * handler's bookkeeping. If it did, the retry below would reuse that stale
+     * state instead of creating a fresh one.
+     */
+    auto *const state_after_failure = fixture.writable->fileState.get();
+
+    /*
      * ... and must not corrupt the handler's bookkeeping. Write the file now
      * using a separate handler, and the same handler must afterwards be able to
      * open it without holding on to stale state from the failed attempt.
@@ -202,6 +209,7 @@ void failed_open()
     fixture.handler->enqueue(IOTask(fixture.writable, std::move(retry)));
     fixture.handler->flush(internal::defaultFlushParams);
     REQUIRE(fixture.writable->fileState.has_value());
+    REQUIRE(fixture.writable->fileState.get() != state_after_failure);
 
     close_file(*fixture.handler, fixture.writable);
     REQUIRE(!fixture.writable->fileState.has_value());
