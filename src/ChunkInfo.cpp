@@ -956,7 +956,7 @@ namespace host_info
     }
 
     template chunk_assignment::RankMeta
-    byMethodCollective<MPI_Comm>(MPI_Comm, Method);
+        byMethodCollective<MPI_Comm>(MPI_Comm, Method);
 
     std::string mpi_processor_name()
     {

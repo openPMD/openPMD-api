@@ -108,8 +108,8 @@ namespace auxiliary
 #if openPMD_HAVE_MPI
 
     template <typename Communicator>
-    std::string collective_file_read(
-        std::string const &path, Communicator communicator);
+    std::string
+    collective_file_read(std::string const &path, Communicator communicator);
 
 #endif
 } // namespace auxiliary
