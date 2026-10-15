@@ -21,8 +21,10 @@
 
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/ChunkInfo.hpp"
+#include "openPMD/Datatype.tpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
+#include "openPMD/backend/Variant_internal.hpp"
 
 #include <any>
 #include <complex>
@@ -193,8 +195,21 @@ auto WriteBuffer::CopyableUniquePtr::release() -> UniquePtrWithLambda<void>
 
 WriteBuffer::WriteBuffer() : m_buffer(std::make_any<CopyableUniquePtr>())
 {}
-WriteBuffer::WriteBuffer(std::shared_ptr<void const> ptr)
-    : m_buffer(std::make_any<WriteBufferTypes>(std::move(ptr)))
+template <typename T>
+WriteBuffer::WriteBuffer(std::shared_ptr<T> ptr)
+    : m_buffer //(std::make_any<WriteBufferTypes>(std::move(ptr)))
+    ([&]() {
+        if constexpr (std::is_const_v<T>)
+        {
+            return std::make_any<WriteBufferTypes>(
+                std::static_pointer_cast<void const>(ptr));
+        }
+        else
+        {
+            return std::make_any<WriteBufferTypes>(
+                std::static_pointer_cast<void>(ptr));
+        }
+    }())
 {}
 WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
     : m_buffer(
@@ -204,12 +219,22 @@ WriteBuffer::WriteBuffer(UniquePtrWithLambda<void> ptr)
 WriteBuffer::WriteBuffer(WriteBuffer &&) noexcept = default;
 WriteBuffer &WriteBuffer::operator=(WriteBuffer &&) noexcept = default;
 
-WriteBuffer const &WriteBuffer::operator=(std::shared_ptr<void const> ptr)
+template <typename T>
+WriteBuffer &WriteBuffer::operator=(std::shared_ptr<T> const &ptr)
 {
-    m_buffer = std::make_any<WriteBufferTypes>(std::move(ptr));
+    if constexpr (std::is_const_v<T>)
+    {
+        m_buffer = std::make_any<WriteBufferTypes>(
+            std::static_pointer_cast<void const>(ptr));
+    }
+    else
+    {
+        m_buffer = std::make_any<WriteBufferTypes>(
+            std::static_pointer_cast<void>(ptr));
+    }
     return *this;
 }
-WriteBuffer const &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
+WriteBuffer &WriteBuffer::operator=(UniquePtrWithLambda<void> ptr)
 {
     m_buffer =
         std::make_any<WriteBufferTypes>(CopyableUniquePtr(std::move(ptr)));
@@ -226,4 +251,22 @@ void const *WriteBuffer::get() const
         },
         as_variant<WriteBufferTypes>());
 }
+
+#define OPENPMD_INSTANTIATE(dtype)                                             \
+    template WriteBuffer::WriteBuffer(std::shared_ptr<dtype>);                 \
+    template WriteBuffer &WriteBuffer::operator=(                              \
+        std::shared_ptr<dtype> const &);
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+OPENPMD_FOREACH_DATASET_DATATYPE(OPENPMD_INSTANTIATE)
+template WriteBuffer::WriteBuffer(std::shared_ptr<void>);
+template WriteBuffer &WriteBuffer::operator=(std::shared_ptr<void> const &);
+template WriteBuffer::WriteBuffer(std::shared_ptr<void const>);
+template WriteBuffer &
+WriteBuffer::operator=(std::shared_ptr<void const> const &);
+
+#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+
+#undef OPENPMD_INSTANTIATE
 } // namespace openPMD::auxiliary

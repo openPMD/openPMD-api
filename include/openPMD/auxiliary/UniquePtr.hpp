@@ -24,6 +24,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 
 namespace openPMD
@@ -176,10 +177,23 @@ template <typename U>
 UniquePtrWithLambda<U> UniquePtrWithLambda<T>::static_cast_() &&
 {
     using other_type = std::remove_extent_t<U>;
+    auto original_ptr = this->release();
+    auto original_ptr_casted = static_cast<other_type *>(original_ptr);
     return UniquePtrWithLambda<U>{
-        static_cast<other_type *>(this->release()),
-        [deleter = std::move(this->get_deleter())](other_type *ptr) {
-            deleter(static_cast<T_decayed *>(ptr));
+        original_ptr_casted,
+        [deleter = std::move(this->get_deleter()),
+         original_ptr,
+         original_ptr_casted](other_type *casted_ptr) {
+            if (original_ptr_casted == casted_ptr)
+            {
+                deleter(original_ptr);
+            }
+            else
+            {
+                throw std::runtime_error(
+                    "UniquePtrWithLambda: Pointer of casted pointer was "
+                    "disassociated from its deleter.");
+            }
         }};
 }
 } // namespace openPMD
