@@ -1589,6 +1589,46 @@ class APITest(unittest.TestCase):
         # flush for reads to local vars
         series.flush()
 
+    def testSliceEllipsis(self):
+        """Test ellipsis expansion over multiple axes for reads and writes."""
+        if not found_numpy:
+            return
+
+        data = np.arange(18, dtype="float64").reshape(2, 3, 3)
+        replacement = np.full((2, 3), -1.0, dtype=data.dtype)
+        expected = data.copy()
+        expected[..., 1] = replacement
+
+        # Backends that support modifying existing datasets.
+        for ext in ["json", "h5"]:
+            if ext not in tested_file_extensions:
+                continue
+            with self.subTest(backend=ext):
+                filename = "unittest_py_ellipsis_API." + ext
+                self.__files_to_remove.append(filename)
+                series = io.Series(filename, io.Access.create)
+                field = series.iterations[0].meshes["E"]
+                field.reset_dataset(io.Dataset(data.dtype, data.shape))
+                field.store_chunk(data)
+                series.close()
+
+                series = io.Series(filename, io.Access.read_write)
+                field = series.iterations[0].meshes["E"]
+                selected = field[..., 1]
+                series.flush()
+                with self.subTest(operation="read"):
+                    np.testing.assert_array_equal(selected, data[..., 1])
+
+                field[..., 1] = replacement
+                series.close()
+
+                series = io.Series(filename, io.Access.read_only)
+                stored = series.iterations[0].meshes["E"].load_chunk()
+                series.flush()
+                series.close()
+                with self.subTest(operation="write"):
+                    np.testing.assert_array_equal(stored, expected)
+
     def testSliceWrite(self):
         for ext in tested_file_extensions:
             self.backend_write_slices(ext)
