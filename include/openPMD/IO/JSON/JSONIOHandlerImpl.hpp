@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include "openPMD/IO/ADIOS/ADIOS2File.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
@@ -277,11 +276,6 @@ private:
     std::tuple<std::unique_ptr<FILEHANDLE>, std::istream *, std::ostream *>
     getFilehandle(internal::FileState const &, Access access);
 
-    // full operating system path of the given file
-    std::string fullPath(internal::FileState const &);
-
-    std::string fullPath(std::string const &);
-
     // from a path specification /a/b/c, remove the last
     // "folder" (i.e. modify the string to equal /a/b)
     static void parentDir(std::string &);
@@ -291,7 +285,7 @@ private:
     std::string filePositionToString(JSONFilePosition const &);
 
     std::shared_ptr<JSONFilePosition>
-    extendFilePosition(JSONFilePosition const &, std::string);
+    extendFilePosition(JSONFilePosition const &, std::string const &);
 
     // Execute visitor on each pair of positions in the json value
     // and the flattened multidimensional array.

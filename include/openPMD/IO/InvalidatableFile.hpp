@@ -30,10 +30,10 @@ namespace openPMD::internal
 
 struct FileState
 {
-    std::string name;
+    std::string const name;
     std::any backendSpecificState;
 
-    FileState(std::string name);
+    explicit FileState(std::string name);
 
     FileState(FileState const &other) = delete;
     FileState(FileState &&other) = delete;
@@ -50,6 +50,12 @@ class SharedFileState : std::shared_ptr<std::optional<FileState>>
     using ptr_type = std::shared_ptr<std::optional<FileState>>;
 
 public:
+    explicit SharedFileState();
+    explicit SharedFileState(std::string name_in);
+    // copy of the name in the shared state
+    // necessary for stable comparison operator
+    std::string name;
+
     [[nodiscard]] auto has_value() const -> bool;
     operator bool() const;
     auto operator*() -> FileState &;
@@ -61,7 +67,7 @@ public:
     void reset_optional();
 
     using ptr_type::get;
-    using ptr_type::shared_ptr;
-    using ptr_type::operator=;
+    // using ptr_type::shared_ptr;
+    // using ptr_type::operator=;
 };
 } // namespace openPMD::internal

@@ -1340,11 +1340,6 @@ Be aware of the performance implications described above.)");
         " chosen by the front-end.");
 }
 
-void ADIOS2File::drop()
-{
-    assert(m_buffer.empty());
-}
-
 template <typename AttributesMap>
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(
     std::string const &prefix, AttributesMap const &attributes)

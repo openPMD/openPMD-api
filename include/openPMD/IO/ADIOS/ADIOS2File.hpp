@@ -324,11 +324,6 @@ public:
      */
     AdvanceStatus advance(AdvanceMode mode);
 
-    /*
-     * Delete all buffered actions without running them.
-     */
-    void drop();
-
     std::vector<std::string>
     availableAttributesPrefixed(std::string const &prefix);
 

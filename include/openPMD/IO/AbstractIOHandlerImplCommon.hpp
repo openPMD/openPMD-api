@@ -87,7 +87,8 @@ protected:
 
     /**
      * Figure out the file position of the writable.
-     * Only modify the writable's fileposition when specified.
+     * If the writable has no file position yet, it is initialized with its
+     * parent's file position (or with the root position if it has no parent).
      * @param writable The writable.
      * @return The current file position.
      */
@@ -96,29 +97,44 @@ protected:
     /**
      * Figure out the file position of the writable and extend it.
      * @param writable The writable.
-     * @param extend The extension string.
+     * @param extendIfNotYetOpen The extension string, used if a position is not
+     *                           yet defined for the object.
      * @return The current file position.
      */
     FilePositionType *
-    setAndGetFilePosition(Writable *writable, std::string extend);
+    setAndGetFilePosition(Writable *writable, std::string extendIfNotYetOpen);
+
+    std::string
+    concatToPosition(std::string const &base, std::string const &extension)
+    {
+        if (!auxiliary::ends_with(base, '/') &&
+            !auxiliary::starts_with(extension, '/'))
+        {
+            return base + '/' + extension;
+        }
+        else if (
+            auxiliary::ends_with(base, '/') &&
+            auxiliary::starts_with(extension, '/'))
+        {
+            return auxiliary::replace_last(base, "/", "") + extension;
+        }
+        else
+        {
+            return base + extension;
+        }
+    }
 
     /*
-     * The "virtual" methods here must be implemented by the child class,
-     * but the references are resolved at compile time, hence not really
-     * virtual.
+     * CRTP interface: IOHandlerImpl_t must implement the following member
+     * functions. Calls to them are resolved at compile time.
+     *
+     * // @return A string representation of the file position.
+     * std::string filePositionToString(FilePositionType const &);
+     *
+     * // @return A new file position that is extended with the given string.
+     * std::shared_ptr<FilePositionType>
+     * extendFilePosition(FilePositionType const &, std::string);
      */
-#if 0
-    /**
-     * @return A string representation of the file position.
-     */
-    virtual std::string filePositionToString(FilePositionType const &) = 0;
-
-    /**
-     * @return A new file position that is extended with the given string.
-     */
-    virtual std::shared_ptr< IOHandler_t,  FilePositionType>
-    extendFilePosition(FilePositionType const &, std::string) = 0;
-#endif
 };
 
 template <typename IOHandler_t, typename FilePositionType>
@@ -137,8 +153,14 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::makeFile(
     Writable *writable, std::string file, bool consider_open_files)
 {
     auto make_new = [&]() {
-        writable->fileState =
-            std::make_shared<std::optional<internal::FileState>>(file);
+        if (auto it = m_files.find(file);
+            it != m_files.end() && it->second.has_value())
+        {
+            // A file of this name is still open. Overwrite it.
+            m_dirty.erase(it->second);
+            it->second.reset_optional();
+        }
+        writable->fileState = internal::SharedFileState(file);
         m_files[std::move(file)] = writable->fileState;
     };
     if (consider_open_files)
@@ -275,10 +297,10 @@ auto AbstractIOHandlerImplCommon<IOHandlerImpl_t, FilePositionType>::
 
 template <typename IOHandlerImpl_t, typename FilePositionType>
 auto AbstractIOHandlerImplCommon<IOHandlerImpl_t, FilePositionType>::
-    setAndGetFilePosition(Writable *writable, std::string extend)
+    setAndGetFilePosition(Writable *writable, std::string extendIfNotYetOpen)
         -> FilePositionType *
 {
-    if (extend.empty())
+    if (extendIfNotYetOpen.empty())
     {
         return setAndGetFilePosition(writable);
     }
@@ -287,22 +309,24 @@ auto AbstractIOHandlerImplCommon<IOHandlerImpl_t, FilePositionType>::
         return dynamic_cast<FilePositionType *>(
             writable->abstractFilePosition.get());
     }
-    if (!auxiliary::starts_with(extend, '/') &&
-        auxiliary::ends_with(extend, '/'))
+    if (!auxiliary::starts_with(extendIfNotYetOpen, '/') &&
+        auxiliary::ends_with(extendIfNotYetOpen, '/'))
     {
-        extend = "/" + extend.substr(0, extend.size() - 1);
+        extendIfNotYetOpen =
+            "/" + extendIfNotYetOpen.substr(0, extendIfNotYetOpen.size() - 1);
     }
-    else if (!auxiliary::starts_with(extend, '/'))
+    else if (!auxiliary::starts_with(extendIfNotYetOpen, '/'))
     {
-        extend = "/" + extend;
+        extendIfNotYetOpen = "/" + extendIfNotYetOpen;
     }
-    else if (auxiliary::ends_with(extend, '/'))
+    else if (auxiliary::ends_with(extendIfNotYetOpen, '/'))
     {
-        extend = extend.substr(0, extend.size() - 1);
+        extendIfNotYetOpen =
+            extendIfNotYetOpen.substr(0, extendIfNotYetOpen.size() - 1);
     }
     auto oldPos = setAndGetFilePosition(writable);
     auto new_pos = static_cast<IOHandlerImpl_t *>(this)->extendFilePosition(
-        *oldPos, extend);
+        *oldPos, extendIfNotYetOpen);
 
     auto res = new_pos.get();
     writable->abstractFilePosition = std::move(new_pos);

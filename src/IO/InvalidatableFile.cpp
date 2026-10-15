@@ -25,6 +25,11 @@ namespace openPMD::internal
 {
 FileState::FileState(std::string name_in) : name(std::move(name_in))
 {}
+SharedFileState::SharedFileState() = default;
+SharedFileState::SharedFileState(std::string name_in)
+    : ptr_type(std::make_shared<ptr_type::element_type>(name_in))
+    , name(std::move(name_in))
+{}
 auto SharedFileState::has_value() const -> bool
 {
     return ptr_type::operator bool() && ptr_type::operator*().has_value();
@@ -55,11 +60,7 @@ auto SharedFileState::operator->() const -> FileState const *
 }
 auto SharedFileState::operator<(SharedFileState const &other) const -> bool
 {
-    if (!*this || !other)
-    {
-        return std::less<>()(this->get(), other.get());
-    }
-    return operator*().name < other->name;
+    return name < other.name;
 }
 void SharedFileState::reset_optional()
 {

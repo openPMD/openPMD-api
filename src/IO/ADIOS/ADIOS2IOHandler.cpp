@@ -35,6 +35,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Defer.hpp"
 #include "openPMD/auxiliary/DrainSet.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -48,7 +49,7 @@
 
 #include <algorithm>
 #include <any>
-#include <cctype> // std::tolower
+#include <cassert>
 #include <cstddef>
 #include <deque>
 #include <initializer_list>
@@ -180,8 +181,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 {
     /*
-     * m_fileData is an unordered_map indexed by pointer addresses
-     * to the fileState member of InvalidatableFile.
+     * m_fileData is an unordered_map indexed by file names.
      * This means that destruction order is nondeterministic.
      * Let's determinize it (necessary if computing in parallel).
      */
@@ -650,18 +650,28 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 
     for (auto &p : auxiliary::drain(m_dirty))
     {
-        if (p.has_value() && p->backendSpecificState.has_value())
+        try
         {
-            auto &adios2_file = std::any_cast<BackendSpecificFileState &>(
-                p->backendSpecificState);
-            adios2_file->flush(adios2FlushParams, /* writeLatePuts = */ false);
+            if (p.has_value() && p->backendSpecificState.has_value())
+            {
+                auto &adios2_file = std::any_cast<BackendSpecificFileState &>(
+                    p->backendSpecificState);
+                adios2_file->flush(
+                    adios2FlushParams, /* writeLatePuts = */ false);
+            }
+            else
+            {
+                throw error::Internal(
+                    "File '" +
+                    (p.has_value() ? p->name
+                                   : std::string("Unknown file name")) +
+                    "' was dirty, but has no associated ADIOS2 data?");
+            }
         }
-        else
+        catch (...)
         {
-            throw error::Internal(
-                "File '" +
-                (p.has_value() ? p->name : std::string("Unknown file name")) +
-                "' was dirty, but has no associated ADIOS2 data?");
+            m_dirty.emplace(std::move(p));
+            throw;
         }
     }
     assert(m_dirty.empty());
@@ -713,16 +723,25 @@ void ADIOS2IOHandlerImpl::createFile(
     {
         std::string name = parameters.name + fileSuffix();
 
+        // Check this before makeFile(), which already replaces
+        // writable->fileState and m_files[name].
+        if (access::read(m_handler->m_backendAccess))
+        {
+            auto const open_file = m_files.find(name);
+            auto const path = fullPath(name);
+            if ((open_file != m_files.end() && open_file->second.has_value()) ||
+                auxiliary::file_exists(path) ||
+                auxiliary::directory_exists(path))
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Can only overwrite existing file in CREATE "
+                    "mode.");
+            }
+        }
+
         auto &file =
             makeFile(writable, name, /* consider_open_files = */ false);
         auto &file_state = *file;
-        if (access::read(m_handler->m_backendAccess) &&
-            (auxiliary::file_exists(fullPath(file_state)) ||
-             auxiliary::directory_exists(fullPath(file_state))))
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Can only overwrite existing file in CREATE mode.");
-        }
 
         std::string const dir(m_handler->directory);
         if (!auxiliary::directory_exists(dir))
@@ -733,8 +752,19 @@ void ADIOS2IOHandlerImpl::createFile(
 
         // enforce opening the file
         // lazy opening is deathly in parallel situations
-        auto &fileData =
-            getFileData(file_state, IfFileNotOpen::CreateImplicitly);
+        auto &fileData = [&]() -> detail::ADIOS2File & {
+            try
+            {
+                return getFileData(file_state, IfFileNotOpen::CreateImplicitly);
+            }
+            catch (...)
+            {
+                // makeFile() might have already registered the file. Do not
+                // leave an entry without ADIOS2 data behind in m_files.
+                m_files.erase(name);
+                throw;
+            }
+        }();
 
         // only emplace the file into our structures after it has been
         // successfully opened. otherwise, errors will lead to undefined state.
@@ -1087,9 +1117,20 @@ void ADIOS2IOHandlerImpl::openFile(
     }();
 
     // enforce opening the file
-    // lazy opening is deathly in parallel situations
-    auto &fileData = getFileData(*file, how_to_open);
-
+    // lazy opening is deadly in parallel situations
+    auto &fileData = [&]() -> detail::ADIOS2File & {
+        try
+        {
+            return getFileData(*file, how_to_open);
+        }
+        catch (...)
+        {
+            // makeFile() might have already registered the file. Do not leave
+            // an entry without ADIOS2 data behind in m_files.
+            m_files.erase(name);
+            throw;
+        }
+    }();
     // the following calls present the new file to the IO handler's data
     // structures. do this only after the file has been successfully open, to
     // avoid invalid state.
@@ -1113,8 +1154,10 @@ void ADIOS2IOHandlerImpl::closeFile(
     }
     auto &file = *maybe_file;
 
-    m_files.erase(file.name);
-    m_dirty.erase(maybe_file);
+    auto erase_file = auxiliary::defer([&]() {
+        m_files.erase(file.name);
+        m_dirty.erase(maybe_file);
+    });
 
     if (!file.backendSpecificState.has_value())
     {
@@ -2021,6 +2064,9 @@ void ADIOS2IOHandlerImpl::listAttributes(
 void ADIOS2IOHandlerImpl::advance(
     Writable *writable, Parameter<Operation::ADVANCE> &parameters)
 {
+    VERIFY_ALWAYS(
+        writable->fileState.has_value(),
+        "[ADIOS2] Cannot advance: Writable has no open file associated.");
     auto &ba = getFileData(*writable->fileState, IfFileNotOpen::ThrowError);
     std::visit(
         auxiliary::overloaded{
@@ -2220,18 +2266,11 @@ ADIOS2IOHandlerImpl::filePositionToString(ADIOS2FilePosition const &filepos)
 }
 
 std::shared_ptr<ADIOS2FilePosition> ADIOS2IOHandlerImpl::extendFilePosition(
-    ADIOS2FilePosition const &oldPos, std::string s)
+    ADIOS2FilePosition const &oldPos, std::string const &s)
 {
     auto path = filePositionToString(oldPos);
-    if (!auxiliary::ends_with(path, '/') && !auxiliary::starts_with(s, '/'))
-    {
-        path = path + "/";
-    }
-    else if (auxiliary::ends_with(path, '/') && auxiliary::starts_with(s, '/'))
-    {
-        path = auxiliary::replace_last(path, "/", "");
-    }
-    return std::make_shared<ADIOS2FilePosition>(path + std::move(s), oldPos.gd);
+    return std::make_shared<ADIOS2FilePosition>(
+        concatToPosition(path, s), oldPos.gd);
 }
 
 std::optional<adios2::Operator>
@@ -2287,16 +2326,6 @@ ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
 {
     return setAndGetFilePosition(writable)->gd;
-}
-
-detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
-    std::optional<internal::FileState> &file, IfFileNotOpen flag)
-{
-    VERIFY_ALWAYS(
-        file.has_value(),
-        "[ADIOS2] Cannot retrieve file data for a file that has "
-        "been overwritten or deleted.")
-    return getFileData(*file, flag);
 }
 
 detail::ADIOS2File &

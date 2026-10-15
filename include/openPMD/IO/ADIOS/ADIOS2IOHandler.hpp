@@ -381,8 +381,8 @@ private:
 
     std::string filePositionToString(ADIOS2FilePosition const &);
 
-    std::shared_ptr<ADIOS2FilePosition>
-    extendFilePosition(ADIOS2FilePosition const &pos, std::string extend);
+    std::shared_ptr<ADIOS2FilePosition> extendFilePosition(
+        ADIOS2FilePosition const &pos, std::string const &extend);
 
     // Helper methods.
 
@@ -421,8 +421,6 @@ private:
         ReopenFileFoundOnDisk = OpenImplicitly,
     };
 
-    detail::ADIOS2File &
-    getFileData(std::optional<internal::FileState> &file, IfFileNotOpen);
     detail::ADIOS2File &getFileData(internal::FileState &file, IfFileNotOpen);
 
     template <typename T>

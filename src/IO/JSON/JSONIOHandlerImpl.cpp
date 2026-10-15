@@ -40,15 +40,16 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 
-#include <iomanip>
-#include <sstream>
-#include <stdexcept>
-#include <toml.hpp>
-
 #include <algorithm>
+#include <cassert>
 #include <exception>
+#include <iomanip>
 #include <iostream>
 #include <optional>
+#include <sstream>
+#include <stdexcept>
+
+#include <toml.hpp>
 
 namespace openPMD
 {
@@ -465,7 +466,18 @@ void JSONIOHandlerImpl::init(openPMD::json::TracingJSON config)
     }
 }
 
-JSONIOHandlerImpl::~JSONIOHandlerImpl() = default;
+JSONIOHandlerImpl::~JSONIOHandlerImpl()
+{
+    // The file states are shared with the Writable objects and can outlive
+    // this handler, so release the in-memory JSON/TOML documents explicitly.
+    for (auto &file : m_files)
+    {
+        if (file.second.has_value())
+        {
+            file.second->backendSpecificState.reset();
+        }
+    }
+}
 
 std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
 {
@@ -477,8 +489,17 @@ std::future<void> JSONIOHandlerImpl::flush(internal::ParsedFlushParams &params)
     }
     for (internal::SharedFileState &file : auxiliary::drain(m_dirty))
     {
-        if (file.has_value())
-            putJsonContents(*file);
+        try
+        {
+            if (file.has_value())
+                putJsonContents(*file);
+        }
+        catch (...)
+        {
+            // go back to being dirty
+            m_dirty.emplace(std::move(file));
+            throw;
+        }
     }
     assert(m_dirty.empty());
     return std::future<void>();
@@ -514,15 +535,25 @@ void JSONIOHandlerImpl::createFile(
     {
         std::string name = parameters.name + m_originalExtension;
 
+        // Check this before makeFile(), which already replaces
+        // writable->fileState and m_files[name].
+        if (access::read(m_handler->m_backendAccess))
+        {
+            auto const open_file = m_files.find(name);
+            auto const path = fullPath(name);
+            if ((open_file != m_files.end() && open_file->second.has_value()) ||
+                auxiliary::file_exists(path) ||
+                auxiliary::directory_exists(path))
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Can only overwrite existing file in CREATE "
+                    "mode.");
+            }
+        }
+
         auto file = makeFile(writable, name, /* consider_open_files = */ false);
         auto &file_state = *file;
         auto file_exists = auxiliary::file_exists(fullPath(file_state));
-
-        if (access::read(m_handler->m_backendAccess) && file_exists)
-        {
-            throw std::runtime_error(
-                "[JSON] Can only overwrite existing file in CREATE mode.");
-        }
 
         std::string const &dir(m_handler->directory);
         if (!auxiliary::directory_exists(dir))
@@ -922,10 +953,6 @@ void JSONIOHandlerImpl::closeFile(
     {
         return;
     }
-    else if (!maybe_file.has_value())
-    {
-        maybe_file.reset_optional();
-    }
     auto &file = *maybe_file;
     putJsonContents(file);
     m_dirty.erase(maybe_file);
@@ -987,13 +1014,16 @@ void JSONIOHandlerImpl::deleteFile(
         return;
     }
 
-    auto filename = auxiliary::ends_with(parameters.name, ".json")
-        ? parameters.name
-        : parameters.name + ".json";
+    std::string name = parameters.name + m_originalExtension;
 
-    closeFile(writable, Parameter<Operation::CLOSE_FILE>());
-
-    std::remove(fullPath(filename).c_str());
+    // Drop the file named in the parameters without writing it to disk first.
+    if (auto it = m_files.find(name);
+        it != m_files.end() && it->second.has_value())
+    {
+        m_dirty.erase(it->second);
+        it->second.reset_optional();
+        m_files.erase(it);
+    }
 
     writable->written = false;
 }
@@ -1700,23 +1730,6 @@ auto JSONIOHandlerImpl::getFilehandle(
     return std::make_tuple(std::move(fs), istream, ostream);
 }
 
-std::string JSONIOHandlerImpl::fullPath(internal::FileState const &fileName)
-{
-    return fullPath(fileName.name);
-}
-
-std::string JSONIOHandlerImpl::fullPath(std::string const &fileName)
-{
-    if (auxiliary::ends_with(m_handler->directory, "/"))
-    {
-        return m_handler->directory + fileName;
-    }
-    else
-    {
-        return m_handler->directory + "/" + fileName;
-    }
-}
-
 void JSONIOHandlerImpl::parentDir(std::string &s)
 {
     auto i = s.rfind('/');
@@ -1734,19 +1747,11 @@ JSONIOHandlerImpl::filePositionToString(JSONFilePosition const &filepos)
 }
 
 std::shared_ptr<JSONFilePosition> JSONIOHandlerImpl::extendFilePosition(
-    JSONFilePosition const &oldPos, std::string s)
+    JSONFilePosition const &oldPos, std::string const &s)
 {
     auto path = filePositionToString(oldPos);
-    if (!auxiliary::ends_with(path, '/') && !auxiliary::starts_with(s, '/'))
-    {
-        path = path + "/";
-    }
-    else if (auxiliary::ends_with(path, '/') && auxiliary::starts_with(s, '/'))
-    {
-        path = auxiliary::replace_last(path, "/", "");
-    }
     return std::make_shared<JSONFilePosition>(
-        json::json_pointer(path + std::move(s)));
+        json::json_pointer(concatToPosition(path, s)));
 }
 
 template <typename T, typename Visitor>
@@ -1882,10 +1887,13 @@ void JSONIOHandlerImpl::ensurePath(
 
 nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(internal::FileState &file)
 {
-    // VERIFY_ALWAYS(
-    //     file.valid(),
-    //     "[JSON] File has been overwritten or deleted before reading");
-
+    if (auto *loaded =
+            std::any_cast<BackendSpecificFileState>(&file.backendSpecificState))
+    {
+        // Already in memory. The internal meta table below must only be
+        // evaluated once, when the file is first read from disk.
+        return loaded->data;
+    }
     // read from file
     auto serialImplementation = [&file, this]() {
         auto [fh, fh_with_precision, _] =
@@ -1927,7 +1935,7 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(internal::FileState &file)
         }
         throw std::runtime_error("Unreachable!");
     };
-    if (!file.backendSpecificState.has_value())
+
     {
         if (m_communicator.has_value())
         {
@@ -1942,7 +1950,7 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(internal::FileState &file)
     }
 
 #else
-    if (!file.backendSpecificState.has_value())
+
     {
         file.backendSpecificState =
             std::make_any<BackendSpecificFileState>(serialImplementation());
@@ -2035,6 +2043,9 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
         refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto filePosition =
         dynamic_cast<JSONFilePosition *>(writable->abstractFilePosition.get());
+    VERIFY_ALWAYS(
+        filePosition != nullptr,
+        "[JSON] Internal error: Writable has no file position.");
     return obtainJsonContents(file)[filePosition->id];
 }
 
