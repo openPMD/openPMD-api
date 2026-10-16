@@ -54,8 +54,26 @@ title = "Constant dataset"
 description = "A dataset represented by two attributes: The constant value and its shape."
 
 [allOf.properties.attributes.properties]
-value."$ref" = "attribute_defs.json#/$defs/float_attribute"
 shape."$ref" = "attribute_defs.json#/$defs/vec_int_attribute"
+
+# Constant values are real numbers, except for complex datatypes which are
+# represented as a two-element array of the real and imaginary part.
+[allOf.properties.attributes.properties.value.if]
+type = "object"
+required = ["datatype"]
+properties.datatype.enum = ["CFLOAT", "CDOUBLE", "CLONG_DOUBLE"]
+
+[allOf.properties.attributes.properties.value.then]
+type = "object"
+required = ["value", "datatype"]
+properties.value.type = "array"
+properties.value.items.type = "number"
+properties.value.minItems = 2
+properties.value.maxItems = 2
+properties.datatype.enum = ["CFLOAT", "CDOUBLE", "CLONG_DOUBLE"]
+
+[allOf.properties.attributes.properties.value.else]
+"$ref" = "attribute_defs.json#/$defs/float_attribute"
 
 #####################
 # Option 2.2: Array #

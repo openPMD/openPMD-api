@@ -47,7 +47,7 @@ int main()
     // documentation of the `Snapshots` class in `snapshots/Snapshots.hpp`. This
     // restricted workflow enables performance optimizations in the backends,
     // and more importantly is compatible with streaming I/O.
-    Series series = Series("electrons.sst", Access::READ_LINEAR, R"(
+    Series series = Series("../samples/electrons.sst", Access::READ_LINEAR, R"(
 {
   "adios2": {
     "engine": {

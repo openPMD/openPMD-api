@@ -1250,7 +1250,7 @@ PARALLEL_TEST_CASE(unavailable_backend, "[core][parallel]")
     {
         auto fail = []() {
             Series(
-                "unavailable.bp",
+                "../samples/unavailable_parallel.bp",
                 Access::CREATE,
                 MPI_COMM_WORLD,
                 R"({"backend": "ADIOS2"})");
@@ -1264,7 +1264,10 @@ PARALLEL_TEST_CASE(unavailable_backend, "[core][parallel]")
 #if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
-            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
+            Series(
+                "../samples/unavailable_parallel.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD);
         };
         REQUIRE_THROWS_WITH(
             fail(),
@@ -1276,7 +1279,7 @@ PARALLEL_TEST_CASE(unavailable_backend, "[core][parallel]")
     {
         auto fail = []() {
             Series(
-                "unavailable.h5",
+                "../samples/unavailable_parallel.h5",
                 Access::CREATE,
                 MPI_COMM_WORLD,
                 R"({"backend": "HDF5"})");
@@ -1454,7 +1457,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
             {
                 std::fstream file;
                 file.open(
-                    "../samples/write_config.toml",
+                    "../samples/write_config_parallel.toml",
                     std::ios_base::out | std::ios_base::binary);
                 file << config;
                 file.flush();
@@ -1464,7 +1467,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
                 filename,
                 openPMD::Access::CREATE,
                 MPI_COMM_WORLD,
-                "@../samples/write_config.toml");
+                "@../samples/write_config_parallel.toml");
             auto E_x = series.iterations[0].meshes["E"]["x"];
             openPMD::Dataset ds(openPMD::Datatype::INT, {unsigned(size), 1000});
             E_x.resetDataset(ds);
@@ -1511,7 +1514,8 @@ doshuffle = "BLOSC_BITSHUFFLE"
             if (rank == 0)
             {
                 std::fstream file;
-                file.open("../samples/read_config.json", std::ios_base::out);
+                file.open(
+                    "../samples/read_parallel_config.json", std::ios_base::out);
                 file << config;
                 file.flush();
             }
@@ -1520,7 +1524,7 @@ doshuffle = "BLOSC_BITSHUFFLE"
                 filename,
                 openPMD::Access::READ_ONLY,
                 MPI_COMM_WORLD,
-                "  @   ../samples/read_config.json     ");
+                "  @   ../samples/read_parallel_config.json     ");
             auto E_x = series.iterations[0].meshes["E"]["x"];
             REQUIRE(E_x.getDimensionality() == 2);
             REQUIRE(E_x.getExtent()[0] == unsigned(size));
@@ -1662,16 +1666,16 @@ void append_mode(
     bool test_read_linear = true)
 {
     std::string filename =
-        (variableBased ? "../samples/append/append_variablebased."
-                       : "../samples/append/append_groupbased.") +
+        (variableBased ? "../samples/append_parallel/append_variablebased."
+                       : "../samples/append_parallel/append_groupbased.") +
         extension;
     int mpi_size{}, mpi_rank{};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Barrier(MPI_COMM_WORLD);
-    if (auxiliary::directory_exists("../samples/append"))
+    if (auxiliary::directory_exists("../samples/append_parallel"))
     {
-        auxiliary::remove_directory("../samples/append");
+        auxiliary::remove_directory("../samples/append_parallel");
     }
     MPI_Barrier(MPI_COMM_WORLD);
     std::vector<int> data(10, 999);

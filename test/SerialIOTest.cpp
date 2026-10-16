@@ -431,7 +431,8 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
         std::unique_ptr<openPMD::Series> series_ptr;
         {
             openPMD::Series series(
-                "sample%T.json", openPMD::AccessType::CREATE);
+                "../samples/multiple_series_handles_%T.json",
+                openPMD::AccessType::CREATE);
             series_ptr = std::make_unique<openPMD::Series>(series);
             /*
              * we have two handles for the same Series instance now:
@@ -452,7 +453,8 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
         std::unique_ptr<openPMD::Series> series_ptr;
         {
             openPMD::Series series(
-                "sample%T.json", openPMD::AccessType::CREATE);
+                "../samples/multiple_series_handles_%T.json",
+                openPMD::AccessType::CREATE);
             series_ptr = std::make_unique<openPMD::Series>(series);
             series_ptr->iterations[0].meshes["E"]["x"].makeEmpty<int>(1);
         }
@@ -648,7 +650,9 @@ void close_and_copy_attributable_test(std::string const &file_ending)
     using position_t = int;
 
     // open file for writing
-    Series series("electrons." + file_ending, Access::CREATE_LINEAR);
+    Series series(
+        "../samples/close_and_copy_attributable." + file_ending,
+        Access::CREATE_LINEAR);
 
     Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;

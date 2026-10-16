@@ -7,16 +7,12 @@ Authors: Axel Huebl
 License: LGPLv3+
 """
 
-from pathlib import Path
-
 import numpy as np
 from openpmd_api import Access, Dataset, Series, Unit_Dimension
 
 if __name__ == "__main__":
     # open file for writing
-    samples = Path("../samples")
-    filename = "9_particle_write_serial_py.h5"
-    f = Series(samples / filename, Access.create)
+    f = Series("../samples/9_particle_write_serial_py.h5", Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)

@@ -193,7 +193,9 @@ class APITest(unittest.TestCase):
 
     def attributeRoundTrip(self, file_ending):
         # write
-        series = io.Series("unittest_py_API." + file_ending, io.Access.create)
+        series = io.Series(
+            "../samples/unittest_py_API." + file_ending, io.Access.create
+        )
 
         # meta data
         series.set_software("nonsense")  # with unspecified version
@@ -391,7 +393,9 @@ class APITest(unittest.TestCase):
         self.assertFalse(series)
 
         # read back
-        series = io.Series("unittest_py_API." + file_ending, io.Access.read_only)
+        series = io.Series(
+            "../samples/unittest_py_API." + file_ending, io.Access.read_only
+        )
 
         self.assertEqual(series.software, "openPMD-api-python-tests")
         self.assertEqual(series.software_version, "0.42.0")
@@ -658,7 +662,9 @@ class APITest(unittest.TestCase):
 
     def makeConstantRoundTrip(self, file_ending):
         # write
-        series = io.Series("unittest_py_constant_API." + file_ending, io.Access.create)
+        series = io.Series(
+            "../samples/unittest_py_constant_API." + file_ending, io.Access.create
+        )
 
         ms = series.iterations[0].meshes
         SCALAR = io.Mesh_Record_Component.SCALAR
@@ -731,7 +737,7 @@ class APITest(unittest.TestCase):
 
         # read back
         series = io.Series(
-            "unittest_py_constant_API." + file_ending, io.Access.read_only
+            "../samples/unittest_py_constant_API." + file_ending, io.Access.read_only
         )
 
         ms = series.iterations[0].meshes
@@ -834,7 +840,9 @@ class APITest(unittest.TestCase):
             return
 
         # write
-        series = io.Series("unittest_py_data_API." + file_ending, io.Access.create)
+        series = io.Series(
+            "../samples/unittest_py_data_API." + file_ending, io.Access.create
+        )
 
         it = series.iterations[0]
 
@@ -868,7 +876,9 @@ class APITest(unittest.TestCase):
         self.assertFalse(series)
 
         # read back
-        series = io.Series("unittest_py_data_API." + file_ending, io.Access.read_only)
+        series = io.Series(
+            "../samples/unittest_py_data_API." + file_ending, io.Access.read_only
+        )
 
         it = series.iterations[0]
 
@@ -908,7 +918,7 @@ class APITest(unittest.TestCase):
     def makeEmptyRoundTrip(self, file_ending):
         # write
         series = io.Series(
-            "unittest_py_empty_API." + file_ending, io.Access_Type.create
+            "../samples/unittest_py_empty_API." + file_ending, io.Access_Type.create
         )
 
         ms = series.iterations[0].meshes
@@ -946,7 +956,7 @@ class APITest(unittest.TestCase):
 
         # read back
         series = io.Series(
-            "unittest_py_empty_API." + file_ending, io.Access_Type.read_only
+            "../samples/unittest_py_empty_API." + file_ending, io.Access_Type.read_only
         )
 
         ms = series.iterations[0].meshes
@@ -1600,7 +1610,9 @@ class APITest(unittest.TestCase):
             return
 
         # get series
-        series = io.Series("unittest_py_slice_API." + file_ending, io.Access.create)
+        series = io.Series(
+            "../samples/unittest_py_slice_API." + file_ending, io.Access.create
+        )
         i = series.iterations[0]
 
         # create data to write
@@ -1783,7 +1795,7 @@ class APITest(unittest.TestCase):
         num_patches = 2
 
         series = io.Series(
-            "unittest_py_particle_patches." + file_ending, io.Access.create
+            "../samples/unittest_py_particle_patches." + file_ending, io.Access.create
         )
         e = series.iterations[42].particles["electrons"]
 
@@ -1843,7 +1855,8 @@ class APITest(unittest.TestCase):
         self.assertFalse(series)
 
         series = io.Series(
-            "unittest_py_particle_patches." + file_ending, io.Access.read_only
+            "../samples/unittest_py_particle_patches." + file_ending,
+            io.Access.read_only,
         )
         e = series.iterations[42].particles["electrons"]
 
@@ -2378,7 +2391,7 @@ class APITest(unittest.TestCase):
         for mesh component extraction."""
         import gc
 
-        filename = "unittest_py_keepalive_mesh." + file_ending
+        filename = "../samples/unittest_py_keepalive_mesh." + file_ending
         path = filename
 
         def get_component_only():
@@ -2421,7 +2434,7 @@ class APITest(unittest.TestCase):
         for particle position component extraction."""
         import gc
 
-        filename = "unittest_py_keepalive_particle." + file_ending
+        filename = "../samples/unittest_py_keepalive_particle." + file_ending
         path = filename
         num_particles = 100
 
@@ -2464,7 +2477,7 @@ class APITest(unittest.TestCase):
         for particle patches extraction."""
         import gc
 
-        filename = "unittest_py_keepalive_patches." + file_ending
+        filename = "../samples/unittest_py_keepalive_patches." + file_ending
         path = filename
 
         def get_component_only():
@@ -2482,6 +2495,18 @@ class APITest(unittest.TestCase):
             num_particles_comp = particles.particle_patches["numParticles"]
             num_particles_comp.reset_dataset(dset)
             num_particles_comp.store(1, np.uint64(20))
+
+            # just store something here to satisfy verifiers
+            component = particles.particle_patches["numParticlesOffset"]
+            component.reset_dataset(dset)
+            component.store(0, np.uint64(0))
+            component.store(1, np.uint64(1))
+            for key in ["offset", "extent"]:
+                for dim in ["x", "y", "z"]:
+                    component = particles.particle_patches[key][dim]
+                    component.reset_dataset(dset)
+                    component.store(0, np.uint64(123))
+                    component.store(1, np.uint64(123))
 
             iteration.populate_missing_metadata(recursive=True)
             del iteration
