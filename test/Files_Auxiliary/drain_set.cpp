@@ -136,7 +136,11 @@ auto drain_set() -> void
         for (int const value : auxiliary::drain(set))
         {
             REQUIRE(value == 1);
-            break;
+            // if condition needed for warnings to disappear
+            if (value == 1)
+            {
+                break;
+            }
         }
         REQUIRE(set == std::set<int>{2, 3});
     }
