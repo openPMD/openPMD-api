@@ -679,6 +679,21 @@ TEST_CASE("particleSpecies_modification_test", "[core]")
     auto &off_x = offset["x"];
     off_x.resetDataset(dset);
 
+    /*
+     * Fill the remaining standard particle patch components. The openPMD
+     * standard requires all of numParticles, numParticlesOffset, offset and
+     * extent to be present once particlePatches are written.
+     */
+    auto uintDset = Dataset(determineDatatype<uint64_t>(), {1});
+    patches["numParticles"][RecordComponent::SCALAR].resetDataset(uintDset);
+    patches["numParticles"][RecordComponent::SCALAR].store(0, uint64_t(1));
+    patches["numParticlesOffset"][RecordComponent::SCALAR].resetDataset(
+        uintDset);
+    patches["numParticlesOffset"][RecordComponent::SCALAR].store(
+        0, uint64_t(0));
+    patches["extent"]["x"].resetDataset(dset);
+    patches["extent"]["x"].store(0, 1.);
+
     o.iterations[42].close();
     REQUIRE(1 == offset.numAttributes()); // unitDimension
     REQUIRE(1 == off_x.unitSI());
