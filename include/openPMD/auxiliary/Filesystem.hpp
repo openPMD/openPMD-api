@@ -26,10 +26,6 @@
 
 #include "openPMD/config.hpp"
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
 namespace openPMD
 {
 namespace auxiliary
@@ -111,7 +107,9 @@ namespace auxiliary
 
 #if openPMD_HAVE_MPI
 
-    std::string collective_file_read(std::string const &path, MPI_Comm);
+    template <typename Communicator>
+    std::string
+    collective_file_read(std::string const &path, Communicator communicator);
 
 #endif
 } // namespace auxiliary
