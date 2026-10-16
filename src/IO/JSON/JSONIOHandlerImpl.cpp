@@ -938,8 +938,6 @@ void JSONIOHandlerImpl::openFile(
 
     auto &file = makeFile(writable, name, /* consider_open_files = */ true);
 
-    associateWithFile(writable, file);
-
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<JSONFilePosition>();
 }
@@ -2067,13 +2065,9 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
 
 void JSONIOHandlerImpl::putJsonContents(internal::FileState &file)
 {
-    // VERIFY_ALWAYS(
-    //     filename.valid(),
-    //     "[JSON] File has been overwritten/deleted before writing");
-    if (!file.backendSpecificState.has_value())
-    {
-        return;
-    }
+    VERIFY_ALWAYS(
+        file.backendSpecificState.has_value(),
+        "[JSON] File has been overwritten/deleted before writing");
 
     auto &backend_specific_filestate =
         *std::any_cast<BackendSpecificFileState>(&file.backendSpecificState);
@@ -2211,7 +2205,6 @@ merge the .json files somehow (no tooling provided for this (yet)).
             }
         };
 
-    std::shared_ptr<nlohmann::json> res;
     if (m_communicator.has_value())
     {
         parallelImplementation(m_communicator.value());

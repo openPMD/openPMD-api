@@ -1155,13 +1155,11 @@ void ADIOS2IOHandlerImpl::closeFile(
     }
     auto &file = *maybe_file;
 
-    auto erase_file = auxiliary::defer([&, name = file.name]() {
-        m_files.erase(name);
-        m_dirty.erase(maybe_file);
-    });
-
     if (!file.backendSpecificState.has_value())
     {
+        m_files.erase(file.name);
+        m_dirty.erase(maybe_file);
+        maybe_file.reset_optional();
         return;
     }
     auto &adios2_file =
@@ -1177,6 +1175,8 @@ void ADIOS2IOHandlerImpl::closeFile(
         /* writeLatePuts = */ true,
         /* flushUnconditionally = */ false);
     file.backendSpecificState.reset();
+    m_files.erase(file.name);
+    m_dirty.erase(maybe_file);
     maybe_file.reset_optional();
 }
 

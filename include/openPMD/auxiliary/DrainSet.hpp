@@ -35,6 +35,17 @@ namespace openPMD::auxiliary
  * this automatically in a for loop.
  */
 
+/*
+ * Sentinel type for drain_view::end(). Using a distinct sentinel type avoids
+ * the hazard of constructing a begin()-style iterator just to perform an
+ * end-of-range comparison: begin() extracts an element from the set, so
+ * creating one as a temporary merely to compare against would silently consume
+ * an element. With a sentinel, operator==(iterator, drain_sentinel) only checks
+ * whether the iterator's current node is empty — no extraction occurs.
+ */
+struct drain_sentinel
+{};
+
 template <class Set>
 class drain_view
 {
@@ -50,9 +61,9 @@ class drain_view
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::input_iterator_tag;
 
-        explicit iterator(Set *set) : m_set(set)
+        explicit iterator(Set &set) : m_set(&set)
         {
-            if (m_set && !m_set->empty())
+            if (!m_set->empty())
                 m_node = m_set->extract(m_set->begin());
         }
 
@@ -76,14 +87,14 @@ class drain_view
             return *this;
         }
 
-        auto operator==(iterator const &other) const -> bool
+        auto operator==(drain_sentinel const &) const -> bool
         {
-            return this->m_node.empty() == other.m_node.empty();
+            return m_node.empty();
         }
 
-        auto operator!=(iterator const &other) const -> bool
+        auto operator!=(drain_sentinel const &) const -> bool
         {
-            return !operator==(other);
+            return !m_node.empty();
         }
     };
 
@@ -93,12 +104,12 @@ public:
 
     auto begin() -> iterator
     {
-        return iterator(&set_);
+        return iterator{set_};
     }
 
-    auto end() -> iterator
+    auto end() -> drain_sentinel
     {
-        return iterator{nullptr};
+        return {};
     }
 };
 

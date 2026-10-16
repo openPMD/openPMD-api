@@ -112,14 +112,20 @@ auto drain_set() -> void
 
     SECTION("iterator_comparison")
     {
+        // An empty set: begin() immediately yields an empty node, so it
+        // compares equal to the sentinel end().
         std::set<int> empty_set;
-        auto empty_begin = auxiliary::drain(empty_set).begin();
-        auto empty_end = auxiliary::drain(empty_set).end();
-        // an empty set has begin() == end()
-        REQUIRE(empty_begin == empty_end);
+        auto view = auxiliary::drain(empty_set);
+        REQUIRE(view.begin() == view.end());
 
-        std::set<int> set{1};
-        REQUIRE(auxiliary::drain(set).begin() != auxiliary::drain(set).end());
+        // A non-empty set: begin() extracts the first element, so it does NOT
+        // equal the sentinel. Note: we use one drain_view here so that begin()
+        // is called only once and we do not consume an element with each call.
+        std::set<int> set{1, 2};
+        auto nonempty_view = auxiliary::drain(set);
+        REQUIRE(nonempty_view.begin() != nonempty_view.end());
+        // One element was consumed by begin(); the set still has the rest.
+        REQUIRE(set == std::set<int>{2});
     }
 
     SECTION("draining_a_subset_leaves_rest_in_set")
