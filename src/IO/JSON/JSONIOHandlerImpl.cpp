@@ -936,7 +936,7 @@ void JSONIOHandlerImpl::openFile(
 
     std::string name = parameter.name + m_originalExtension;
 
-    auto &file = makeFile(writable, name, /* consider_open_files = */ true);
+    makeFile(writable, name, /* consider_open_files = */ true);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared<JSONFilePosition>();
