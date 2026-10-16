@@ -169,21 +169,39 @@ void recreate_still_open_file(std::string const &ext, Format format)
     REQUIRE(!second->fileState.has_value());
 }
 
-#if openPMD_HAVE_ADIOS2
-void failed_open()
+/*
+ * @param expect_fresh_state Whether the retry is expected to obtain a fresh
+ *        file state. The ADIOS2 handler cleans up after a failed open, so it
+ *        does. The JSON handler opens files lazily, so the failure only
+ *        surfaces once data is read and the registered state survives.
+ */
+void failed_open(std::string const &ext, Format format, bool expect_fresh_state)
 {
-    std::string const directory = "../samples/file_state_lifetime/failed_open";
+    std::string const directory =
+        "../samples/file_state_lifetime/failed_open_" + ext;
     auxiliary::remove_directory(directory);
     auxiliary::create_directories(directory);
 
-    Fixture fixture(directory, Access::READ_ONLY, Format::ADIOS2_BP, ".bp");
+    Fixture fixture(directory, Access::READ_ONLY, format, "." + ext);
 
-    // Opening a file that does not exist must fail ...
-    Parameter<Operation::OPEN_FILE> open;
-    open.name = "does_not_exist";
-    open.reopen = Parameter<Operation::OPEN_FILE>::Reopen::NoReopen;
-    fixture.handler->enqueue(IOTask(fixture.writable, std::move(open)));
-    REQUIRE_THROWS(fixture.handler->flush(internal::defaultFlushParams));
+    /*
+     * Open the file and then force the backend to actually read from disk. The
+     * JSON backend is lazy, so opening a non-existent file only fails once data
+     * is read from it.
+     */
+    auto open_and_read = [&fixture](std::string const &name) {
+        Parameter<Operation::OPEN_FILE> open;
+        open.name = name;
+        open.reopen = Parameter<Operation::OPEN_FILE>::Reopen::NoReopen;
+        fixture.handler->enqueue(IOTask(fixture.writable, std::move(open)));
+
+        Parameter<Operation::LIST_PATHS> list;
+        fixture.handler->enqueue(IOTask(fixture.writable, std::move(list)));
+        fixture.handler->flush(internal::defaultFlushParams);
+    };
+
+    // Opening and reading a file that does not exist must fail ...
+    REQUIRE_THROWS(open_and_read("does_not_exist"));
 
     /*
      * The failed attempt must not leave a registered file behind in the
@@ -192,38 +210,35 @@ void failed_open()
      */
     auto *const state_after_failure = fixture.writable->fileState.get();
 
-    /*
-     * ... and must not corrupt the handler's bookkeeping. Write the file now
-     * using a separate handler, and the same handler must afterwards be able to
-     * open it without holding on to stale state from the failed attempt.
-     */
+    // ... and must not corrupt the handler's bookkeeping. Write the file now
+    // using a separate handler.
     {
-        Fixture writer(directory, Access::CREATE, Format::ADIOS2_BP, ".bp");
+        Fixture writer(directory, Access::CREATE, format, "." + ext);
         create_file(*writer.handler, writer.writable, "does_not_exist");
         close_file(*writer.handler, writer.writable);
     }
 
-    Parameter<Operation::OPEN_FILE> retry;
-    retry.name = "does_not_exist";
-    retry.reopen = Parameter<Operation::OPEN_FILE>::Reopen::WasFoundOnDisk;
-    fixture.handler->enqueue(IOTask(fixture.writable, std::move(retry)));
-    fixture.handler->flush(internal::defaultFlushParams);
+    // The same handler must afterwards be able to open and use the file.
+    open_and_read("does_not_exist");
     REQUIRE(fixture.writable->fileState.has_value());
-    REQUIRE(fixture.writable->fileState.get() != state_after_failure);
+    if (expect_fresh_state)
+    {
+        REQUIRE(fixture.writable->fileState.get() != state_after_failure);
+    }
 
     close_file(*fixture.handler, fixture.writable);
     REQUIRE(!fixture.writable->fileState.has_value());
 }
-#endif
 
 auto file_state_lifetime() -> void
 {
     reopen_after_close_file("json", Format::JSON);
     recreate_still_open_file("json", Format::JSON);
+    failed_open("json", Format::JSON, /* expect_fresh_state = */ false);
 #if openPMD_HAVE_ADIOS2
     reopen_after_close_file("bp", Format::ADIOS2_BP);
     recreate_still_open_file("bp", Format::ADIOS2_BP);
-    failed_open();
+    failed_open("bp", Format::ADIOS2_BP, /* expect_fresh_state = */ true);
 #endif
 }
 } // namespace file_state_lifetime
