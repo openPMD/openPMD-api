@@ -321,7 +321,8 @@ private:
 
     // get the json value representing the whole file, possibly reading
     // from disk
-    nlohmann::json &obtainJsonContents(internal::FileState &);
+    nlohmann::json &obtainJsonContents(internal::SharedFileState &);
+    nlohmann::json &obtainJsonContents_impl(internal::FileState &);
 
     // get the json value at the writable's fileposition
     nlohmann::json &obtainJsonContents(Writable *writable);

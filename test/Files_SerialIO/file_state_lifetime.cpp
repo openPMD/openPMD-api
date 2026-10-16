@@ -170,12 +170,10 @@ void recreate_still_open_file(std::string const &ext, Format format)
 }
 
 /*
- * @param expect_fresh_state Whether the retry is expected to obtain a fresh
- *        file state. The ADIOS2 handler cleans up after a failed open, so it
- *        does. The JSON handler opens files lazily, so the failure only
- *        surfaces once data is read and the registered state survives.
+ * A failed open must not leave the file registered in the handler, so that a
+ * retry obtains a fresh file state afterwards. This holds for all backends.
  */
-void failed_open(std::string const &ext, Format format, bool expect_fresh_state)
+void failed_open(std::string const &ext, Format format)
 {
     std::string const directory =
         "../samples/file_state_lifetime/failed_open_" + ext;
@@ -185,9 +183,9 @@ void failed_open(std::string const &ext, Format format, bool expect_fresh_state)
     Fixture fixture(directory, Access::READ_ONLY, format, "." + ext);
 
     /*
-     * Open the file and then force the backend to actually read from disk. The
-     * JSON backend is lazy, so opening a non-existent file only fails once data
-     * is read from it.
+     * Open the file and then read from it. Reading is not required for the
+     * failure itself, but it makes the test exercise backends that open files
+     * lazily as well.
      */
     auto open_and_read = [&fixture](std::string const &name) {
         Parameter<Operation::OPEN_FILE> open;
@@ -221,10 +219,7 @@ void failed_open(std::string const &ext, Format format, bool expect_fresh_state)
     // The same handler must afterwards be able to open and use the file.
     open_and_read("does_not_exist");
     REQUIRE(fixture.writable->fileState.has_value());
-    if (expect_fresh_state)
-    {
-        REQUIRE(fixture.writable->fileState.get() != state_after_failure);
-    }
+    REQUIRE(fixture.writable->fileState.get() != state_after_failure);
 
     close_file(*fixture.handler, fixture.writable);
     REQUIRE(!fixture.writable->fileState.has_value());
@@ -234,11 +229,11 @@ auto file_state_lifetime() -> void
 {
     reopen_after_close_file("json", Format::JSON);
     recreate_still_open_file("json", Format::JSON);
-    failed_open("json", Format::JSON, /* expect_fresh_state = */ false);
+    failed_open("json", Format::JSON);
 #if openPMD_HAVE_ADIOS2
     reopen_after_close_file("bp", Format::ADIOS2_BP);
     recreate_still_open_file("bp", Format::ADIOS2_BP);
-    failed_open("bp", Format::ADIOS2_BP, /* expect_fresh_state = */ true);
+    failed_open("bp", Format::ADIOS2_BP);
 #endif
 }
 } // namespace file_state_lifetime

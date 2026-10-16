@@ -69,7 +69,7 @@ protected:
      */
     std::string fullPath(internal::FileState const &);
 
-    std::string fullPath(std::string);
+    std::string fullPath(std::string const &);
 
     /**
      * Get the writable's containing file.
@@ -82,7 +82,7 @@ protected:
      * with another file, update the writable to match its parent and return
      * the refreshed file.
      */
-    internal::FileState &
+    internal::SharedFileState &
     refreshFileFromParent(Writable *writable, bool preferParentFile);
 
     /**
@@ -202,7 +202,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::fullPath(
 template <typename IOHandler_t, typename FilePositionType>
 std::string
 AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::fullPath(
-    std::string fileName)
+    std::string const &fileName)
 {
     if (auxiliary::ends_with(m_handler->directory, "/"))
     {
@@ -215,11 +215,11 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::fullPath(
 }
 
 template <typename IOHandler_t, typename FilePositionType>
-internal::FileState &
+internal::SharedFileState &
 AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
     refreshFileFromParent(Writable *writable, bool preferParentFile)
 {
-    auto getFileFromParent = [writable, this]() -> internal::FileState & {
+    auto getFileFromParent = [writable, this]() -> internal::SharedFileState & {
         auto search = writable->parent;
         if (!search)
         {
@@ -248,7 +248,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
             search = search->parent;
         }
         associateWithFile(writable, file);
-        return *file;
+        return file;
     };
     if (preferParentFile && writable->parent)
     {
@@ -258,7 +258,7 @@ AbstractIOHandlerImplCommon<IOHandler_t, FilePositionType>::
     {
         if (writable->fileState && writable->fileState.has_value())
         {
-            return *writable->fileState;
+            return writable->fileState;
         }
         else if (writable->parent)
         {

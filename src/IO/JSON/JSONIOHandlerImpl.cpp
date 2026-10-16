@@ -1885,15 +1885,30 @@ void JSONIOHandlerImpl::ensurePath(
     }
 }
 
-nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(internal::FileState &file)
+nlohmann::json &
+JSONIOHandlerImpl::obtainJsonContents(internal::SharedFileState &file)
 {
-    if (auto *loaded =
-            std::any_cast<BackendSpecificFileState>(&file.backendSpecificState))
+    if (auto *loaded = std::any_cast<BackendSpecificFileState>(
+            &file->backendSpecificState))
     {
-        // Already in memory. The internal meta table below must only be
         // evaluated once, when the file is first read from disk.
         return loaded->data;
     }
+    try
+    {
+        return obtainJsonContents_impl(*file);
+    }
+    catch (...)
+    {
+        m_files.erase(file.name);
+        file.reset_optional();
+        throw;
+    }
+}
+
+nlohmann::json &
+JSONIOHandlerImpl::obtainJsonContents_impl(internal::FileState &file)
+{
     // read from file
     auto serialImplementation = [&file, this]() {
         auto [fh, fh_with_precision, _] =
@@ -2046,7 +2061,8 @@ nlohmann::json &JSONIOHandlerImpl::obtainJsonContents(Writable *writable)
     VERIFY_ALWAYS(
         filePosition != nullptr,
         "[JSON] Internal error: Writable has no file position.");
-    return obtainJsonContents(file)[filePosition->id];
+    auto &json_dataset = obtainJsonContents(file);
+    return json_dataset[filePosition->id];
 }
 
 void JSONIOHandlerImpl::putJsonContents(internal::FileState &file)
