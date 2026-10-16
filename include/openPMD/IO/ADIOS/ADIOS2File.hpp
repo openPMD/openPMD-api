@@ -237,7 +237,7 @@ public:
 
     ADIOS2File(
         ADIOS2IOHandlerImpl &impl,
-        InvalidatableFile file,
+        internal::FileState const &file,
         adios_defs::OpenFileAs);
 
     ~ADIOS2File();
@@ -323,11 +323,6 @@ public:
      * @return AdvanceStatus
      */
     AdvanceStatus advance(AdvanceMode mode);
-
-    /*
-     * Delete all buffered actions without running them.
-     */
-    void drop();
 
     std::vector<std::string>
     availableAttributesPrefixed(std::string const &prefix);

@@ -24,6 +24,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
@@ -188,11 +189,9 @@ void BufferedUniquePtrPut::run(ADIOS2File &ba)
 
 ADIOS2File::ADIOS2File(
     ADIOS2IOHandlerImpl &impl,
-    InvalidatableFile file,
+    internal::FileState const &file,
     adios_defs::OpenFileAs openFileAs)
-    : m_file(impl.fullPath(std::move(file)))
-    , m_ADIOS(impl.m_ADIOS)
-    , m_impl(&impl)
+    : m_file(impl.fullPath(file)), m_ADIOS(impl.m_ADIOS), m_impl(&impl)
 {
     // Declaring these members in the constructor body to avoid
     // initialization order hazards. Need the IO_ prefix since in some
@@ -1341,11 +1340,6 @@ Be aware of the performance implications described above.)");
         " chosen by the front-end.");
 }
 
-void ADIOS2File::drop()
-{
-    assert(m_buffer.empty());
-}
-
 template <typename AttributesMap>
 static std::vector<std::string> availableAttributesOrVariablesPrefixed(
     std::string const &prefix, AttributesMap const &attributes)
@@ -1401,8 +1395,7 @@ void ADIOS2File::markActive(Writable *writable)
             do
             {
                 using attr_t = unsigned long long;
-                auto filePos = m_impl->setAndGetFilePosition(
-                    writable, /* write = */ false);
+                auto filePos = m_impl->setAndGetFilePosition(writable);
                 auto fullPath =
                     adios_defaults::str_activeTablePrefix + filePos->location;
                 m_IO.DefineAttribute<attr_t>(

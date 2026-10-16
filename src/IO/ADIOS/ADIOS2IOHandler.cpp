@@ -31,9 +31,12 @@
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Defer.hpp"
+#include "openPMD/auxiliary/DrainSet.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSONMatcher.hpp"
@@ -45,12 +48,17 @@
 #include "openPMD/backend/Variant_internal.hpp"
 
 #include <algorithm>
+#include <any>
+#include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <deque>
+#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -174,19 +182,27 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 {
     /*
-     * m_fileData is an unordered_map indexed by pointer addresses
-     * to the fileState member of InvalidatableFile.
+     * m_fileData is an unordered_map indexed by file names.
      * This means that destruction order is nondeterministic.
      * Let's determinize it (necessary if computing in parallel).
      */
-    using file_t = std::unique_ptr<detail::ADIOS2File>;
-    std::vector<file_t> sorted;
-    sorted.reserve(m_fileData.size());
-    for (auto &pair : m_fileData)
+    std::vector<std::pair<std::string, std::any *>> sorted;
+    sorted.reserve(m_files.size());
+    for (auto &file : m_files)
     {
-        sorted.push_back(std::move(pair.second));
+        if (!file.second.has_value() ||
+            !file.second->backendSpecificState.has_value())
+        {
+            std::cerr << "File '" << file.first
+                      << "' was marked dirty, but has no associated ADIOS2 "
+                         "data at destruction time. Will ignore, but this "
+                         "might lead to issues."
+                      << std::endl;
+            continue;
+        }
+        sorted.emplace_back(
+            file.second->name, &file.second->backendSpecificState);
     }
-    m_fileData.clear();
     /*
      * Technically, std::sort() is sufficient here, since file names are unique.
      * Use std::stable_sort() for two reasons:
@@ -199,14 +215,18 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
      */
     std::stable_sort(
         sorted.begin(), sorted.end(), [](auto const &left, auto const &right) {
-            return left->m_file <= right->m_file;
+            return left.first <= right.first;
         });
     // run the destructors
     for (auto &file : sorted)
     {
-        // std::unique_ptr interface
-        file.reset();
+        // std::any interface
+        // std::cout << "Resetting pointer " << file.second << "->" <<
+        // *file.second
+        //           << std::endl;
+        file.second->reset();
     }
+    m_files.clear();
 }
 
 template <typename Callback>
@@ -629,19 +649,33 @@ ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
         }
     }
 
-    for (auto const &file : m_dirty)
+    for (auto &p : auxiliary::drain(m_dirty))
     {
-        auto file_data = m_fileData.find(file);
-        if (file_data == m_fileData.end())
+        try
         {
-            throw error::Internal(
-                "[ADIOS2 backend] No associated data found for file'" + *file +
-                "'.");
+            if (p.has_value() && p->backendSpecificState.has_value())
+            {
+                auto &adios2_file = std::any_cast<BackendSpecificFileState &>(
+                    p->backendSpecificState);
+                adios2_file->flush(
+                    adios2FlushParams, /* writeLatePuts = */ false);
+            }
+            else
+            {
+                throw error::Internal(
+                    "File '" +
+                    (p.has_value() ? p->name
+                                   : std::string("Unknown file name")) +
+                    "' was dirty, but has no associated ADIOS2 data?");
+            }
         }
-        file_data->second->flush(
-            adios2FlushParams, /* writeLatePuts = */ false);
+        catch (...)
+        {
+            m_dirty.emplace(std::move(p));
+            throw;
+        }
     }
-    m_dirty.clear();
+    assert(m_dirty.empty());
     return res;
 }
 
@@ -676,6 +710,12 @@ https://openpmd-api.readthedocs.io/en/latest/usage/concepts.html#iteration-and-s
 void ADIOS2IOHandlerImpl::createFile(
     Writable *writable, Parameter<Operation::CREATE_FILE> const &parameters)
 {
+    if (writable->parent)
+    {
+        throw std::runtime_error(
+            "CREATE_FILE only allowed for root-level objects");
+    }
+
     VERIFY_ALWAYS(
         access::write(m_handler->m_backendAccess),
         "[ADIOS2] Creating a file in read-only mode is not possible.");
@@ -684,22 +724,25 @@ void ADIOS2IOHandlerImpl::createFile(
     {
         std::string name = parameters.name + fileSuffix();
 
-        auto res_pair = getPossiblyExisting(name);
-        InvalidatableFile shared_name = InvalidatableFile(name);
-        VERIFY_ALWAYS(
-            !(m_handler->m_backendAccess == Access::READ_WRITE &&
-              (!std::get<PE_NewlyCreated>(res_pair) ||
-               auxiliary::file_exists(
-                   fullPath(std::get<PE_InvalidatableFile>(res_pair))))),
-            "[ADIOS2] Can only overwrite existing file in CREATE mode.");
-
-        if (!std::get<PE_NewlyCreated>(res_pair))
+        // Check this before makeFile(), which already replaces
+        // writable->fileState and m_files[name].
+        if (access::read(m_handler->m_backendAccess))
         {
-            auto file = std::get<PE_InvalidatableFile>(res_pair);
-            m_dirty.erase(file);
-            dropFileData(file);
-            file.invalidate();
+            auto const open_file = m_files.find(name);
+            auto const path = fullPath(name);
+            if ((open_file != m_files.end() && open_file->second.has_value()) ||
+                auxiliary::file_exists(path) ||
+                auxiliary::directory_exists(path))
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Can only overwrite existing file in CREATE "
+                    "mode.");
+            }
         }
+
+        auto &file =
+            makeFile(writable, name, /* consider_open_files = */ false);
+        auto &file_state = *file;
 
         std::string const dir(m_handler->directory);
         if (!auxiliary::directory_exists(dir))
@@ -710,14 +753,25 @@ void ADIOS2IOHandlerImpl::createFile(
 
         // enforce opening the file
         // lazy opening is deathly in parallel situations
-        auto &fileData =
-            getFileData(shared_name, IfFileNotOpen::CreateImplicitly);
+        auto &fileData = [&]() -> detail::ADIOS2File & {
+            try
+            {
+                return getFileData(file_state, IfFileNotOpen::CreateImplicitly);
+            }
+            catch (...)
+            {
+                // makeFile() might have already registered the file. Do not
+                // leave an entry without ADIOS2 data behind in m_files.
+                m_files.erase(name);
+                throw;
+            }
+        }();
 
         // only emplace the file into our structures after it has been
         // successfully opened. otherwise, errors will lead to undefined state.
 
-        associateWithFile(writable, shared_name);
-        this->m_dirty.emplace(shared_name);
+        associateWithFile(writable, writable->fileState);
+        this->m_dirty.emplace(writable->fileState);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
@@ -798,12 +852,12 @@ void ADIOS2IOHandlerImpl::createPath(
     Writable *writable, const Parameter<Operation::CREATE_PATH> &parameters)
 {
     std::string path;
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
+    auto &file = refreshFileFromParent(writable, /* preferParentFile = */ true);
 
     /* Sanitize path */
     if (!auxiliary::starts_with(parameters.path, '/'))
     {
-        path = filePositionToString(setAndGetFilePosition(writable)) + "/" +
+        path = filePositionToString(*setAndGetFilePosition(writable)) + "/" +
             auxiliary::removeSlashes(parameters.path);
     }
     else
@@ -823,7 +877,7 @@ void ADIOS2IOHandlerImpl::createPath(
     case UseGroupTable::No:
         break;
     case UseGroupTable::Yes:
-        getFileData(file, IfFileNotOpen::ThrowError).markActive(writable);
+        getFileData(*file, IfFileNotOpen::ThrowError).markActive(writable);
         break;
     }
 }
@@ -857,7 +911,7 @@ void ADIOS2IOHandlerImpl::createDataset(
                     name + "')");
         }
 
-        auto const file =
+        auto &file =
             refreshFileFromParent(writable, /* preferParentFile = */ true);
         writable->abstractFilePosition.reset();
         auto filePos = setAndGetFilePosition(writable, name);
@@ -874,7 +928,7 @@ void ADIOS2IOHandlerImpl::createDataset(
             shape[jd.value()] = adios2::JoinedDim;
         }
 
-        auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+        auto &fileData = getFileData(*file, IfFileNotOpen::ThrowError);
 
 #define HAS_BP5_BLOSC2_BUG                                                     \
     (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR == 209 &&               \
@@ -914,7 +968,7 @@ https://github.com/ornladios/ADIOS2/issues/3504.
         switchAdios2VariableType<detail::VariableDefiner>(
             parameters.dtype, fileData.m_IO, varName, operators, shape);
         writable->written = true;
-        m_dirty.emplace(file);
+        m_dirty.emplace(writable->fileState);
     }
 }
 
@@ -1019,9 +1073,10 @@ void ADIOS2IOHandlerImpl::extendDataset(
     }
 
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
     std::string name = nameOfVariable(writable);
-    auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &filedata = getFileData(*file, IfFileNotOpen::ThrowError);
     Datatype dt = detail::fromADIOS2Type(filedata.m_IO.VariableType(name));
     switchAdios2VariableType<detail::DatasetExtender>(
         dt, filedata.m_IO, name, parameters.extent, parameters.joinedDimension);
@@ -1039,8 +1094,15 @@ void ADIOS2IOHandlerImpl::openFile(
             "Supplied directory is not valid: " + m_handler->directory);
     }
 
+    if (writable->parent)
+    {
+        throw std::runtime_error(
+            "OPEN_FILE only allowed for root-level objects");
+    }
+
     std::string name = parameters.name + fileSuffix();
-    auto file = std::get<PE_InvalidatableFile>(getPossiblyExisting(name));
+
+    auto &file = makeFile(writable, name, /* consider_open_files = */ true);
 
     auto how_to_open = [&]() {
         switch (parameters.reopen)
@@ -1057,8 +1119,19 @@ void ADIOS2IOHandlerImpl::openFile(
 
     // enforce opening the file
     // lazy opening is deadly in parallel situations
-    auto &fileData = getFileData(file, how_to_open);
-
+    auto &fileData = [&]() -> detail::ADIOS2File & {
+        try
+        {
+            return getFileData(*file, how_to_open);
+        }
+        catch (...)
+        {
+            // makeFile() might have already registered the file. Do not leave
+            // an entry without ADIOS2 data behind in m_files.
+            m_files.erase(name);
+            throw;
+        }
+    }();
     // the following calls present the new file to the IO handler's data
     // structures. do this only after the file has been successfully open, to
     // avoid invalid state.
@@ -1069,43 +1142,51 @@ void ADIOS2IOHandlerImpl::openFile(
     writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
 
     *parameters.out_parsePreference = fileData.parsePreference;
-    m_dirty.emplace(std::move(file));
+    m_dirty.emplace(file);
 }
 
 void ADIOS2IOHandlerImpl::closeFile(
     Writable *writable, Parameter<Operation::CLOSE_FILE> const &)
 {
-    auto fileIterator = m_files.find(writable);
-    if (fileIterator != m_files.end())
+    auto &maybe_file = writable->fileState;
+    if (!maybe_file.has_value())
     {
-        // do not invalidate the file
-        // it still exists, it is just not open
-        auto it = m_fileData.find(fileIterator->second);
-        if (it != m_fileData.end())
-        {
-            /*
-             * No need to finalize unconditionally, destructor will take care
-             * of it.
-             */
-            it->second->flush(
-                FlushLevel::UserFlush,
-                [](detail::ADIOS2File &ba, adios2::Engine &) { ba.finalize(); },
-                /* writeLatePuts = */ true,
-                /* flushUnconditionally = */ false);
-            m_fileData.erase(it);
-        }
-        m_dirty.erase(fileIterator->second);
-        m_files.erase(fileIterator);
+        return;
     }
+    auto &file = *maybe_file;
+
+    if (!file.backendSpecificState.has_value())
+    {
+        m_files.erase(file.name);
+        m_dirty.erase(maybe_file);
+        maybe_file.reset_optional();
+        return;
+    }
+    auto &adios2_file =
+        std::any_cast<BackendSpecificFileState &>(file.backendSpecificState);
+
+    /*
+     * No need to finalize unconditionally, destructor will take care
+     * of it.
+     */
+    adios2_file->flush(
+        FlushLevel::UserFlush,
+        [](detail::ADIOS2File &ba, adios2::Engine &) { ba.finalize(); },
+        /* writeLatePuts = */ true,
+        /* flushUnconditionally = */ false);
+    file.backendSpecificState.reset();
+    m_files.erase(file.name);
+    m_dirty.erase(maybe_file);
+    maybe_file.reset_optional();
 }
 
 void ADIOS2IOHandlerImpl::openPath(
     Writable *writable, const Parameter<Operation::OPEN_PATH> &parameters)
 {
     /* Sanitize path */
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
+    auto &file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     std::string prefix =
-        filePositionToString(setAndGetFilePosition(writable->parent));
+        filePositionToString(*setAndGetFilePosition(writable->parent));
     std::string suffix = auxiliary::removeSlashes(parameters.path);
     std::string infix =
         suffix.empty() || auxiliary::ends_with(prefix, '/') ? "" : "/";
@@ -1122,7 +1203,7 @@ void ADIOS2IOHandlerImpl::openPath(
     case UseGroupTable::No:
         break;
     case UseGroupTable::Yes:
-        getFileData(file, IfFileNotOpen::ThrowError).markActive(writable);
+        getFileData(*file, IfFileNotOpen::ThrowError).markActive(writable);
         break;
     }
 }
@@ -1134,9 +1215,9 @@ void ADIOS2IOHandlerImpl::openDataset(
     writable->abstractFilePosition.reset();
     auto pos = setAndGetFilePosition(writable, name);
     pos->gd = GroupOrDataset::DATASET;
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ true);
+    auto &file = refreshFileFromParent(writable, /* preferParentFile = */ true);
     auto varName = nameOfVariable(writable);
-    auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &fileData = getFileData(*file, IfFileNotOpen::ThrowError);
     *parameters.dtype =
         detail::fromADIOS2Type(fileData.m_IO.VariableType(varName));
 
@@ -1152,7 +1233,7 @@ void ADIOS2IOHandlerImpl::openDataset(
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype,
         this,
-        file,
+        *file,
         varName,
         parameters,
         fileData.stepSelection(),
@@ -1194,13 +1275,14 @@ void ADIOS2IOHandlerImpl::writeDataset(
         access::write(m_handler->m_backendAccess),
         "[ADIOS2] Cannot write data in read-only mode.");
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
     detail::BufferedPut bp;
     bp.name = nameOfVariable(writable);
     bp.param = std::move(parameters);
     ba.enqueue(std::move(bp));
-    m_dirty.emplace(std::move(file));
+    m_dirty.emplace(writable->fileState);
     writable->written = true; // TODO erst nach dem Schreiben?
 }
 
@@ -1219,8 +1301,9 @@ void ADIOS2IOHandlerImpl::readDataset(
     Writable *writable, Parameter<Operation::READ_DATASET> &parameters)
 {
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
     detail::BufferedGet bg;
     bg.name = nameOfVariable(writable);
     bg.param = parameters;
@@ -1228,7 +1311,7 @@ void ADIOS2IOHandlerImpl::readDataset(
     // selection might change again before flushing
     bg.stepSelection = ba.stepSelection();
     ba.enqueue(std::move(bg));
-    m_dirty.emplace(std::move(file));
+    m_dirty.emplace(writable->fileState);
 }
 
 namespace detail
@@ -1331,8 +1414,9 @@ void ADIOS2IOHandlerImpl::getBufferView(
     }
 
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
 
     if (std::any_of(
             parameters.extent.begin(), parameters.extent.end(), [](auto val) {
@@ -1404,9 +1488,10 @@ namespace detail
 void ADIOS2IOHandlerImpl::readAttribute(
     Writable *writable, Parameter<Operation::READ_ATT> &parameters)
 {
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    auto pos = setAndGetFilePosition(writable);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
     auto name = nameOfAttribute(writable, parameters.name);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
@@ -1629,10 +1714,11 @@ namespace
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    auto pos = setAndGetFilePosition(writable);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    setAndGetFilePosition(writable);
     auto name = nameOfAttribute(writable, param.name);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
 
     auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
 
@@ -1770,9 +1856,10 @@ void ADIOS2IOHandlerImpl::listPaths(
         writable->written,
         "[ADIOS2] Internal error: Writable not marked written during path "
         "listing");
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
-    std::string myName = filePositionToString(pos);
+    std::string myName = filePositionToString(*pos);
     if (!auxiliary::ends_with(myName, '/'))
     {
         myName = myName + '/';
@@ -1782,7 +1869,7 @@ void ADIOS2IOHandlerImpl::listPaths(
      * since ADIOS does not have a concept of paths, restore them
      * from variables and attributes.
      */
-    auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &fileData = getFileData(*file, IfFileNotOpen::ThrowError);
 
     std::set<std::string> subdirs;
     /*
@@ -1910,10 +1997,10 @@ void ADIOS2IOHandlerImpl::listDatasets(
         writable->written,
         "[ADIOS2] Internal error: Writable not marked written during path "
         "listing");
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
-    // adios2::Engine & engine = getEngine( file );
-    std::string myName = filePositionToString(pos);
+    std::string myName = filePositionToString(*pos);
     if (!auxiliary::ends_with(myName, '/'))
     {
         myName = myName + '/';
@@ -1924,7 +2011,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
      * from variables and attributes.
      */
 
-    auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &fileData = getFileData(*file, IfFileNotOpen::ThrowError);
 
     std::set<std::string> subdirs;
     for (auto var : fileData.availableVariablesPrefixed(myName))
@@ -1952,14 +2039,15 @@ void ADIOS2IOHandlerImpl::listAttributes(
         writable->written,
         "[ADIOS2] Internal error: Writable not marked "
         "written during attribute writing");
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
-    auto attributePrefix = filePositionToString(pos);
+    auto attributePrefix = filePositionToString(*pos);
     if (attributePrefix == "/")
     {
         attributePrefix = "";
     }
-    auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &ba = getFileData(*file, IfFileNotOpen::ThrowError);
 
     std::vector<std::string> attrs =
         ba.availableAttributesPrefixed(attributePrefix);
@@ -1977,8 +2065,10 @@ void ADIOS2IOHandlerImpl::listAttributes(
 void ADIOS2IOHandlerImpl::advance(
     Writable *writable, Parameter<Operation::ADVANCE> &parameters)
 {
-    auto file = m_files.at(writable);
-    auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    VERIFY_ALWAYS(
+        writable->fileState.has_value(),
+        "[ADIOS2] Cannot advance: Writable has no open file associated.");
+    auto &ba = getFileData(*writable->fileState, IfFileNotOpen::ThrowError);
     std::visit(
         auxiliary::overloaded{
             [&](AdvanceMode mode) { *parameters.status = ba.advance(mode); },
@@ -2000,14 +2090,15 @@ void ADIOS2IOHandlerImpl::closePath(
         // nothing to do
         return;
     }
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    auto &fileData = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    auto &fileData = getFileData(*file, IfFileNotOpen::ThrowError);
     if (!fileData.optimizeAttributesStreaming)
     {
         return;
     }
     auto position = setAndGetFilePosition(writable);
-    auto positionString = filePositionToString(position);
+    auto positionString = filePositionToString(*position);
     VERIFY(
         !auxiliary::ends_with(positionString, '/'),
         "[ADIOS2] Position string has unexpected format. This is a bug "
@@ -2025,8 +2116,9 @@ void ADIOS2IOHandlerImpl::availableChunks(
     Writable *writable, Parameter<Operation::AVAILABLE_CHUNKS> &parameters)
 {
     setAndGetFilePosition(writable);
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
-    detail::ADIOS2File &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    auto &file =
+        refreshFileFromParent(writable, /* preferParentFile = */ false);
+    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
     std::string varName = nameOfVariable(writable);
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
@@ -2042,23 +2134,18 @@ void ADIOS2IOHandlerImpl::availableChunks(
 }
 
 void ADIOS2IOHandlerImpl::deregister(
-    Writable *writable, Parameter<Operation::DEREGISTER> const &)
+    Writable *, Parameter<Operation::DEREGISTER> const &)
 {
-    m_files.erase(writable);
+    // noop, ADIOS2 backend stores all such information directly in the Writable
 }
 
 void ADIOS2IOHandlerImpl::touch(
     Writable *writable, Parameter<Operation::TOUCH> const &)
 {
-    auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
+    refreshFileFromParent(writable, false);
     if (access::write(m_handler->m_backendAccess))
     {
-        m_dirty.emplace(std::move(file));
-    }
-    else if (m_fileData.find(file) == m_fileData.end())
-    {
-        throw error::Internal(
-            "ADIOS2: Tried activating a file that is not open.");
+        this->m_dirty.emplace(writable->fileState);
     }
 }
 
@@ -2173,26 +2260,18 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
 json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = {
     nlohmann::json(), json::SupportedLanguages::JSON};
 
-std::string ADIOS2IOHandlerImpl::filePositionToString(
-    std::shared_ptr<ADIOS2FilePosition> filepos)
+std::string
+ADIOS2IOHandlerImpl::filePositionToString(ADIOS2FilePosition const &filepos)
 {
-    return filepos->location;
+    return filepos.location;
 }
 
 std::shared_ptr<ADIOS2FilePosition> ADIOS2IOHandlerImpl::extendFilePosition(
-    std::shared_ptr<ADIOS2FilePosition> const &oldPos, std::string s)
+    ADIOS2FilePosition const &oldPos, std::string const &s)
 {
     auto path = filePositionToString(oldPos);
-    if (!auxiliary::ends_with(path, '/') && !auxiliary::starts_with(s, '/'))
-    {
-        path = path + "/";
-    }
-    else if (auxiliary::ends_with(path, '/') && auxiliary::starts_with(s, '/'))
-    {
-        path = auxiliary::replace_last(path, "/", "");
-    }
     return std::make_shared<ADIOS2FilePosition>(
-        path + std::move(s), oldPos->gd);
+        concatToPosition(path, s), oldPos.gd);
 }
 
 std::optional<adios2::Operator>
@@ -2234,15 +2313,15 @@ ADIOS2IOHandlerImpl::getCompressionOperator(std::string const &compression)
 std::string ADIOS2IOHandlerImpl::nameOfVariable(Writable *writable)
 {
     auto filepos = setAndGetFilePosition(writable);
-    return filePositionToString(filepos);
+    return filePositionToString(*filepos);
 }
 
 std::string
 ADIOS2IOHandlerImpl::nameOfAttribute(Writable *writable, std::string attribute)
 {
     auto pos = setAndGetFilePosition(writable);
-    return filePositionToString(extendFilePosition(
-        pos, auxiliary::removeSlashes(std::move(attribute))));
+    return filePositionToString(*extendFilePosition(
+        *pos, auxiliary::removeSlashes(std::move(attribute))));
 }
 
 GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
@@ -2250,13 +2329,9 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
-    InvalidatableFile const &file, IfFileNotOpen flag)
+detail::ADIOS2File &
+ADIOS2IOHandlerImpl::getFileData(internal::FileState &file, IfFileNotOpen flag)
 {
-    VERIFY_ALWAYS(
-        file.valid(),
-        "[ADIOS2] Cannot retrieve file data for a file that has "
-        "been overwritten or deleted.")
     auto openFileAs = [&]() {
         using OF = adios_defs::OpenFileAs;
         switch (flag)
@@ -2271,37 +2346,25 @@ detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
             break;
         }
         return OF{};
-    }();
-    auto it = m_fileData.find(file);
-    if (it == m_fileData.end())
+    };
+    if (!file.backendSpecificState.has_value())
     {
         switch (flag)
         {
         case IfFileNotOpen::ThrowError:
             throw std::runtime_error(
                 "[ADIOS2] Requested file has not been opened yet: " +
-                (file.fileState ? file.fileState->name : "Unknown file name"));
-        default:
-            auto res = m_fileData.emplace(
-                file,
-                std::make_unique<detail::ADIOS2File>(*this, file, openFileAs));
-            return *res.first->second;
+                file.name);
+        default: {
+            file.backendSpecificState = std::make_any<BackendSpecificFileState>(
+                new detail::ADIOS2File(*this, file, openFileAs()));
+            break;
+        }
         }
     }
-    else
-    {
-        return *it->second;
-    }
-}
-
-void ADIOS2IOHandlerImpl::dropFileData(InvalidatableFile const &file)
-{
-    auto it = m_fileData.find(file);
-    if (it != m_fileData.end())
-    {
-        it->second->drop();
-        m_fileData.erase(it);
-    }
+    auto &adios2_file =
+        std::any_cast<BackendSpecificFileState &>(file.backendSpecificState);
+    return *adios2_file;
 }
 
 namespace detail
@@ -2340,8 +2403,7 @@ namespace detail
         VERIFY_ALWAYS(
             access::write(impl->m_handler->m_backendAccess),
             "[ADIOS2] Cannot write attribute in read-only mode.");
-        auto pos = impl->setAndGetFilePosition(writable);
-        auto file = impl->refreshFileFromParent(
+        auto &file = impl->refreshFileFromParent(
             writable, /* preferParentFile = */ false);
         auto name = auxiliary::removeSlashes(parameters.name);
         if (auxiliary::contains(name, '/'))
@@ -2355,9 +2417,9 @@ namespace detail
         auto fullName = impl->nameOfAttribute(writable, parameters.name);
 
         auto &filedata = impl->getFileData(
-            file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
+            *file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
         adios2::IO IO = filedata.m_IO;
-        impl->m_dirty.emplace(std::move(file));
+        impl->m_dirty.emplace(writable->fileState);
 
         if (impl->m_modifiableAttributes ==
                 ADIOS2IOHandlerImpl::ModifiableAttributes::No &&
@@ -2488,7 +2550,7 @@ namespace detail
     template <typename T>
     void DatasetOpener::call(
         ADIOS2IOHandlerImpl *impl,
-        InvalidatableFile const &file,
+        internal::FileState &file,
         const std::string &varName,
         Parameter<Operation::OPEN_DATASET> &parameters,
         std::optional<size_t> stepSelection,
@@ -2504,7 +2566,7 @@ namespace detail
         {
             throw std::runtime_error(
                 "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" +
-                varName + "' from file " + *file + ".");
+                varName + "' from file " + file.name + ".");
         }
 
         if (stepSelection.has_value())
