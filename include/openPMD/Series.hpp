@@ -131,6 +131,13 @@ namespace internal
          */
         std::unordered_map<IterationIndex_t, size_t> m_snapshotToStep;
         /**
+         * For appending: Keep this snapshot and all snapshots before it from
+         * an existing Series and drop the later ones (JSON/TOML option
+         * `append.after_snapshot`).
+         * If empty, keep all snapshots and append after the last one.
+         */
+        std::optional<IterationIndex_t> m_appendAfterSnapshot;
+        /**
          * This map contains the filenames of those Iterations which were found
          * on the file system upon opening the Series for reading in file-based
          * encoding. It is only written to by readFileBased().
@@ -861,7 +868,7 @@ OPENPMD_private
      *         to include the JSON lib here
      */
     template <typename TracingJSON>
-    void parseJsonOptions(TracingJSON &options, ParsedInput &);
+    void parseJsonOptions(TracingJSON &options, ParsedInput &, Access);
     bool hasExpansionPattern(std::string filenameWithExtension);
     bool reparseExpansionPattern(std::string filenameWithExtension);
     template <typename... MPI_Communicator>
