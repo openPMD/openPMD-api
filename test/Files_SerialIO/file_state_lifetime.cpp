@@ -88,7 +88,11 @@ struct Fixture
         std::string originalExtension)
         : directory(std::move(directory_in))
         , handler(createIOHandler(
-              std::nullopt, directory, access, format, originalExtension))
+              std::nullopt,
+              directory,
+              access,
+              format,
+              std::move(originalExtension)))
         , writable(root.root())
     {}
 };

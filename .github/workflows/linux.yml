@@ -297,12 +297,15 @@ jobs:
         PATH="../../../build/bin:$PATH" make -j 2
         # We need to exclude the thetaMode example since that has a different
         # meshesPath and the JSON schema needs to hardcode that.
-        find ../../../build/samples/      \
-            ! -path '*thetaMode*'         \
-            ! -path '/*many_iterations/*' \
-            ! -name 'profiling.json'      \
-            ! -name '*config.json'        \
-            -iname '*.json'               \
+        # file_state_lifetime test has to be excluded since its output is custom,
+        # not in terms of openPMD
+        find ../../../build/samples/          \
+            ! -path '*thetaMode*'             \
+            ! -path '*/many_iterations/*'     \
+            ! -name 'profiling.json'          \
+            ! -name '*config.json'            \
+            ! -path '*/file_state_lifetime/*' \
+            -iname '*.json'                   \
           | while read i; do
             echo "Checking $i"
             ./check.py "$i"
