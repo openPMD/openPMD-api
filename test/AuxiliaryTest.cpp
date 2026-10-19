@@ -37,6 +37,8 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 
+#include "AuxiliaryTests.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -537,4 +539,9 @@ TEST_CASE("filesystem_test", "[auxiliary]")
 
     REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
 #endif
+}
+
+TEST_CASE("drain_set_test", "[auxiliary]")
+{
+    drain_set::drain_set();
 }

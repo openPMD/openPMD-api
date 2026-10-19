@@ -805,6 +805,11 @@ TEST_CASE("close_and_reopen_test", "[serial]")
 }
 #endif
 
+TEST_CASE("file_state_lifetime", "[serial]")
+{
+    file_state_lifetime::file_state_lifetime();
+}
+
 inline void empty_dataset_test(std::string const &file_ending)
 {
     {

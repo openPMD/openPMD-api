@@ -857,6 +857,7 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/issue_1744_unique_ptrs_at_close_time.cpp
                 test/Files_SerialIO/components_without_extent.cpp
                 test/Files_SerialIO/read_while_writing.cpp
+                test/Files_SerialIO/file_state_lifetime.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}
@@ -868,6 +869,10 @@ if(openPMD_BUILD_TESTING)
             list(APPEND ${out_list}
                 test/Files_Core/automatic_variable_encoding.cpp
                 test/Files_Core/read_nonexistent_attribute.cpp
+            )
+        elseif(${test_name} STREQUAL "Auxiliary")
+            list(APPEND ${out_list}
+                test/Files_Auxiliary/drain_set.cpp
             )
         endif()
     endmacro()
