@@ -23,6 +23,10 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/config.hpp"
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
