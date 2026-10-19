@@ -10,6 +10,7 @@ License: LGPLv3+
 import sys
 
 import numpy as np
+
 import openpmd_api as io
 
 try:
@@ -124,9 +125,7 @@ if __name__ == "__main__":
             E.grid_unit_SI * 1.0e6 * (idx_max * E.grid_spacing + E.grid_global_offset)
         )
         print(
-            "maximum intensity I={} at index={} z={}mu".format(
-                Intensity_max, idx_max, pos_max[2]
-            )
+            f"maximum intensity I={Intensity_max} at index={idx_max} z={pos_max[2]}mu"
         )
 
     s.close()
