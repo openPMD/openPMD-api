@@ -669,7 +669,7 @@ void JSONIOHandlerImpl::createDataset(
         refreshFileFromParent(writable, /* preferParentFile = */ true);
         setAndGetFilePosition(writable, name);
         auto &dset = obtainJsonContents(writable);
-        dset["datatype"] = datatypeToString(parameter.dtype);
+        dset["datatype"] = jsonDatatypeToString(parameter.dtype);
         switch (localMode)
         {
         case DatasetMode::Dataset: {
