@@ -349,7 +349,11 @@ jobs:
         channel-priority: true
     - name: Build
       shell: bash -eo pipefail -l {0}
-      env: {CXXFLAGS: -Werror}
+      env:
+        CXXFLAGS: -Werror
+        OPENPMD_ADIOS2_SST_DATA_TRANSPORT: WAN
+        OPENPMD_ADIOS2_SST_WAN_TRANSPORT: sockets
+        OPENPMD_ADIOS2_SST_CONTROL_TRANSPORT: tcp
       run: |
         share/openPMD/download_samples.sh build
         cmake -S . -B build                                \
