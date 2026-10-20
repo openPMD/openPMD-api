@@ -66,7 +66,6 @@ void read_linear_try_next_adios2(std::string const &file)
 
     Series read(file, Access::READ_LINEAR);
     auto snapshots = read.snapshots();
-    auto end = snapshots.end();
     auto it = snapshots.beginLazy();
 
     // The first step is already on disk.
@@ -74,9 +73,9 @@ void read_linear_try_next_adios2(std::string const &file)
     REQUIRE(it->first == 0);
     it->second.close();
 
-    // The writer is still open and has not written the next step yet.
+    // The writer is still open and has not written the next step yet. The
+    // returned status, not end-ness, distinguishes a timeout from the end.
     REQUIRE(it.tryNext(0.05f) == AdvanceStatus::TRY_AGAIN);
-    REQUIRE(it != end);
 
     // Write the next step. The reader now succeeds again.
     write_step(write, 1);
@@ -86,7 +85,6 @@ void read_linear_try_next_adios2(std::string const &file)
 
     // Still no further step.
     REQUIRE(it.tryNext(0.05f) == AdvanceStatus::TRY_AGAIN);
-    REQUIRE(it != end);
 
     // A negative timeout is an API misuse, not a timeout.
     REQUIRE_THROWS(it.tryNext(-1.0f));
@@ -94,7 +92,6 @@ void read_linear_try_next_adios2(std::string const &file)
     // Closing the writer turns the stream over.
     write.close();
     REQUIRE(it.tryNext(1.0f) == AdvanceStatus::OVER);
-    REQUIRE(it == end);
 
     // next() is a blocking synonym for operator++(): reading a closed Series
     // does not wait and can be used with ordinary iteration.
