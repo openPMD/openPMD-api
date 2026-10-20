@@ -23,6 +23,7 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/binding/python/Common.hpp"
@@ -249,6 +250,19 @@ struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
     StatefulIteratorPythonAdaptor(LegacyIteratorAdaptor it)
         : LegacyIteratorAdaptor(std::move(it))
     {}
+    StatefulIteratorPythonAdaptor(Snapshots::iterator it)
+        : LegacyIteratorAdaptor(std::move(it))
+    {}
+
+    AdvanceStatus tryNext(float timeout)
+    {
+        return m_iterator.tryNext(timeout);
+    }
+
+    IndexedIteration current() const
+    {
+        return static_cast<LegacyIteratorAdaptor const &>(*this).operator*();
+    }
 
     /*
      * Python iterators are weird and call `__next__()` already for getting the
@@ -287,6 +301,14 @@ not possible once it has been closed.
                 // copy + keepalive
                 py::return_value_policy::copy,
                 py::keep_alive<0, 1>())
+            .def(
+                "begin_lazy",
+                [](Snapshots &s) {
+                    return StatefulIteratorPythonAdaptor(s.beginLazy());
+                },
+                py::keep_alive<0, 1>(),
+                "Like begin(), but does not open the first IO step yet. The "
+                "first call to try_next() opens it, possibly with a timeout.")
             .def(
                 "current_iteration",
                 [](Snapshots &s) -> std::optional<IndexedIteration> {
@@ -339,9 +361,23 @@ not possible once it has been closed.
                 {
                     return *iterator;
                 }
-            }
-
-        );
+            })
+        .def(
+            "try_next",
+            [](StatefulIteratorPythonAdaptor &iterator, float timeout) {
+                py::gil_scoped_release release;
+                return iterator.tryNext(timeout);
+            },
+            py::arg("timeout"),
+            "Advance with a timeout. Returns AdvanceStatus.try_again if no "
+            "data became available in time; the iterator stays usable.")
+        .def(
+            "current",
+            [](StatefulIteratorPythonAdaptor &iterator) {
+                return iterator.current();
+            },
+            py::keep_alive<0, 1>(),
+            "The Iteration that the iterator currently points to.");
 
     py::class_<ReadIterations>(m, "ReadIterations", R"END(
 Reading side of the streaming API.
@@ -373,6 +409,12 @@ not possible once it has been closed.
     py::enum_<SnapshotWorkflow>(m, "SnapshotWorkflow")
         .value("random_access", SnapshotWorkflow::RandomAccess)
         .value("synchronous", SnapshotWorkflow::Synchronous);
+
+    py::enum_<AdvanceStatus>(m, "AdvanceStatus")
+        .value("ok", AdvanceStatus::OK)
+        .value("over", AdvanceStatus::OVER)
+        .value("random_access", AdvanceStatus::RANDOMACCESS)
+        .value("try_again", AdvanceStatus::TRY_AGAIN);
 
     py::class_<
         Iterations,
