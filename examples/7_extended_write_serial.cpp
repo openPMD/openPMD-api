@@ -29,8 +29,7 @@ int main()
 
     {
         auto f = io::Series(
-            "working/directory/2D_simData.h5",
-            io::Access::CREATE_RANDOM_ACCESS);
+            "../samples/2D_simData.h5", io::Access::CREATE_RANDOM_ACCESS);
 
         // all required openPMD attributes will be set to reasonable default
         // values (all ones, all zeros, empty strings,...) manually setting them

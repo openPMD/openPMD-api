@@ -81,9 +81,9 @@ anyOf = [
     { type = "array", items = { "type" = "integer" } },
 ]
 
-####################
-# Vectors of float #
-####################
+#################################
+# Vectors of float (no complex) #
+#################################
 
 ["$defs".vec_float_attribute.if]
 type = "object"
@@ -196,7 +196,11 @@ required = ["value", "datatype"]
 
 ["$defs".int_attribute.then.properties]
 
-value.type = "integer"
+value.anyOf = [
+    { type = "integer" },
+    # Support complex numbers:
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "integer" }}
+]
 datatype.enum = [
     "SHORT",
     "INT",
@@ -210,8 +214,11 @@ datatype.enum = [
 
 ["$defs".int_attribute.else]
 title = "Shorthand notation"
-type = "integer"
-
+anyOf = [
+    { type = "integer" },
+    # Support complex numbers:
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "integer" }}
+]
 ####################
 # float attributes #
 ####################
@@ -226,7 +233,11 @@ required = ["value", "datatype"]
 
 ["$defs".float_attribute.then.properties]
 
-value.type = "number"
+value.anyOf = [
+    { type = "number" },
+    # Support complex numbers:
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "number" }}
+]
 datatype.enum = [
     "CHAR",
     "UCHAR",
@@ -250,4 +261,8 @@ datatype.enum = [
 
 ["$defs".float_attribute.else]
 title = "Shorthand notation"
-type = "number"
+anyOf = [
+    { type = "number" },
+    # Support complex numbers:
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "number" }}
+]
