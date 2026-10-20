@@ -29,6 +29,9 @@ properties.value.anyOf = [
         { type = "object", title = "An object" },
         { type = "array", title = "An array" },
     ] } }, title = "An array of non-complex types" },
+    # Or two arrays of floating values (vec complex)
+    # Note that simple complex values are subsumed by the array category above
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "array", items = { type = "number" }  }, title = "Two arrays of numbers (vec_complex)"}
 ]
 
 properties.datatype.type = "string"
@@ -86,6 +89,9 @@ anyOf = [
         { type = "object", title = "An object" },
         { type = "array", title = "An array" },
     ] } }, title = "An array of non-complex types" },
+    # Or two arrays of floating values (vec complex)
+    # Note that simple complex values are subsumed by the array category above
+    { type = "array", minItems = 2, maxItems = 2, items = { type = "array", items = { type = "number" }  }, title = "Two arrays of numbers (vec_complex)"}
 ]
 
 [oneOf.propertyNames]
