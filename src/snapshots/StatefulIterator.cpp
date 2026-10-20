@@ -183,7 +183,8 @@ auto StatefulIterator::get() const -> SharedData const &
     return m_data->value();
 }
 
-void StatefulIterator::initSeriesInLinearReadMode()
+AdvanceStatus
+StatefulIterator::initSeriesInLinearReadMode(std::optional<float> stepTimeout)
 {
     auto &data = get();
     auto &series = data.series;
@@ -194,29 +195,51 @@ void StatefulIterator::initSeriesInLinearReadMode()
         {
             using IE = IterationEncoding;
         case IE::fileBased:
-            series.readFileBased(std::nullopt);
+            if (!data.m_linearMetadataInitialized)
+            {
+                series.readFileBased(std::nullopt);
+                data.m_linearMetadataInitialized = true;
+            }
             break;
         case IE::groupBased:
         case IE::variableBased: {
-            Parameter<Operation::OPEN_FILE> fOpen;
-            fOpen.name = series.get().m_name;
-            series.IOHandler()->enqueue(IOTask(&series, fOpen));
-            series.IOHandler()->flush(internal::defaultFlushParams);
-            using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
-            switch (*fOpen.out_parsePreference)
+            if (!data.m_linearMetadataInitialized)
             {
-            case PP::PerStep:
-                series.advance(AdvanceMode::BEGINSTEP);
+                Parameter<Operation::OPEN_FILE> fOpen;
+                fOpen.name = series.get().m_name;
+                series.IOHandler()->enqueue(IOTask(&series, fOpen));
+                series.IOHandler()->flush(internal::defaultFlushParams);
+                data.parsePreference = *fOpen.out_parsePreference;
+                data.m_linearMetadataInitialized = true;
+            }
+            using PP = Parameter<Operation::OPEN_FILE>::ParsePreference;
+            switch (*data.parsePreference)
+            {
+            case PP::PerStep: {
+                auto status =
+                    series.advance(AdvanceMode::BEGINSTEP, stepTimeout);
+                if (status == AdvanceStatus::TRY_AGAIN ||
+                    status == AdvanceStatus::OVER)
+                {
+                    series.IOHandler()->m_seriesStatus =
+                        internal::SeriesStatus::Default;
+                    return status;
+                }
                 series.readGorVBased(
                     /* do_always_throw_errors = */ false,
                     /* init = */ true,
                     std::nullopt);
                 break;
+            }
             case PP::UpFront:
-                series.readGorVBased(
-                    /* do_always_throw_errors = */ false,
-                    /* init = */ true,
-                    std::nullopt);
+                if (!data.m_upfrontParsed)
+                {
+                    series.readGorVBased(
+                        /* do_always_throw_errors = */ false,
+                        /* init = */ true,
+                        std::nullopt);
+                    data.m_upfrontParsed = true;
+                }
                 /*
                  * In linear read mode (where no parsing at all is done upon
                  * constructing the Series), it might turn out after parsing
@@ -229,11 +252,18 @@ void StatefulIterator::initSeriesInLinearReadMode()
                  */
                 if (series.iterationEncoding() != IterationEncoding::fileBased)
                 {
-                    series.advance(AdvanceMode::BEGINSTEP);
+                    auto status =
+                        series.advance(AdvanceMode::BEGINSTEP, stepTimeout);
+                    if (status == AdvanceStatus::TRY_AGAIN ||
+                        status == AdvanceStatus::OVER)
+                    {
+                        series.IOHandler()->m_seriesStatus =
+                            internal::SeriesStatus::Default;
+                        return status;
+                    }
                 }
                 break;
             }
-            data.parsePreference = *fOpen.out_parsePreference;
             break;
         }
         }
@@ -244,6 +274,7 @@ void StatefulIterator::initSeriesInLinearReadMode()
         throw;
     }
     series.IOHandler()->m_seriesStatus = internal::SeriesStatus::Default;
+    return AdvanceStatus::OK;
 }
 
 void StatefulIterator::close()
@@ -434,7 +465,8 @@ StatefulIterator::StatefulIterator(tag_write_t, Series const &series_in)
 StatefulIterator::StatefulIterator(
     tag_read_t,
     Series const &series_in,
-    std::optional<internal::ParsePreference> const &parsePreference)
+    std::optional<internal::ParsePreference> const &parsePreference,
+    bool lazy)
     : m_data{std::make_shared<std::optional<SharedData>>(std::in_place)}
 {
     auto &data = get();
@@ -449,11 +481,21 @@ StatefulIterator::StatefulIterator(
      */
     data.series = series_in.m_attri->asInternalCopyOf<Series>();
 
+    if (lazy)
+    {
+        /*
+         * Do not open the first step yet. The first call to tryNext() will do
+         * that, possibly with a timeout.
+         */
+        data.m_deferredStart = true;
+        return;
+    }
+
     auto &series = data.series;
     if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
         series.iterations.empty())
     {
-        initSeriesInLinearReadMode();
+        (void)initSeriesInLinearReadMode(std::nullopt);
     }
 
     switch (series.iterationEncoding())
@@ -470,6 +512,84 @@ StatefulIterator::StatefulIterator(
         }
         break;
     }
+}
+
+AdvanceStatus
+StatefulIterator::initializeLinearRead(std::optional<float> stepTimeout)
+{
+    auto &data = get();
+    auto &series = data.series;
+    if (series.IOHandler()->m_frontendAccess == Access::READ_LINEAR &&
+        series.iterations.empty())
+    {
+        auto status = initSeriesInLinearReadMode(stepTimeout);
+        if (status != AdvanceStatus::OK)
+        {
+            return status;
+        }
+    }
+    if (series.iterationEncoding() == IterationEncoding::fileBased)
+    {
+        initIteratorFilebased();
+    }
+    return AdvanceStatus::OK;
+}
+
+AdvanceStatus StatefulIterator::tryNext(float stepTimeout)
+{
+    if (stepTimeout < 0.f)
+    {
+        throw error::WrongAPIUsage(
+            "[StatefulIterator::tryNext] Timeout must not be negative.");
+    }
+    auto &data = get();
+    data.m_lastAdvance = AdvanceStatus::OK;
+    if (data.m_deferredStart)
+    {
+        auto status = initializeLinearRead(stepTimeout);
+        if (status == AdvanceStatus::TRY_AGAIN)
+        {
+            data.m_lastAdvance = status;
+            return status;
+        }
+        data.m_deferredStart = false;
+        if (status == AdvanceStatus::OVER)
+        {
+            return AdvanceStatus::OVER;
+        }
+        if (data.series.iterationEncoding() != IterationEncoding::fileBased)
+        {
+            seek({Seek::Next}, stepTimeout);
+            if (data.m_lastAdvance == AdvanceStatus::TRY_AGAIN)
+            {
+                return AdvanceStatus::TRY_AGAIN;
+            }
+        }
+        if (std::holds_alternative<CurrentStep::After_t>(
+                data.currentStep.as_base()))
+        {
+            return AdvanceStatus::OVER;
+        }
+        return AdvanceStatus::OK;
+    }
+
+    if (std::holds_alternative<CurrentStep::After_t>(
+            data.currentStep.as_base()))
+    {
+        return AdvanceStatus::OVER;
+    }
+
+    seek({Seek::Next}, stepTimeout);
+    if (data.m_lastAdvance == AdvanceStatus::TRY_AGAIN)
+    {
+        return AdvanceStatus::TRY_AGAIN;
+    }
+    if (std::holds_alternative<CurrentStep::After_t>(
+            data.currentStep.as_base()))
+    {
+        return AdvanceStatus::OVER;
+    }
+    return AdvanceStatus::OK;
 }
 
 std::optional<StatefulIterator *> StatefulIterator::nextIterationInStep()
@@ -562,8 +682,8 @@ auto StatefulIterator::skipToIterationInStep(Iteration::IterationIndex_t idx)
     return {this};
 }
 
-std::optional<StatefulIterator *>
-StatefulIterator::nextStep(size_t recursion_depth)
+std::optional<StatefulIterator *> StatefulIterator::nextStep(
+    size_t recursion_depth, std::optional<float> stepTimeout)
 {
     auto &data = get();
     std::vector<iteration_index_t> current_iterations;
@@ -575,7 +695,8 @@ StatefulIterator::nextStep(size_t recursion_depth)
         std::tie(status, current_iterations) = Iteration::beginStep(
             {},
             data.series,
-            /* reread = */ reread(data.parsePreference));
+            /* reread = */ reread(data.parsePreference),
+            stepTimeout);
     }
     catch (error::ReadError const &err)
     {
@@ -583,7 +704,17 @@ StatefulIterator::nextStep(size_t recursion_depth)
                      "below, will skip it.\n"
                   << err.what() << std::endl;
         data.series.advance(AdvanceMode::ENDSTEP);
-        return nextStep(recursion_depth + 1);
+        return nextStep(recursion_depth + 1, stepTimeout);
+    }
+
+    if (status == AdvanceStatus::TRY_AGAIN)
+    {
+        /*
+         * No step became available in time. Leave the iterator exactly where
+         * it is, so that the caller may try again later.
+         */
+        data.m_lastAdvance = AdvanceStatus::TRY_AGAIN;
+        return {this};
     }
 
     bool close = [&]() {
@@ -600,6 +731,9 @@ StatefulIterator::nextStep(size_t recursion_depth)
                     [](CurrentStep::Before_t const &) { return false; },
                     [](auto const &) { return true; }},
                 data.currentStep.as_base());
+        case AdvanceStatus::TRY_AGAIN:
+            // Handled above.
+            return false;
         }
         throw std::runtime_error("Unreachable!");
     }();
@@ -621,7 +755,8 @@ StatefulIterator::nextStep(size_t recursion_depth)
     return {this};
 }
 
-std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
+std::optional<StatefulIterator *>
+StatefulIterator::loopBody(Seek const &seek, std::optional<float> stepTimeout)
 {
     auto &data = get();
     Series &series = data.series;
@@ -776,7 +911,9 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
      */
     auto option = std::visit(
         auxiliary::overloaded{
-            [&](Seek::Next_t) { return nextStep(/* recursion_depth = */ 0); },
+            [&](Seek::Next_t) {
+                return nextStep(/* recursion_depth = */ 0, stepTimeout);
+            },
             [](Seek::Seek_Iteration_t const &skip_to_iteration)
                 -> std::optional<StatefulIterator *> {
                 throw std::runtime_error(
@@ -785,6 +922,14 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
                     "from another step not supported yet");
             }},
         seek.as_base());
+    if (data.m_lastAdvance == AdvanceStatus::TRY_AGAIN)
+    {
+        /*
+         * Do not run guardReturn() here: it would end the current step and
+         * treat the timeout like a step without iterations.
+         */
+        return {this};
+    }
     return guardReturn(option);
 }
 
@@ -861,8 +1006,11 @@ StatefulIterator &StatefulIterator::operator++()
     return seek({Seek::Next});
 }
 
-auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator &
+auto StatefulIterator::seek(Seek const &seek, std::optional<float> stepTimeout)
+    -> StatefulIterator &
 {
+    auto &data = get();
+    data.m_lastAdvance = AdvanceStatus::OK;
     std::optional<StatefulIterator *> res;
     /*
      * loopBody() might return an empty option to indicate a skipped iteration.
@@ -873,7 +1021,7 @@ auto StatefulIterator::seek(Seek const &seek) -> StatefulIterator &
      */
     do
     {
-        res = loopBody(seek);
+        res = loopBody(seek, stepTimeout);
     } while (!res.has_value());
 
     return **res;
@@ -952,15 +1100,23 @@ auto StatefulIterator::is_end() const -> bool
         return true;
     }
     auto &optional = *m_data;
-    return !optional.has_value() ||
-        std::visit(
-            auxiliary::overloaded{
-                [](CurrentStep::Before_t const &) { return false; },
-                [](CurrentStep::During_t const &during) {
-                    return !during.iteration_idx.has_value();
-                },
-                [](CurrentStep::After_t const &) { return true; }},
-            optional->currentStep.as_base());
+    if (!optional.has_value())
+    {
+        return true;
+    }
+    if (optional->m_lastAdvance == AdvanceStatus::TRY_AGAIN)
+    {
+        // Waiting for the next step is not the same as the end of the data.
+        return false;
+    }
+    return std::visit(
+        auxiliary::overloaded{
+            [](CurrentStep::Before_t const &) { return false; },
+            [](CurrentStep::During_t const &during) {
+                return !during.iteration_idx.has_value();
+            },
+            [](CurrentStep::After_t const &) { return true; }},
+        optional->currentStep.as_base());
 }
 
 auto StatefulIterator::assert_end_iterator() const -> void

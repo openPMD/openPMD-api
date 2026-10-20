@@ -256,6 +256,25 @@ class StatefulIterator
         std::unordered_map<iteration_index_t, step_index> seen_iterations;
 
         /*
+         * Status of the last (possibly timed) advance. TRY_AGAIN means that a
+         * step could not be opened within the timeout; the stream is still
+         * open and the iterator may try again.
+         */
+        AdvanceStatus m_lastAdvance = AdvanceStatus::OK;
+        /*
+         * If set, the iterator was created lazily and has not opened the first
+         * step yet. The first call to tryNext() performs the initialization.
+         */
+        bool m_deferredStart = false;
+        /*
+         * Track how far initialization has progressed, so that a retry after
+         * TRY_AGAIN does not redo side effects such as opening the file or
+         * parsing the metadata.
+         */
+        bool m_linearMetadataInitialized = false;
+        bool m_upfrontParsed = false;
+
+        /*
          * This returns the current value of `During_t::iteration_idx` if that
          * exists.
          */
@@ -303,7 +322,8 @@ public:
     StatefulIterator(
         tag_read_t,
         Series const &,
-        std::optional<internal::ParsePreference> const &parsePreference);
+        std::optional<internal::ParsePreference> const &parsePreference,
+        bool lazy = false);
 
     StatefulIterator(tag_write_t, Series const &);
 
@@ -345,7 +365,18 @@ public:
      *
      * A new step will be opened for this purpose if needed.
      */
-    auto seek(Seek const &) -> StatefulIterator &;
+    auto seek(Seek const &, std::optional<float> stepTimeout = std::nullopt)
+        -> StatefulIterator &;
+
+    /**
+     * @brief Advance to the next Iteration, waiting at most `stepTimeout`
+     *        seconds for the next IO step.
+     *
+     * Unlike operator++(), this distinguishes a timeout from the end of the
+     * data: TRY_AGAIN means that no step became available in time and the
+     * iterator may simply try again. OVER means the stream is over.
+     */
+    AdvanceStatus tryNext(float stepTimeout);
 
 private:
     std::optional<StatefulIterator *> nextIterationInStep();
@@ -361,9 +392,11 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
+    std::optional<StatefulIterator *>
+    nextStep(size_t recursion_depth, std::optional<float> stepTimeout);
 
-    std::optional<StatefulIterator *> loopBody(Seek const &);
+    std::optional<StatefulIterator *>
+    loopBody(Seek const &, std::optional<float> stepTimeout);
 
     void initIteratorFilebased();
 
@@ -372,7 +405,13 @@ private:
      */
     void deactivateDeadIteration(iteration_index_t);
 
-    void initSeriesInLinearReadMode();
+    AdvanceStatus initSeriesInLinearReadMode(std::optional<float> stepTimeout);
+
+    /*
+     * Initialize a lazily created iterator: open/parse the first step and, for
+     * file-based encoding, position at the first Iteration.
+     */
+    AdvanceStatus initializeLinearRead(std::optional<float> stepTimeout);
 
     void close();
 

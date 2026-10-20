@@ -69,6 +69,11 @@ protected:
     // increment/decrement
     virtual DynamicSeriesIterator &increment_operator() = 0;
     virtual DynamicSeriesIterator &decrement_operator() = 0;
+    /**
+     * Advance, waiting at most stepTimeout seconds for the next IO step.
+     * See OpaqueSeriesIterator::tryNext().
+     */
+    virtual AdvanceStatus tryNext(float stepTimeout) = 0;
 
     // comparison
     virtual bool equality_operator(DynamicSeriesIterator const &) const = 0;

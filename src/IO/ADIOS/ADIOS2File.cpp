@@ -1180,7 +1180,8 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
         /* flushUnconditionally = */ false);
 }
 
-AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
+AdvanceStatus
+ADIOS2File::advance(AdvanceMode mode, std::optional<float> stepTimeout)
 {
     if (streamStatus == StreamStatus::Undecided)
     {
@@ -1303,9 +1304,16 @@ number of allowed steps. Set the value as 0 to disable this check.
 Be aware of the performance implications described above.)");
         }
 
+        /*
+         * A timeout only makes sense for reading. For writing, ADIOS2's
+         * BeginStep() must not be called with StepMode::Read.
+         */
+        bool const useTimeout = readOnly(m_mode) && stepTimeout.has_value();
         if (streamStatus != StreamStatus::DuringStep)
         {
-            adiosStatus = engine.BeginStep();
+            adiosStatus = useTimeout
+                ? engine.BeginStep(adios2::StepMode::Read, *stepTimeout)
+                : engine.BeginStep();
         }
         else
         {
@@ -1323,6 +1331,17 @@ Be aware of the performance implications described above.)");
             res = AdvanceStatus::OK;
             break;
         case adios2::StepStatus::NotReady:
+            if (useTimeout)
+            {
+                /*
+                 * No further step arrived within the configured timeout.
+                 * This is not the end of the stream: the iterator stays
+                 * usable and may try again later.
+                 */
+                res = AdvanceStatus::TRY_AGAIN;
+                break;
+            }
+            [[fallthrough]];
         case adios2::StepStatus::OtherError:
             throw std::runtime_error("[ADIOS2] Unexpected step status.");
         }

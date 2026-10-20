@@ -85,6 +85,7 @@ public:
     auto operator*() const -> value_type const &;
 
     auto operator++() -> RandomAccessIterator &;
+    auto tryNext(float stepTimeout) -> AdvanceStatus;
     auto operator--() -> RandomAccessIterator &;
     auto operator++(int) -> RandomAccessIterator;
     auto operator--(int) -> RandomAccessIterator;

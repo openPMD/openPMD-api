@@ -986,9 +986,11 @@ OPENPMD_private
     AdvanceStatus advance(
         AdvanceMode mode,
         internal::AttributableData &file,
-        iterations_iterator it);
+        iterations_iterator it,
+        std::optional<float> stepTimeout = std::nullopt);
 
-    AdvanceStatus advance(AdvanceMode mode);
+    AdvanceStatus
+    advance(AdvanceMode mode, std::optional<float> stepTimeout = std::nullopt);
 
     /**
      * @brief Called at the end of an IO step to store the iterations defined

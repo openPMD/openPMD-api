@@ -34,7 +34,8 @@
 namespace openPMD
 {
 StatefulSnapshotsContainer::StatefulSnapshotsContainer(
-    std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin)
+    std::variant<std::function<StatefulIterator *(bool)>, StatefulIterator *>
+        begin)
     : members{
           // Need to put the deferred function behind a shared_ptr to avoid a
           // gcc14 compiler bug
@@ -42,7 +43,7 @@ StatefulSnapshotsContainer::StatefulSnapshotsContainer(
           // 8).std::_Function_base::_M_manager' may be used uninitialized
           std::visit(
               auxiliary::overloaded{
-                  [](std::function<StatefulIterator *()> &&f)
+                  [](std::function<StatefulIterator *(bool)> &&f)
                       -> Members::BufferedIterator_t {
                       return std::make_shared<
                           Members::Deferred_t::element_type>(std::move(f));
@@ -65,12 +66,12 @@ StatefulSnapshotsContainer &StatefulSnapshotsContainer::
 operator=(StatefulSnapshotsContainer &&other) noexcept(noexcept(
     std::declval<Members>().operator=(std::declval<Members &&>()))) = default;
 
-auto StatefulSnapshotsContainer::get() -> StatefulIterator *
+auto StatefulSnapshotsContainer::get(bool lazy) -> StatefulIterator *
 {
     return std::visit(
         auxiliary::overloaded{
-            [this](Members::Deferred_t &deferred_initialization) {
-                auto it = (*deferred_initialization)();
+            [this, lazy](Members::Deferred_t &deferred_initialization) {
+                auto it = (*deferred_initialization)(lazy);
                 this->members.m_bufferedIterator = it;
                 return it;
             },
@@ -128,6 +129,10 @@ StatefulSnapshotsContainer::~StatefulSnapshotsContainer() = default;
 auto StatefulSnapshotsContainer::begin() -> iterator
 {
     return stateful_to_opaque(*get());
+}
+auto StatefulSnapshotsContainer::beginLazy() -> iterator
+{
+    return stateful_to_opaque(*get(/* lazy = */ true));
 }
 auto StatefulSnapshotsContainer::end() -> iterator
 {
@@ -296,9 +301,14 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
                 during.available_iterations_in_step.emplace_back(key);
                 break;
             case AdvanceStatus::OVER:
+            case AdvanceStatus::TRY_AGAIN:
                 throw error::Internal(
-                    "Backend reported OVER status while trying to create "
-                    "new Iteration.");
+                    "Backend reported " +
+                    std::string(
+                        status.stepStatus == AdvanceStatus::OVER
+                            ? "OVER"
+                            : "TRY_AGAIN") +
+                    " status while trying to create new Iteration.");
             }
             base_iterator->get().seen_iterations[key] = during.step_count;
             during.iteration_idx = key;
@@ -403,6 +413,11 @@ auto RandomAccessIteratorContainer::begin() -> iterator
 {
     return from_concrete_iterator<concrete_iterator_type, iterator::value_type>(
         m_cont.begin());
+}
+auto RandomAccessIteratorContainer::beginLazy() -> iterator
+{
+    // There are no IO steps in the random-access workflow.
+    return begin();
 }
 auto RandomAccessIteratorContainer::end() -> iterator
 {

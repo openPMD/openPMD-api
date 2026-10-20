@@ -729,16 +729,19 @@ void Iteration::readParticles(std::string const &particlesPath)
     }
 }
 
-auto Iteration::beginStep(bool reread) -> BeginStepStatus
+auto Iteration::beginStep(bool reread, std::optional<float> stepTimeout)
+    -> BeginStepStatus
 {
     BeginStepStatus res;
     auto series = retrieveSeries();
-    return beginStep({*this}, series, reread);
+    return beginStep({*this}, series, reread, stepTimeout);
 }
 
 auto Iteration::beginStep(
-    std::optional<Iteration> thisObject, Series &series, bool reread)
-    -> BeginStepStatus
+    std::optional<Iteration> thisObject,
+    Series &series,
+    bool reread,
+    std::optional<float> stepTimeout) -> BeginStepStatus
 {
     BeginStepStatus res;
     using IE = IterationEncoding;
@@ -771,17 +774,21 @@ auto Iteration::beginStep(
     {
         thisObject->setStepStatus(StepStatus::DuringStep);
         status = series.advance(
-            AdvanceMode::BEGINSTEP, *file, series.indexOf(*thisObject));
+            AdvanceMode::BEGINSTEP,
+            *file,
+            series.indexOf(*thisObject),
+            stepTimeout);
     }
     else
     {
         series.get().m_perIterationData.m_stepStatus = StepStatus::DuringStep;
-        status = series.advance(AdvanceMode::BEGINSTEP);
+        status = series.advance(AdvanceMode::BEGINSTEP, stepTimeout);
     }
 
     switch (status)
     {
     case AdvanceStatus::OVER:
+    case AdvanceStatus::TRY_AGAIN:
         res.stepStatus = status;
         return res;
     case AdvanceStatus::OK:
@@ -839,6 +846,9 @@ auto Iteration::beginStep(
                 [](auto const &pair) { return pair.first; });
             break;
         case AdvanceStatus::OVER:
+            break;
+        case AdvanceStatus::TRY_AGAIN:
+            // Handled above already.
             break;
         }
     }

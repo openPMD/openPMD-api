@@ -320,9 +320,13 @@ public:
      * @brief Begin or end an ADIOS step.
      *
      * @param mode Whether to begin or end a step.
+     * @param stepTimeout Optional timeout (in seconds) for waiting on the next
+     *      IO step when beginning a step in a linear read workflow. Only
+     *      applied if the file is opened for reading.
      * @return AdvanceStatus
      */
-    AdvanceStatus advance(AdvanceMode mode);
+    AdvanceStatus
+    advance(AdvanceMode mode, std::optional<float> stepTimeout = std::nullopt);
 
     std::vector<std::string>
     availableAttributesPrefixed(std::string const &prefix);
