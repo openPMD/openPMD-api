@@ -642,54 +642,39 @@ void ADIOS2File::configure_IO()
         return it == alreadyConfigured.end();
     };
 
+    auto setParameter = [&](std::string const &parameter, std::string value) {
+        if (notYetConfigured(parameter) && !value.empty())
+        {
+            m_IO.SetParameter(parameter, std::move(value));
+        }
+    };
+
     // read parameters from environment
-    if (notYetConfigured("CollectiveMetadata"))
+    setParameter(
+        "CollectiveMetadata",
+        1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1)
+            ? "On"
+            : "Off");
+    setParameter(
+        "Profile",
+        1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_HAVE_PROFILING", 1) ? "On"
+                                                                      : "Off");
+    bool asyncWrite =
+        1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 0);
+    if (asyncWrite && notYetConfigured("AsyncWrite") &&
+        !wasTheFlushTargetSpecifiedViaJSON)
     {
-        if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1))
-        {
-            m_IO.SetParameter("CollectiveMetadata", "On");
-        }
-        else
-        {
-            m_IO.SetParameter("CollectiveMetadata", "Off");
-        }
+        m_impl->m_flushTarget = FlushTarget::Buffer;
     }
-    if (notYetConfigured("Profile"))
-    {
-        if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_HAVE_PROFILING", 1) &&
-            notYetConfigured("Profile"))
-        {
-            m_IO.SetParameter("Profile", "On");
-        }
-        else
-        {
-            m_IO.SetParameter("Profile", "Off");
-        }
-    }
-    if (notYetConfigured("AsyncWrite"))
-    {
-        if (1 == auxiliary::getEnvNum("OPENPMD_ADIOS2_ASYNC_WRITE", 0) &&
-            notYetConfigured("AsyncWrite"))
-        {
-            m_IO.SetParameter("AsyncWrite", "On");
-            if (!wasTheFlushTargetSpecifiedViaJSON)
-            {
-                m_impl->m_flushTarget = FlushTarget::Buffer;
-            }
-        }
-        else
-        {
-            m_IO.SetParameter("AsyncWrite", "Off");
-        }
-    }
+    setParameter("AsyncWrite", asyncWrite ? "On" : "Off");
 
 #if openPMD_HAVE_MPI
     {
         auto num_substreams =
             auxiliary::getEnvNum("OPENPMD_ADIOS2_NUM_SUBSTREAMS", 0);
-        if (notYetConfigured("SubStreams") && 0 != num_substreams)
+        if (num_substreams != 0)
         {
-            m_IO.SetParameter("SubStreams", std::to_string(num_substreams));
+            setParameter("SubStreams", std::to_string(num_substreams));
         }
 
         // BP5 parameters
@@ -702,18 +687,17 @@ void ADIOS2File::configure_IO()
         auto BufferChunkMB =
             auxiliary::getEnvNum("OPENPMD_ADIOS2_BP5_BufferChunkMB", 0);
 
-        if (notYetConfigured("NumAggregators") && (numAgg > 0))
-            m_IO.SetParameter("NumAggregators", std::to_string(numAgg));
-        if (notYetConfigured("NumSubFiles") && (numSubFiles > 0))
-            m_IO.SetParameter("NumSubFiles", std::to_string(numSubFiles));
-        if (notYetConfigured("AggregationType") && (AggTypeStr.size() > 0))
-            m_IO.SetParameter("AggregationType", AggTypeStr);
-        if (notYetConfigured("BufferChunkSize") && (BufferChunkMB > 0))
-            m_IO.SetParameter(
+        if (numAgg > 0)
+            setParameter("NumAggregators", std::to_string(numAgg));
+        if (numSubFiles > 0)
+            setParameter("NumSubFiles", std::to_string(numSubFiles));
+        setParameter("AggregationType", AggTypeStr);
+        if (BufferChunkMB > 0)
+            setParameter(
                 "BufferChunkSize",
                 std::to_string((uint64_t)BufferChunkMB * (uint64_t)1048576));
-        if (notYetConfigured("MaxShmSize") && (MaxShmMB > 0))
-            m_IO.SetParameter(
+        if (MaxShmMB > 0)
+            setParameter(
                 "MaxShmSize",
                 std::to_string((uint64_t)MaxShmMB * (uint64_t)1048576));
     }
@@ -725,24 +709,35 @@ void ADIOS2File::configure_IO()
     constexpr int default_stats_level = 0;
 #endif
 
-    if (notYetConfigured("StatsLevel"))
+    /*
+     * Up until and including ADIOS2 v2.12.0:
+     *
+     * Switch those off by default since they are expensive to compute
+     * and to enable it, set the JSON option "StatsLevel" or the
+     * environment variable "OPENPMD_ADIOS2_STATS_LEVEL" be positive.
+     * The ADIOS2 default was "1" (on).
+     *
+     * Beginning ADIOS2 v2.12.1:
+     *
+     * Performance for Stats computation has been improved through
+     * vectorization, so we switch it on by default.
+     */
+    auto stats_level =
+        auxiliary::getEnvNum("OPENPMD_ADIOS2_STATS_LEVEL", default_stats_level);
+    setParameter("StatsLevel", std::to_string(stats_level));
+
+    if (m_impl->realEngineType() == "sst")
     {
-        /*
-         * Up until and including ADIOS2 v2.12.0:
-         *
-         * Switch those off by default since they are expensive to compute
-         * and to enable it, set the JSON option "StatsLevel" or the
-         * environment variable "OPENPMD_ADIOS2_STATS_LEVEL" be positive.
-         * The ADIOS2 default was "1" (on).
-         *
-         * Beginning ADIOS2 v2.12.1:
-         *
-         * Performance for Stats computation has been improved through
-         * vectorization, so we switch it on by default.
-         */
-        auto stats_level = auxiliary::getEnvNum(
-            "OPENPMD_ADIOS2_STATS_LEVEL", default_stats_level);
-        m_IO.SetParameter("StatsLevel", std::to_string(stats_level));
+        setParameter(
+            "DataTransport",
+            auxiliary::getEnvString("OPENPMD_ADIOS2_SST_DATA_TRANSPORT", ""));
+        setParameter(
+            "WANDataTransport",
+            auxiliary::getEnvString("OPENPMD_ADIOS2_SST_WAN_TRANSPORT", ""));
+        setParameter(
+            "ControlTransport",
+            auxiliary::getEnvString(
+                "OPENPMD_ADIOS2_SST_CONTROL_TRANSPORT", ""));
     }
     if (m_impl->realEngineType() == "sst" && notYetConfigured("QueueLimit"))
     {
