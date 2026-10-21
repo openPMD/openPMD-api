@@ -75,8 +75,8 @@ protected:
 public:
     ConfigureLoadStore(ConfigureLoadStore const &other);
     ConfigureLoadStore &operator=(ConfigureLoadStore const &other);
-    ConfigureLoadStore(ConfigureLoadStore &&);
-    ConfigureLoadStore &operator=(ConfigureLoadStore &&);
+    ConfigureLoadStore(ConfigureLoadStore &&) noexcept;
+    ConfigureLoadStore &operator=(ConfigureLoadStore &&) noexcept;
 
 protected:
     [[nodiscard]] auto dim() const -> uint8_t;
@@ -118,11 +118,19 @@ public:
     /** Retrieve the configured offset. If no offset has been specified, compute
      *  and store it now (default: full dataset selection). May be overwritten
      *  at a later point using offset().
+     *
+     * Note that the offset is computed based on the information available at
+     * the time of calling this. No further auto-recomputations will occur, any
+     * later change can only be explicit through .offset().
      */
     auto computeOffset() -> Offset const &;
     /** Retrieve the configured extent. If no extent has been specified, compute
      *  and store it now (default: full dataset selection). May be overwritten
      *  at a later point using extent().
+     *
+     * Note that the extent is computed based on the information available at
+     * the time of calling this. No further auto-recomputations will occur, any
+     * later change can only be explicit through .extent().
      */
     auto computeExtent() -> Extent const &;
 
@@ -273,14 +281,6 @@ class ConfigureStoreChunkFromBuffer : public ConfigureLoadStore
 protected:
     // shared_ptr to make this config object copyable
     std::shared_ptr<auxiliary::WriteBuffer> m_buffer;
-    /*
-     * Consuming the buffer in store() / load() is a single-use operation
-     * (store() moves the buffer out). Since copies of this configuration share
-     * the buffer, the consumed flag is shared between copies as well, so that
-     * a second consumption is reported as an error instead of dereferencing a
-     * moved-from buffer.
-     */
-    std::shared_ptr<bool> m_buffer_consumed = std::make_shared<bool>(false);
     Datatype m_datatype;
     std::optional<MemorySelection> m_mem_select;
     std::optional<size_t> m_buffer_size;
@@ -294,13 +294,6 @@ protected:
      * error::WrongAPIUsage if the buffer has already been consumed.
      */
     auto consumeBuffer() -> auxiliary::WriteBuffer;
-
-    /** Mark the buffer as consumed without moving it out.
-     *
-     * Used by load(), which reads from the buffer instead of taking ownership.
-     * Throws error::WrongAPIUsage if the buffer has already been consumed.
-     */
-    void checkAndMarkBufferConsumed();
 
     // The below methods return void.
     // For chaining calls, they should return *this, but this class right
