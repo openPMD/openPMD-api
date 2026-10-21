@@ -479,7 +479,7 @@ void available_chunks_test(std::string const &file_ending)
                            0, 4, 5, 6, 0, //
                            0, 7, 8, 9, 0, //
                            0, 0, 0, 0, 0};
-    std::vector<int> ydata_firstandlastrow{-1, -1, -1};
+    std::vector<int> const ydata_firstandlastrow{-1, -1, -1};
     // Equivalent contiguous representation of the 3x3 block with values 1..9
     // for ADIOS2 versions that do not support memory selections.
     std::vector<int> ydata_block{1, 2, 3, 4, 5, 6, 7, 8, 9};

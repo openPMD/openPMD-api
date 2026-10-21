@@ -3,6 +3,7 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/auxiliary/UniquePtr.hpp"
 
 // comment to prevent this include from being moved by clang-format
@@ -228,10 +229,11 @@ public:
      * @return A buffer-specific configuration for the operation
      */
     template <typename T_ContiguousContainer>
-    [[nodiscard]] auto withContiguousContainer(T_ContiguousContainer &data)
-        -> std::enable_if_t<
-            auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-            shared_ptr_return_type<typename T_ContiguousContainer::value_type>>;
+    [[nodiscard]] auto
+    withContiguousContainer(T_ContiguousContainer &data) -> std::enable_if_t<
+        auxiliary::IsContiguousContainer_v<
+            std::remove_cv_t<std::remove_reference_t<T_ContiguousContainer>>>,
+        shared_ptr_return_type<auxiliary::PointerVal_t<decltype(data.data())>>>;
 
     // Enqueue methods (deferred execution)
     template <typename T>

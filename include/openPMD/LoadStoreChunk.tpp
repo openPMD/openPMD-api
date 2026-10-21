@@ -64,8 +64,9 @@ auto ConfigureLoadStore::withRawPtr(T *data) -> shared_ptr_return_type<T>
 template <typename T_ContiguousContainer>
 auto ConfigureLoadStore::withContiguousContainer(T_ContiguousContainer &data)
     -> std::enable_if_t<
-        auxiliary::IsContiguousContainer_v<T_ContiguousContainer>,
-        shared_ptr_return_type<typename T_ContiguousContainer::value_type>>
+        auxiliary::IsContiguousContainer_v<
+            std::remove_cv_t<std::remove_reference_t<T_ContiguousContainer>>>,
+        shared_ptr_return_type<auxiliary::PointerVal_t<decltype(data.data())>>>
 {
     auto res = withRawPtr(data.data());
     res.bufferSize(data.size());
