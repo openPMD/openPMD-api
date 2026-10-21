@@ -62,13 +62,13 @@ namespace
 ConfigureLoadStore::ConfigureLoadStore(RecordComponent &rc)
     : m_rc(std::make_shared<RecordComponent>(rc))
 {}
-ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore const &other) =
+ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore const &) = default;
+ConfigureLoadStore &
+ConfigureLoadStore::operator=(ConfigureLoadStore const &) = default;
+ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore &&) noexcept =
     default;
 ConfigureLoadStore &
-ConfigureLoadStore::operator=(ConfigureLoadStore const &other) = default;
-ConfigureLoadStore::ConfigureLoadStore(ConfigureLoadStore &&) = default;
-ConfigureLoadStore &
-ConfigureLoadStore::operator=(ConfigureLoadStore &&) = default;
+ConfigureLoadStore::operator=(ConfigureLoadStore &&) noexcept = default;
 
 auto ConfigureLoadStore::dim() const -> uint8_t
 {
@@ -378,27 +378,34 @@ auto ConfigureStoreChunkFromBuffer::getBufferSize() -> std::optional<size_t>
 
 auto ConfigureStoreChunkFromBuffer::consumeBuffer() -> auxiliary::WriteBuffer
 {
-    if (*m_buffer_consumed)
+    if (!m_buffer)
     {
         throw error::WrongAPIUsage(
-            "This buffer configuration has already been used for a store or "
-            "load operation. Buffer configurations are single-use; create a "
-            "new one via prepareLoadStore() for another operation.");
+            "Specified buffer for this operation has been consumed "
+            "previously.");
     }
-    *m_buffer_consumed = true;
-    return std::move(*m_buffer);
-}
-
-void ConfigureStoreChunkFromBuffer::checkAndMarkBufferConsumed()
-{
-    if (*m_buffer_consumed)
-    {
-        throw error::WrongAPIUsage(
-            "This buffer configuration has already been used for a store or "
-            "load operation. Buffer configurations are single-use; create a "
-            "new one via prepareLoadStore() for another operation.");
-    }
-    *m_buffer_consumed = true;
+    return std::visit(
+        auxiliary::overloaded{
+            [this](auxiliary::WriteBuffer::CopyableUniquePtr &ptr) {
+                if (!ptr)
+                {
+                    throw error::WrongAPIUsage(
+                        "Specified buffer for this operation has been consumed "
+                        "previously.");
+                }
+                auto res = auxiliary::WriteBuffer{ptr.release()};
+                m_buffer.reset();
+                return res;
+            },
+            [](auxiliary::WriteBuffer::SharedPtr &ptr) {
+                // no move! the pointer may still live in copies
+                return auxiliary::WriteBuffer(ptr);
+            },
+            [](auxiliary::WriteBuffer::ReadSharedPtr &ptr) {
+                // no move! the pointer may still live in copies
+                return auxiliary::WriteBuffer(ptr);
+            }},
+        m_buffer->as_variant<auxiliary::WriteBufferTypes>());
 }
 
 auto ConfigureStoreChunkFromBuffer::store()
@@ -418,7 +425,6 @@ auto ConfigureStoreChunkFromBuffer::store()
 auto ConfigureLoadStoreFromBuffer::load()
     -> auxiliary::DeferredComputation<void>
 {
-    this->checkAndMarkBufferConsumed();
     auto *shared_ptr = std::get_if<auxiliary::WriteBuffer::ReadSharedPtr>(
         &this->m_buffer->as_variant<auxiliary::WriteBufferTypes>());
     if (!shared_ptr)

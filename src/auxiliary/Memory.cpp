@@ -192,6 +192,10 @@ auto WriteBuffer::CopyableUniquePtr::release() -> UniquePtrWithLambda<void>
     this->reset();
     return res;
 }
+WriteBuffer::CopyableUniquePtr::operator bool() const
+{
+    return parent_t::operator bool();
+}
 
 WriteBuffer::WriteBuffer() : m_buffer(std::make_any<CopyableUniquePtr>())
 {}

@@ -63,6 +63,7 @@ namespace auxiliary
             auto get() -> void *;
             [[nodiscard]] auto get() const -> void const *;
             [[nodiscard]] auto release() -> UniquePtrWithLambda<void>;
+            operator bool() const;
         };
         using SharedPtr = std::shared_ptr<void const>;
         using ReadSharedPtr = std::shared_ptr<void>;
