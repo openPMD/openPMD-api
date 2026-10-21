@@ -62,6 +62,12 @@ auto OneTimeTask<T>::operator()() -> T
         return res;
     }
 }
+
+template <typename T>
+auto OneTimeTask<T>::valid() const -> bool
+{
+    return members.m_task_valid && members.m_task;
+}
 } // namespace openPMD::auxiliary::detail
 
 namespace openPMD::auxiliary
@@ -98,43 +104,15 @@ auto DeferredComputation<T>::operator=(DeferredComputation &&other) noexcept(
      * collective flush) that must not be silently dropped, so run it before
      * overwriting it.
      */
-    this->executeIfValid();
+    this->warnUnconsumedTask();
     this->m_task = std::move(other.m_task);
     return *this;
 }
 
 template <typename T>
-void DeferredComputation<T>::executeIfValid() noexcept
-{
-    try
-    {
-        std::visit(
-            auxiliary::overloaded{
-                [](detail::OneTimeTask<T> &task) {
-                    if (task.members.m_task_valid && task.members.m_task)
-                    {
-                        std::move(task)();
-                    }
-                },
-                [](detail::CachedValue<T> &) {}},
-            this->m_task);
-    }
-    catch (std::exception const &e)
-    {
-        std::cerr << "[DeferredComputation] Error in destructor: '" << e.what()
-                  << "'." << std::endl;
-    }
-    catch (...)
-    {
-        std::cerr << "[DeferredComputation] Unknown error in destructor."
-                  << std::endl;
-    }
-}
-
-template <typename T>
 DeferredComputation<T>::~DeferredComputation()
 {
-    this->executeIfValid();
+    this->warnUnconsumedTask();
 }
 
 template <typename T>
@@ -181,11 +159,28 @@ auto DeferredComputation<T>::valid() const noexcept -> bool
 {
     return std::visit(
         auxiliary::overloaded{
-            [](detail::OneTimeTask<T> const &task) {
-                return task.members.m_task_valid;
-            },
+            [](detail::OneTimeTask<T> const &task) { return task.valid(); },
             [](detail::CachedValue<T> const &) { return true; }},
         this->m_task);
+}
+template <typename T>
+auto DeferredComputation<T>::hasUnconsumedTask() const noexcept -> bool
+{
+    return std::visit(
+        auxiliary::overloaded{
+            [](detail::OneTimeTask<T> const &task) { return task.valid(); },
+            [](detail::CachedValue<T> const &) { return false; }},
+        this->m_task);
+}
+template <typename T>
+void DeferredComputation<T>::warnUnconsumedTask() const noexcept
+{
+    if (hasUnconsumedTask())
+    {
+        std::cerr << "[DeferredComputation] Discarding a deferred computation "
+                     "with an unconsumed operation. Will not execute it."
+                  << std::endl;
+    }
 }
 
 template class DeferredComputation<void>;

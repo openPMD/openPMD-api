@@ -578,11 +578,10 @@ TEST_CASE("future_test", "[auxiliary]")
         REQUIRE_THROWS_AS(move_assigned(), error::WrongAPIUsage);
     }
 
-    SECTION("move assignment executes pending task")
+    SECTION("move assignment discards pending task")
     {
-        // Move-assigning over a handle that still holds a pending task must
-        // not silently drop that task: it is executed before being
-        // overwritten.
+        // Move-assigning over a handle that still holds a pending task
+        // will discard that task: it is not executed
         size_t overwritten_counter = 0;
         size_t source_counter = 0;
         task_type target{[&overwritten_counter]() {
@@ -595,7 +594,7 @@ TEST_CASE("future_test", "[auxiliary]")
         }};
 
         target = std::move(source);
-        REQUIRE(overwritten_counter == 1);
+        REQUIRE(overwritten_counter == 0);
         REQUIRE(source_counter == 0);
 
         // The moved-in task is now the target's task.

@@ -34,6 +34,8 @@ struct OneTimeTask
     auto operator=(OneTimeTask const &) -> OneTimeTask & = delete;
 
     auto operator()() -> T;
+
+    [[nodiscard]] auto valid() const -> bool;
 };
 
 /** Internal helper for cached value storage. Used when the API requires
@@ -162,11 +164,7 @@ public:
     [[nodiscard]] auto valid() const noexcept -> bool;
 
 private:
-    /** Execute the stored task if it is still valid, then mark it as consumed.
-     *
-     * Exceptions are caught and logged to standard error, since this runs from
-     * destructors and move-assignment operators which must not throw.
-     */
-    void executeIfValid() noexcept;
+    auto hasUnconsumedTask() const noexcept -> bool;
+    void warnUnconsumedTask() const noexcept;
 };
 } // namespace openPMD::auxiliary
