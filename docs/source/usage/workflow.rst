@@ -135,9 +135,8 @@ Flush points are triggered by:
     Each rank must invoke such a handle the same number of times and in the same order, *even if* the number of ``store()`` / ``load()`` calls differs per rank.
     The flush is skipped if the pertaining ``RecordComponent`` has already been flushed by another component in the meantime (tracked via per-component flush counters), so a given invocation does not necessarily flush.
     To avoid this coupling, disable the automatic flush with ``unsafeNoAutomaticFlush()`` and call ``Series::flush()`` explicitly at a collective point.
-    The handles are returned with the ``[[nodiscard]]`` attribute and the flush is only triggered by explicitly invoking them.
-    Destroying a still-valid handle does not trigger the flush; it only prints a warning to standard error.
-    Note that ``store()`` / ``load()`` enqueue the data operation immediately, so the buffers passed to them must stay valid until the next flush point (unless the operation owns the buffer, e.g. when passing a ``shared_ptr`` or a ``unique_ptr``).
+    The handles are returned with the ``[[nodiscard]]`` attribute and the flush is only triggered by explicitly invoking them; destroying a still-valid handle skips the flush and prints a warning.
+    Note that ``store()`` / ``load()`` enqueue immediately, so buffers not owned by the operation must stay valid until the next flush point.
 
 Attributes are (currently) unaffected by this:
 
