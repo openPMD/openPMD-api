@@ -242,6 +242,20 @@ RecordComponent::loadChunkAllocate_impl(internal::LoadStoreConfig cfg)
 std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
     Datatype dtype, size_t dtype_size, internal::LoadStoreConfig cfg)
 {
+    /*
+     * Reject joined arrays before computing the number of points: the extent
+     * of a joined dimension is Dataset::JOINED_DIMENSION during the write
+     * session, so allocating the buffer first would attempt an enormous
+     * allocation instead of reporting the actual problem.
+     */
+    if (joinedDimension().has_value())
+    {
+        throw error::WrongAPIUsage(
+            "Cannot load chunks of a joined array: the extent of the joined "
+            "dimension is not known during the write session. Close and "
+            "reopen the Series to read back the joined data.");
+    }
+
     auto [o, e] = std::move(cfg);
 
     size_t numPoints = 1;

@@ -207,15 +207,58 @@ public:
     using unique_ptr_return_type = openPMD::ConfigureStoreChunkFromBuffer;
 
     // Buffer specification methods (return specialized configurations)
+
+    /** Specify a shared pointer as the buffer for the operation.
+     *
+     * The buffer is kept alive by the configuration (and by the enqueued
+     * operation), so the caller does not have to manage its lifetime.
+     * As with the legacy storeChunk() / loadChunk() overloads, the actual data
+     * transfer happens at the next flush point, not when this method is called.
+     *
+     * @param data Shared pointer to the buffer
+     * @return A buffer-specific configuration for the operation
+     */
     template <typename T>
     [[nodiscard]] auto withSharedPtr(std::shared_ptr<T>)
         -> shared_ptr_return_type<T>;
+    /** Specify a unique pointer as the buffer for the operation.
+     *
+     * Only storing is possible from a unique pointer. Ownership of the buffer
+     * is transferred to the configuration; the buffer is consumed by the first
+     * store() call and configurations sharing it cannot be reused afterwards.
+     * As with the legacy storeChunk() overloads, the actual data transfer
+     * happens at the next flush point, not when this method or store() is
+     * called. The buffer is owned by the operation, so no further lifetime
+     * management is required from the caller.
+     *
+     * @param data Unique pointer to the buffer
+     * @return A buffer-specific configuration for the operation
+     */
     template <typename T>
     [[nodiscard]] auto withUniquePtr(UniquePtrWithLambda<T>)
         -> unique_ptr_return_type<T>;
+    /** Specify a unique pointer as the buffer for the operation.
+     *
+     * See the UniquePtrWithLambda overload for details.
+     *
+     * @param data Unique pointer to the buffer
+     * @return A buffer-specific configuration for the operation
+     */
     template <typename T, typename Del>
     [[nodiscard]] auto withUniquePtr(std::unique_ptr<T, Del>)
         -> unique_ptr_return_type<T>;
+    /** Specify a raw pointer as the buffer for the operation.
+     *
+     * The openPMD API does not take ownership of the buffer. It is the
+     * caller's responsibility to ensure that the buffer stays valid (and, for
+     * stores, is not modified) until the next flush point, as guaranteed by the
+     * deferred data API contract. Since store() / load() only enqueue the
+     * operation, the buffer must not be freed or replaced before that flush
+     * point, even if the returned handle has already been invoked.
+     *
+     * @param data Pointer to the buffer
+     * @return A buffer-specific configuration for the operation
+     */
     template <typename T>
     [[nodiscard]] auto withRawPtr(T *data) -> shared_ptr_return_type<T>;
     /** Specify a contiguous container (std::vector, std::array, ...) as the
@@ -224,6 +267,12 @@ public:
      * The buffer size is inferred from the container and set automatically, so
      * that the operation's extent is adjusted to the container when no explicit
      * extent is given.
+     *
+     * Like withRawPtr(), the container is not owned by the openPMD API. It
+     * must stay valid until the next flush point, and it must not be
+     * reallocated or modified (when storing) in the meantime. The actual data
+     * transfer happens at that flush point, not when store() / load() is
+     * called.
      *
      * @param data Contiguous container large enough for the selected data
      * @return A buffer-specific configuration for the operation
@@ -235,7 +284,7 @@ public:
             std::remove_cv_t<std::remove_reference_t<T_ContiguousContainer>>>,
         shared_ptr_return_type<auxiliary::PointerVal_t<decltype(data.data())>>>;
 
-    // Enqueue methods (deferred execution)
+    // Enqueue methods
     template <typename T>
     [[nodiscard]] auto storeSpan() -> DynamicMemoryView<T>;
     // definition for this one is in RecordComponent.tpp since it needs the
@@ -245,16 +294,19 @@ public:
 
     /** Load the chunk data, allocating a buffer
      *
-     * The returned handle performs the load, and the automatic flush of the
-     * underlying Series, when invoked via get() / operator()(). That flush is
-     * an MPI-collective operation, so in parallel codes every rank must invoke
-     * (or explicitly destroy) its handles in a consistent order. Invoking the
-     * handle is an explicit, user-controlled action and the return value is
-     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
-     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
+     * Calling this method allocates the buffer and enqueues the load
+     * operation immediately. As guaranteed by the deferred data API contract,
+     * the buffer is filled at the next flush point. The returned handle only
+     * triggers the automatic flush of the underlying Series when invoked via
+     * get() / operator()(). That flush is an MPI-collective operation, so in
+     * parallel codes every rank must invoke its handles in a consistent order.
+     * Invoking the handle is an explicit, user-controlled action and the return
+     * value is marked [[nodiscard]], so handles cannot be dropped unnoticed.
+     * Use unsafeNoAutomaticFlush() to defer flushing to a later explicit
      * Series::flush() instead.
      *
-     * @return Deferred computation that performs the load when invoked
+     * @return Deferred computation that triggers the automatic flush and
+     *         returns the load buffer when invoked
      */
     template <typename T>
     [[nodiscard]] auto load()
@@ -406,20 +458,23 @@ public:
         return *this;
     }
 
-    // Enqueue method (deferred execution)
+    // Enqueue method
 
     /** Store the chunk data
      *
-     * The returned handle performs the store, and the automatic flush of the
-     * underlying Series, when invoked via get() / operator()(). That flush is
-     * an MPI-collective operation, so in parallel codes every rank must invoke
-     * (or explicitly destroy) its handles in a consistent order. Invoking the
-     * handle is an explicit, user-controlled action and the return value is
-     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
-     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
-     * Series::flush() instead.
+     * Calling this method enqueues the store operation immediately. As
+     * guaranteed by the deferred data API contract, the data is written at the
+     * next flush point. The returned handle only triggers the automatic flush
+     * of the underlying Series when invoked via get() / operator()(). That
+     * flush is an MPI-collective operation, so in parallel codes every rank
+     * must invoke its handles in a consistent order.
+     * Invoking the handle is an explicit, user-controlled action and the
+     * return value is marked [[nodiscard]], so handles cannot be dropped
+     * unnoticed. Use unsafeNoAutomaticFlush() to defer flushing to a later
+     * explicit Series::flush() instead.
      *
-     * @return Deferred computation that performs the store when invoked
+     * @return Deferred computation that triggers the automatic flush when
+     *         invoked
      */
     [[nodiscard]] auto store() -> auxiliary::DeferredComputation<void>;
 
@@ -543,20 +598,26 @@ public:
         return *this;
     }
 
-    // Enqueue method (deferred execution)
+    // Enqueue method
 
     /** Load the chunk data into the buffer
      *
-     * The returned handle performs the load, and the automatic flush of the
-     * underlying Series, when invoked via get() / operator()(). That flush is
-     * an MPI-collective operation, so in parallel codes every rank must invoke
-     * (or explicitly destroy) its handles in a consistent order. Invoking the
-     * handle is an explicit, user-controlled action and the return value is
-     * marked [[nodiscard]], so handles cannot be dropped unnoticed. Use
-     * unsafeNoAutomaticFlush() to defer flushing to a later explicit
-     * Series::flush() instead.
+     * Calling this method enqueues the load operation immediately. As
+     * guaranteed by the deferred data API contract, the buffer is filled at the
+     * next flush point. The returned handle only triggers the automatic flush
+     * of the underlying Series when invoked via get() / operator()(). That
+     * flush is an MPI-collective operation, so in parallel codes every rank
+     * must invoke its handles in a consistent order.
+     * Invoking the handle is an explicit, user-controlled action and the
+     * return value is marked [[nodiscard]], so handles cannot be dropped
+     * unnoticed. Use unsafeNoAutomaticFlush() to defer flushing to a later
+     * explicit Series::flush() instead.
      *
-     * @return Deferred computation that performs the load when invoked
+     * The buffer must stay valid until the next flush point. See withRawPtr()
+     * and withContiguousContainer() for details.
+     *
+     * @return Deferred computation that triggers the automatic flush when
+     *         invoked
      */
     [[nodiscard]] auto load() -> auxiliary::DeferredComputation<void>;
 };

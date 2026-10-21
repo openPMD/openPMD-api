@@ -53,11 +53,11 @@ Functionality                Behavior           Description
 
 .. [5] The experimental deferred I/O API (``RecordComponent::prepareLoadStore()`` followed by ``store()`` / ``load()``) returns handles of type ``auxiliary::DeferredComputation``.
        By default, invoking such a handle via ``get()`` / ``operator()()`` performs the data operation *and* automatically flushes the underlying Series.
-       Since ``Series::flush()`` is collective, this makes invoking the handle a collective operation: every rank must invoke (or explicitly destroy) its handles in a consistent order, even if the number of ``store()`` / ``load()`` calls differs between ranks.
+       Since ``Series::flush()`` is collective, this makes invoking the handle a collective operation: every rank must invoke its handles in a consistent order, even if the number of ``store()`` / ``load()`` calls differs between ranks.
        The per-``RecordComponent`` flush counter is used to skip a flush if the component has already been flushed by another component in the meantime, so a given invocation does not necessarily flush.
        The returned handles are marked ``[[nodiscard]]`` and the automatic flush is only triggered by an explicit invocation, so handles cannot be dropped unnoticed.
        Call ``unsafeNoAutomaticFlush()`` on the configuration object to disable the automatic flush and instead call ``Series::flush()`` explicitly and collectively at a suitable point.
-       The destructor of a still-valid handle also performs the automatic flush and therefore has the same collective semantics as ``get()``.
+       The destructor of a still-valid handle does not perform the automatic flush; it only prints a warning to standard error. The data operation itself is already enqueued by ``store()`` / ``load()``, so the buffer passed to those calls must stay valid until the next flush point (unless the operation owns the buffer).
 
 .. warning::
 

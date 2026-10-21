@@ -101,45 +101,43 @@ public:
     DeferredComputation(DeferredComputation &&) noexcept(noexcept_move);
     DeferredComputation(DeferredComputation const &) = delete;
 
-    /** Move-assign, executing any still-pending task of the target first.
+    /** Move-assign, discarding any still-pending task of the target.
      *
-     * Like the destructor, the assignment does not silently drop a pending
-     * computation: a task already held by the target is executed (and any
-     * exception logged to standard error) before the source's task is moved
-     * in.
+     * A task already held by the target is not executed; a warning is printed
+     * to standard error instead. For handles returned by openPMD's data
+     * operations this means that the automatic flush is skipped, while the
+     * data operation itself has already been enqueued.
      */
     auto operator=(DeferredComputation &&) noexcept(noexcept_move)
         -> DeferredComputation &;
     auto operator=(DeferredComputation const &)
         -> DeferredComputation & = delete;
 
-    /** Destroy the computation, executing it if it has not been invoked yet.
+    /** Destroy the computation without executing a still-pending task.
      *
-     * Computations returned by openPMD's data operations (see
-     * ConfigureLoadStore::store() and ConfigureLoadStore::load()) carry out
-     * the operation and, unless disabled via
-     * ConfigureLoadStore::unsafeNoAutomaticFlush(), the automatic flush of the
-     * underlying Series. That flush is an MPI-collective operation, hence
-     * destroying a still-valid handle without invoking it has the same
-     * collective semantics as calling get().
-     * Exceptions thrown here cannot escape the destructor and are logged to
-     * standard error instead.
+     * Destroying a still-valid handle does not run its callable and therefore
+     * does not trigger the automatic flush of the underlying Series. If the
+     * handle came from ConfigureLoadStore::store() / load(), the data operation
+     * itself has already been enqueued by that call; only the flush is skipped,
+     * so the user must ensure that the Series is flushed at a later point. If
+     * the handle is still valid, a warning is printed to standard error.
      */
     ~DeferredComputation();
 
     /** Get the result of the computation
      *
-     * Invoking the computation executes the deferred data operation and, if
-     * automatic flushing was not disabled via
-     * ConfigureLoadStore::unsafeNoAutomaticFlush(), the automatic flush of the
-     * underlying Series. Since Series::flush() is MPI-collective, all ranks of
-     * a parallel Series must invoke (or explicitly destroy) their deferred
-     * computations in a consistent order. The handles returned by openPMD's
-     * store() / load() operations are marked [[nodiscard]] so that they cannot
-     * be dropped unnoticed. The flush itself is skipped if the pertaining
-     * RecordComponent has already been flushed by another component in the
-     * meantime (tracked via per-component flush counters), so a given
-     * invocation does not necessarily flush.
+     * Invoking the computation executes the stored callable. For handles
+     * returned by openPMD's store() / load(), this triggers the automatic
+     * flush of the underlying Series (unless disabled via
+     * ConfigureLoadStore::unsafeNoAutomaticFlush()); the data operation itself
+     * was already enqueued when store() / load() was called. Since
+     * Series::flush() is MPI-collective, all ranks of a parallel Series must
+     * invoke their deferred computations in a consistent order. The handles
+     * returned by openPMD's store() / load() operations are marked
+     * [[nodiscard]] so that they cannot be dropped unnoticed. The flush itself
+     * is skipped if the pertaining RecordComponent has already been flushed by
+     * another component in the meantime (tracked via per-component flush
+     * counters), so a given invocation does not necessarily flush.
      *
      * @return The result of the computation
      */
