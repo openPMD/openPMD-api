@@ -103,10 +103,7 @@ public:
 
     /** Move-assign, discarding any still-pending task of the target.
      *
-     * A task already held by the target is not executed; a warning is printed
-     * to standard error instead. For handles returned by openPMD's data
-     * operations this means that the automatic flush is skipped, while the
-     * data operation itself has already been enqueued.
+     * The discarded task is not executed; a warning is printed instead.
      */
     auto operator=(DeferredComputation &&) noexcept(noexcept_move)
         -> DeferredComputation &;
@@ -115,29 +112,20 @@ public:
 
     /** Destroy the computation without executing a still-pending task.
      *
-     * Destroying a still-valid handle does not run its callable and therefore
-     * does not trigger the automatic flush of the underlying Series. If the
-     * handle came from ConfigureLoadStore::store() / load(), the data operation
-     * itself has already been enqueued by that call; only the flush is skipped,
-     * so the user must ensure that the Series is flushed at a later point. If
-     * the handle is still valid, a warning is printed to standard error.
+     * This skips the automatic flush of the underlying Series. The data
+     * operation itself was already enqueued by store() / load(), so the user
+     * must flush the Series later. A still-valid handle prints a warning.
      */
     ~DeferredComputation();
 
     /** Get the result of the computation
      *
      * Invoking the computation executes the stored callable. For handles
-     * returned by openPMD's store() / load(), this triggers the automatic
-     * flush of the underlying Series (unless disabled via
-     * ConfigureLoadStore::unsafeNoAutomaticFlush()); the data operation itself
-     * was already enqueued when store() / load() was called. Since
-     * Series::flush() is MPI-collective, all ranks of a parallel Series must
-     * invoke their deferred computations in a consistent order. The handles
-     * returned by openPMD's store() / load() operations are marked
-     * [[nodiscard]] so that they cannot be dropped unnoticed. The flush itself
-     * is skipped if the pertaining RecordComponent has already been flushed by
-     * another component in the meantime (tracked via per-component flush
-     * counters), so a given invocation does not necessarily flush.
+     * returned by store() / load(), this triggers the automatic flush of the
+     * underlying Series, unless disabled via unsafeNoAutomaticFlush(). Since
+     * Series::flush() is MPI-collective, all ranks must invoke their handles in
+     * a consistent order. The flush is skipped if the pertaining
+     * RecordComponent has already been flushed in the meantime.
      *
      * @return The result of the computation
      */
