@@ -1865,13 +1865,12 @@ TEST_CASE("unique_ptr", "[core]")
     ptr3.swap(ptr4);
     REQUIRE(*reinterpret_cast<int *>(ptr3.get()) == 6);
     REQUIRE(*reinterpret_cast<int *>(ptr4.get()) == 5);
-    // cannot hand a new pointer to a casted UniquePtrWithLambda
-    // so let's check that it throws
+    // cannot hand a new pointer to a casted UniquePtrWithLambda since the
+    // deleter is bound to the original allocation. Replacing the pointer is a
+    // precondition violation that is reported on stderr (deleting a
+    // unique_ptr is noexcept), so install a deleter matching the new pointer
+    // before releasing it.
     ptr3.reset(ptr5);
-    // (we could theoretically reinterpret_cast the new pointer back to the
-    // original type and apply the deleter, but let's not.)
-    REQUIRE_THROWS_AS(ptr3.get_deleter()(ptr3.get()), std::runtime_error);
-    // The pointer is now broken, so we need to replace the deleter
     ptr3.get_deleter() =
         auxiliary::CustomDelete<void>([](void const *ptr_in_lambda) {
             delete reinterpret_cast<int const *>(ptr_in_lambda);

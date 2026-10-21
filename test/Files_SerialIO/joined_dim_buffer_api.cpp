@@ -70,7 +70,12 @@ TEST_CASE("joined_dim_buffer_api", "[serial][json]")
     epx.storeChunkRaw(data.data(), {0}, {N});
 
     // load: a joined array cannot be loaded during the write session (its
-    // extent is not known), so every buffer-based load overload must reject it.
+    // extent is not known), so every load overload must reject it. This must
+    // happen before the allocating overloads attempt to allocate a buffer of
+    // JOINED_DIMENSION elements.
+    REQUIRE_THROWS_AS(epx.loadChunk<type>(), error::WrongAPIUsage);
+    REQUIRE_THROWS_AS(
+        epx.prepareLoadStore().load<type>(), error::WrongAPIUsage);
     std::vector<type> buf(N, -1.f);
     REQUIRE_THROWS_AS(
         epx.loadChunkRaw(buf.data(), {0}, {-1u}), error::WrongAPIUsage);
