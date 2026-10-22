@@ -97,7 +97,7 @@ protected:
     void extent_impl(Extent);
     void unsafeNoAutomaticFlush_impl();
 
-    virtual auto getBufferSize() -> std::optional<size_t>;
+    virtual auto getBufferSize() const -> std::optional<size_t>;
 
 private:
     auto withSharedPtr_impl_mut(std::shared_ptr<void> data, Datatype)
@@ -117,23 +117,13 @@ public:
     using this_t = ConfigureLoadStore;
 
     /** Retrieve the configured offset. If no offset has been specified, compute
-     *  and store it now (default: full dataset selection). May be overwritten
-     *  at a later point using offset().
-     *
-     * Note that the offset is computed based on the information available at
-     * the time of calling this. No further auto-recomputations will occur, any
-     * later change can only be explicit through .offset().
+     *  and return the default offset (i.e. the origin).
      */
-    auto computeOffset() -> Offset const &;
+    [[nodiscard]] auto currentOffset() const -> Offset;
     /** Retrieve the configured extent. If no extent has been specified, compute
-     *  and store it now (default: full dataset selection). May be overwritten
-     *  at a later point using extent().
-     *
-     * Note that the extent is computed based on the information available at
-     * the time of calling this. No further auto-recomputations will occur, any
-     * later change can only be explicit through .extent().
+     *  and return the default extent (i.e. fill up from the configured offset).
      */
-    auto computeExtent() -> Extent const &;
+    [[nodiscard]] auto currentExtent() const -> Extent;
 
     // Configuration methods (always available)
 
@@ -297,6 +287,7 @@ public:
     [[nodiscard]] auto loadVariant() -> auxiliary::DeferredComputation<
         auxiliary::detail::shared_ptr_dataset_types>;
 
+    /** Retrieve the RecordComponent that was used to start this operation. */
     [[nodiscard]] auto getComponentHandle() const -> RecordComponent;
 };
 
@@ -322,11 +313,8 @@ protected:
     ConfigureStoreChunkFromBuffer(
         auxiliary::WriteBuffer buffer, Datatype, ConfigureLoadStore &&);
 
-    /** Move the buffer out of this configuration, marking it as consumed.
-     *
-     * Must only be called once per (shared) buffer. Throws
-     * error::WrongAPIUsage if the buffer has already been consumed.
-     */
+    /** Get a buffer for load/store operations. If the base type is unique
+     * pointer, then the buffer will be consumed and later calls will throw. */
     auto consumeBuffer() -> auxiliary::WriteBuffer;
 
     // The below methods return void.
@@ -343,7 +331,7 @@ protected:
 
     void bufferSize_impl(size_t);
 
-    auto getBufferSize() -> std::optional<size_t> override;
+    auto getBufferSize() const -> std::optional<size_t> override;
 
 public:
     using this_t = ConfigureStoreChunkFromBuffer;
