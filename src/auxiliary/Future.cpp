@@ -99,11 +99,8 @@ auto DeferredComputation<T>::operator=(DeferredComputation &&other) noexcept(
         return *this;
     }
     /*
-     * The target of the assignment might still hold a pending task. As with
-     * the destructor, that task represents a data operation (and possibly a
-     * collective flush) that must not be silently dropped, so run it before
-     * overwriting it.
-     */
+     * The target of the assignment might still hold a pending task. If so, then
+     * warn that it is being dropped now.     */
     this->warnUnconsumedTask();
     this->m_task = std::move(other.m_task);
     return *this;

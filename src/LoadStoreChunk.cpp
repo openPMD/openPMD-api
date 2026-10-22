@@ -77,7 +77,7 @@ auto ConfigureLoadStore::dim() const -> uint8_t
 
 auto ConfigureLoadStore::storeChunkConfig() -> internal::LoadStoreConfig
 {
-    return internal::LoadStoreConfig{computeOffset(), computeExtent()};
+    return internal::LoadStoreConfig{currentOffset(), currentExtent()};
 }
 
 auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
@@ -108,18 +108,18 @@ auto ConfigureLoadStore::deferFlush(RecordComponent &attr)
     };
 }
 
-auto ConfigureLoadStore::computeOffset() -> Offset const &
+auto ConfigureLoadStore::currentOffset() const -> Offset
 {
     auto joined_dim = m_rc->joinedDimension();
     if (!m_offset.has_value())
     {
         if (joined_dim.has_value())
         {
-            m_offset = std::make_optional<Offset>();
+            return Offset();
         }
         else
         {
-            m_offset = std::make_optional<Offset>(dim(), 0);
+            return Offset(dim(), 0);
         }
     }
     else if (joined_dim.has_value() && !m_offset->empty())
@@ -130,50 +130,53 @@ auto ConfigureLoadStore::computeOffset() -> Offset const &
     return *m_offset;
 }
 
-auto ConfigureLoadStore::computeExtent() -> Extent const &
+auto ConfigureLoadStore::currentExtent() const -> Extent
 {
     bool allow_downsizing = false;
-    if (!m_extent.has_value())
-    {
-        m_extent = std::make_optional<Extent>(m_rc->getExtent());
+    Extent res = [&]() {
+        if (m_extent.has_value())
+        {
+            return *m_extent;
+        }
+        Extent ext = m_rc->getExtent();
         if (m_offset.has_value())
         {
             auto it_o = m_offset->begin();
             auto end_o = m_offset->end();
-            auto it_e = m_extent->begin();
-            auto end_e = m_extent->end();
+            auto it_e = ext.begin();
+            auto end_e = ext.end();
             for (; it_o != end_o && it_e != end_e; ++it_e, ++it_o)
             {
                 *it_e -= *it_o;
             }
         }
         allow_downsizing = true;
-    }
+        return ext;
+    }();
     if (auto buffer_size = getBufferSize(); buffer_size.has_value())
     {
         size_t requestedExtent = std::accumulate(
-            m_extent->begin(),
-            m_extent->end(),
-            1,
-            [](size_t l, size_t r) -> size_t { return r * l; });
+            res.begin(), res.end(), 1, [](size_t l, size_t r) -> size_t {
+                return r * l;
+            });
         if (requestedExtent > *buffer_size)
         {
-            if (m_extent->size() == 1 && allow_downsizing)
+            if (res.size() == 1 && allow_downsizing)
             {
-                (*m_extent)[0] = *buffer_size;
+                res[0] = *buffer_size;
             }
             else
             {
                 std::stringstream error;
                 error << "Requesting to load/store a chunk of size "
                       << requestedExtent << " (n-dimensional extent is ";
-                auxiliary::write_vec_to_stream(error, *m_extent)
+                auxiliary::write_vec_to_stream(error, res)
                     << ") to/from a buffer of size " << *buffer_size << ".";
                 throw error::WrongAPIUsage(error.str());
             }
         }
     }
-    return *m_extent;
+    return res;
 }
 
 auto ConfigureLoadStore::withSharedPtr_impl_mut(
@@ -363,7 +366,7 @@ auto ConfigureStoreChunkFromBuffer::storeChunkConfig()
     -> internal::LoadStoreConfigWithBuffer
 {
     return internal::LoadStoreConfigWithBuffer{
-        this->computeOffset(), this->computeExtent(), m_mem_select};
+        this->currentOffset(), this->currentExtent(), m_mem_select};
 }
 
 void ConfigureStoreChunkFromBuffer::bufferSize_impl(size_t size)
@@ -371,7 +374,8 @@ void ConfigureStoreChunkFromBuffer::bufferSize_impl(size_t size)
     m_buffer_size = size;
 }
 
-auto ConfigureStoreChunkFromBuffer::getBufferSize() -> std::optional<size_t>
+auto ConfigureStoreChunkFromBuffer::getBufferSize() const
+    -> std::optional<size_t>
 {
     return m_buffer_size;
 }
@@ -485,7 +489,7 @@ void ConfigureLoadStore::unsafeNoAutomaticFlush_impl()
     m_unsafeNoAutomaticFlush = true;
 }
 
-auto ConfigureLoadStore::getBufferSize() -> std::optional<size_t>
+auto ConfigureLoadStore::getBufferSize() const -> std::optional<size_t>
 {
     return std::nullopt;
 }
