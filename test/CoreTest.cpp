@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include "openPMD/Error.hpp"
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -276,6 +277,17 @@ TEST_CASE("versions_test", "[core]")
 
     auto const featureVariants = getVariants();
     REQUIRE(featureVariants.at("json") == true);
+}
+
+TEST_CASE("dataset_initialization", "[core]")
+{
+    Series s("f.json", Access::CREATE);
+    auto rc = s.iterations[0].meshes["E"]["x"];
+    rc.getDatatype();
+    auto scalar_rc = s.iterations[0].meshes["theta"];
+    REQUIRE_THROWS_AS(scalar_rc.getDatatype(), error::WrongAPIUsage);
+    scalar_rc.resetDataset(Dataset{Datatype::INT, {5}});
+    scalar_rc.getDatatype();
 }
 
 TEST_CASE("attribute_dtype_test", "[core]")
@@ -584,6 +596,25 @@ TEST_CASE("output_constructor_test", "[core]")
     // Reset the custom paths so that the written file is a valid openPMD file.
     o.setMeshesPath("meshes");
     o.setParticlesPath("particles");
+}
+
+TEST_CASE("optional_attribute_test", "[core]")
+{
+    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+
+    // Missing attributes yield an empty optional instead of throwing.
+    REQUIRE(!o.getAttributeOptional("meshesPath").has_value());
+    REQUIRE(!o.meshesPathOptional().has_value());
+    REQUIRE(!o.particlesPathOptional().has_value());
+    REQUIRE_THROWS_AS(o.getAttribute("meshesPath"), no_such_attribute_error);
+
+    o.setMeshesPath("customMeshes").setParticlesPath("customParticles");
+    REQUIRE(o.getAttributeOptional("meshesPath").has_value());
+    REQUIRE(o.meshesPathOptional() == "customMeshes/");
+    REQUIRE(o.particlesPathOptional() == "customParticles/");
+    // getAttribute still throws for a missing key, returns for a present one.
+    REQUIRE(o.getAttribute("meshesPath").get<std::string>() == "customMeshes/");
+    o.iterations[0];
 }
 
 TEST_CASE("output_modification_test", "[core]")
@@ -1151,8 +1182,8 @@ TEST_CASE("wrapper_test", "[core]")
     o.flush();
     REQUIRE(all_data.get()[0] == value);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[4].meshes["E"]["y"].get().m_chunks.empty());
-    REQUIRE(mrc2.get().m_chunks.empty());
+    REQUIRE(o.iterations[4].meshes["E"]["y"].get().chunks().empty());
+    REQUIRE(mrc2.get().chunks().empty());
 #endif
 
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
@@ -1167,13 +1198,13 @@ TEST_CASE("wrapper_test", "[core]")
     std::shared_ptr<double> storeData = std::make_shared<double>(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == 1);
-    REQUIRE(mrc3.get().m_chunks.size() == 1);
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().chunks().size() == 1);
+    REQUIRE(mrc3.get().chunks().size() == 1);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.empty());
-    REQUIRE(mrc3.get().m_chunks.empty());
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().chunks().empty());
+    REQUIRE(mrc3.get().chunks().empty());
 #endif
 
     o.iterations[6]
@@ -1211,8 +1242,9 @@ TEST_CASE("wrapper_test", "[core]")
                 .particles["electrons"]
                 .particlePatches["numParticles"][RecordComponent::SCALAR]
                 .get()
-                .m_chunks.empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+                .chunks()
+                .empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().chunks().empty());
 #endif
     pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
 #if openPMD_USE_INVASIVE_TESTS
@@ -1221,9 +1253,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 1);
+            .chunks()
+            .size() == 1);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
+        pp["numParticles"][RecordComponent::SCALAR].get().chunks().size() == 1);
 #endif
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
@@ -1245,9 +1278,10 @@ TEST_CASE("wrapper_test", "[core]")
             .particles["electrons"]
             .particlePatches["numParticles"][RecordComponent::SCALAR]
             .get()
-            .m_chunks.size() == 2);
+            .chunks()
+            .size() == 2);
     REQUIRE(
-        pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
+        pp["numParticles"][RecordComponent::SCALAR].get().chunks().size() == 2);
 #endif
     /*
      * Fill the remaining standard particle patch components. The openPMD
@@ -1279,8 +1313,9 @@ TEST_CASE("wrapper_test", "[core]")
                 .particles["electrons"]
                 .particlePatches["numParticles"][RecordComponent::SCALAR]
                 .get()
-                .m_chunks.empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+                .chunks()
+                .empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().chunks().empty());
 #endif
 }
 
@@ -1303,6 +1338,15 @@ TEST_CASE("baserecord_test", "[core]")
     auto inserted = B.insert(B.find("x"), std::pair{"y", E["y"]});
     REQUIRE(inserted->first == "y");
     B.erase(inserted);
+
+    // Range insert overload of BaseRecord, in a single batch.
+    {
+        std::vector<Mesh::value_type> components;
+        components.emplace_back("y", E["y"]);
+        B.insert(components.begin(), components.end());
+        REQUIRE(B.contains("y"));
+        B.erase("y");
+    }
 }
 
 TEST_CASE("use_count_test", "[core]")
@@ -1335,7 +1379,7 @@ TEST_CASE("use_count_test", "[core]")
     REQUIRE(
         std::get<std::shared_ptr<void const>>(
             static_cast<Parameter<Operation::WRITE_DATASET> *>(
-                pprc.get().m_chunks.front().parameter.get())
+                pprc.get().chunks().front().parameter.get())
                 ->data.as_variant<auxiliary::WriteBufferTypes>())
             .use_count() == 1);
     /*
@@ -1839,6 +1883,11 @@ TEST_CASE("automatic_variable_encoding", "[adios2]")
 TEST_CASE("read_nonexistent_attribute", "[core]")
 {
     read_nonexistent_attribute::read_nonexistent_attribute();
+}
+
+TEST_CASE("custom_hierarchy", "[core]")
+{
+    custom_hierarchy::custom_hierarchy();
 }
 
 TEST_CASE("unique_ptr", "[core]")

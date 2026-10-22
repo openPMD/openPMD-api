@@ -657,8 +657,10 @@ std::optional<StatefulIterator *> StatefulIterator::loopBody(Seek const &seek)
             else if (
                 series.IOHandler()->m_frontendAccess == Access::READ_LINEAR)
             {
-                data.series.iterations.container().erase(
-                    *maybe_current_iteration);
+                data.series.iterations.container().for_both_to_string(
+                    [&maybe_current_iteration](auto &map, auto &&to_string) {
+                        map.erase(to_string(*maybe_current_iteration));
+                    });
             }
         }
     }
@@ -853,7 +855,8 @@ void StatefulIterator::deactivateDeadIteration(iteration_index_t index)
     }
     break;
     }
-    data.series.iterations.container().erase(index);
+    data.series.iterations.container().for_both_to_string(
+        [index](auto &map, auto &&to_string) { map.erase(to_string(index)); });
 }
 
 StatefulIterator &StatefulIterator::operator++()
