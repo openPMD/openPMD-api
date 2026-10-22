@@ -11,6 +11,7 @@
 
 #include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace openPMD
 {
@@ -206,7 +207,7 @@ public:
      * @return A buffer-specific configuration for the operation
      */
     template <typename T>
-    [[nodiscard]] auto withSharedPtr(std::shared_ptr<T>)
+    [[nodiscard]] auto withSharedPtr(std::shared_ptr<T> data)
         -> shared_ptr_return_type<T>;
     /** Specify a unique pointer as the buffer for the operation.
      *
@@ -217,7 +218,7 @@ public:
      * @return A buffer-specific configuration for the operation
      */
     template <typename T>
-    [[nodiscard]] auto withUniquePtr(UniquePtrWithLambda<T>)
+    [[nodiscard]] auto withUniquePtr(UniquePtrWithLambda<T> data)
         -> unique_ptr_return_type<T>;
     /** See the UniquePtrWithLambda overload.
      *
@@ -225,7 +226,7 @@ public:
      * @return A buffer-specific configuration for the operation
      */
     template <typename T, typename Del>
-    [[nodiscard]] auto withUniquePtr(std::unique_ptr<T, Del>)
+    [[nodiscard]] auto withUniquePtr(std::unique_ptr<T, Del> data)
         -> unique_ptr_return_type<T>;
     /** Specify a raw pointer as the buffer for the operation.
      *
@@ -255,7 +256,8 @@ public:
     withContiguousContainer(T_ContiguousContainer &data) -> std::enable_if_t<
         auxiliary::IsContiguousContainer_v<
             std::remove_cv_t<std::remove_reference_t<T_ContiguousContainer>>>,
-        shared_ptr_return_type<auxiliary::PointerVal_t<decltype(data.data())>>>;
+        shared_ptr_return_type<auxiliary::PointerVal_t<
+            decltype(std::declval<T_ContiguousContainer &>().data())>>>;
 
     // Enqueue methods
     template <typename T>
