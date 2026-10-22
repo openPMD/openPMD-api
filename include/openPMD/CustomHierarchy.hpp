@@ -86,12 +86,13 @@ private:
     {}
 
 public:
-    auto isDataset() -> bool;
+    [[nodiscard]] auto isDataset() const -> bool;
     auto asDataset() -> CustomDataset;
 
     auto datasets() -> ConvertibleContainer<CustomDataset>;
-    auto subgroups() -> CustomHierarchy;
+    auto subhierarchies() -> ConvertibleContainer<CustomHierarchy>;
 
+    // TODO when to refresh? refresh implicitly?
     void refresh();
 };
 
@@ -197,6 +198,8 @@ class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
     friend struct traits::ElementAccessPolicy<CustomHierarchy>;
     template <typename, typename, typename>
     friend class Container;
+    template <typename>
+    friend class ConvertibleContainer;
 
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
@@ -244,11 +247,6 @@ public:
 
     CustomHierarchy &operator=(CustomHierarchy const &) = default;
     CustomHierarchy &operator=(CustomHierarchy &&) = default;
-
-    inline operator CustomDataset()
-    {
-        return asDataset();
-    }
 
     // TODO should we automatically read upon returning / instantiating a
     // CustomHierarchy object? i.e. upon Attributable::customHierarchy() and

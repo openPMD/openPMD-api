@@ -60,8 +60,8 @@ namespace traits
 // TODO: Add visitor over real type, using HierarchyVisitor class
 //       Then, maybe even implement HierarchyVisitor in terms of CustomHierarchy
 
-template <>
-auto ConvertibleContainer<CustomHierarchy>::isDataset() -> bool
+template <typename MappedType>
+auto ConvertibleContainer<MappedType>::isDataset() const -> bool
 {
     return this->writable().objectType.isDataset();
 }
@@ -155,9 +155,20 @@ auto ConvertibleContainer<CustomDataset>::datasets()
 }
 
 template <typename MappedType>
-auto ConvertibleContainer<MappedType>::subgroups() -> CustomHierarchy
+auto ConvertibleContainer<MappedType>::subhierarchies()
+    -> ConvertibleContainer<CustomHierarchy>
 {
-    return this->customHierarchies();
+    ConvertibleContainer<CustomHierarchy> res;
+    res.m_attri->cloneFrom(*this->m_attri);
+    auto &container = res.container_front();
+    for (auto &[key, subgroup] : this->container_back())
+    {
+        if (subgroup->m_writable.objectType.isGroup())
+        {
+            container.emplace(key, CustomHierarchy(subgroup));
+        }
+    }
+    return res;
 }
 
 template <typename MappedType>

@@ -157,7 +157,7 @@ void read(
 
     auto custom_data_2 = iteration.customHierarchies()["fully"]
                              .datasets()
-                             .subgroups()["custom"]["dataset2"]
+                             .subhierarchies()["custom"]["dataset2"]
                              .asDataset()
                              .loadChunk<int>();
     iteration.seriesFlush();

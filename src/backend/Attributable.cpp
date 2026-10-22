@@ -384,20 +384,23 @@ void Attributable::touch()
 void Attributable::visitHierarchy(HierarchyVisitor &visitor, bool recursive)
 {
     this->visitHierarchyImpl(visitor, recursive);
-    writable().objectType.ifGroup([&, recursive](auto &group_info) {
-        for (auto &pair : group_info.m_children_managed_as_custom_hierarchy)
-        {
-            auto &obj = *pair.second;
-            if (obj.isDataset())
+    if (recursive)
+    {
+        writable().objectType.ifGroup([&, recursive](auto &group_info) {
+            for (auto &pair : group_info.m_children_managed_as_custom_hierarchy)
             {
-                obj.asDataset().visitHierarchy(visitor, recursive);
+                auto &obj = *pair.second;
+                if (obj.isDataset())
+                {
+                    obj.asDataset().visitHierarchy(visitor, recursive);
+                }
+                else
+                {
+                    pair.second->visitHierarchy(visitor, recursive);
+                }
             }
-            else
-            {
-                pair.second->visitHierarchy(visitor, recursive);
-            }
-        }
-    });
+        });
+    }
 }
 
 void Attributable::populateMissingMetadata(bool recursive)
