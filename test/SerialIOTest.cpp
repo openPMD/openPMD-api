@@ -7926,15 +7926,21 @@ TEST_CASE("append_after_snapshot", "[serial]")
                 error::OperationUnsupportedInBackend);
         }
     }
-    // not implemented for file-based iteration encoding
+    // implicitly supported for file-based iteration encoding: Append simply
+    // overwrites the file of a snapshot that is written again
     for (auto const &t : testedFileExtensions())
     {
-        REQUIRE_THROWS_AS(
-            Series(
-                "../samples/append_after_snapshot/filebased_%T." + t,
-                Access::APPEND_LINEAR,
-                R"({"append": {"after_snapshot": 5}})"),
-            error::OperationUnsupportedInBackend);
+        std::string const filename =
+            "../samples/append_after_snapshot/filebased_%T." + t;
+        auto write = [&filename](std::string const &config) {
+            Series series(filename, Access::APPEND_LINEAR, config);
+            auto dataset = series.snapshots()[10].meshes["E"]["x"];
+            dataset.resetDataset({Datatype::INT, {1}});
+            dataset.makeConstant<int>(0);
+            series.close();
+        };
+        write("{}");
+        write(R"({"append": {"after_snapshot": 5}})");
     }
 }
 #endif // openPMD_HAS_ADIOS_2_8

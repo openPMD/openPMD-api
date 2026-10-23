@@ -130,10 +130,10 @@ This will help read datasets with inconsistent metadata definitions.
 .. _backendconfig-append-after-snapshot:
 
 When appending to an existing Series (``Access::APPEND``), the key ``append.after_snapshot`` selects the snapshot (iteration) after which the Series is continued.
-By default (``"last"``), all snapshots of the existing Series are kept and new snapshots are appended after the last snapshot that was written.
-If the key is set to the index of a snapshot, this snapshot and all snapshots before it are kept, and the later snapshots are removed from the existing Series before anything is appended.
-A snapshot with this index does not need to exist.
-This is meant for simulations that restart from a checkpoint and write the snapshots after the checkpoint again:
+By default (``"last"``), all existing snapshots are kept and new snapshots are appended after the last one.
+If set to the index of a snapshot, this snapshot and all earlier snapshots are kept, while later snapshots are removed before appending.
+The index does not need to exist.
+This is meant for simulations that restart from a checkpoint:
 
 .. code-block:: json
 
@@ -143,21 +143,8 @@ This is meant for simulations that restart from a checkpoint and write the snaps
     }
   }
 
-Removing later snapshots is implemented in the :ref:`ADIOS2 backend <backends-adios2>` for group-based and variable-based iteration encoding:
-
-* The existing Series is searched for the first ADIOS2 step that holds a later snapshot.
-  This step and all steps after it are dropped with the engine parameter ``AppendAfterSteps``, which must then not be specified in ``adios2.engine.parameters``.
-* Steps can only be dropped as a whole and from the end.
-  An error is thrown if this would also drop a snapshot that is to be kept, because it shares a step with a later snapshot or was written after one.
-* Only the BP5 engine can drop steps.
-  With other engines (e.g. BP4), an error is thrown if the Series holds later snapshots.
-* If no snapshot is kept, the Series is created anew.
-* The search does not wait for a writer, so it also works on a Series whose writer was killed and that is therefore still marked as being written.
-
-The other backends and file-based iteration encoding throw an error if a snapshot is selected.
-There, a snapshot that is written again replaces or is merged into the existing one, see :ref:`Append mode <workflow>`.
-
-Independent of this key, the ADIOS2 backend creates a Series anew if it has no complete step, e.g. because its writer was killed before the first snapshot was finished.
+Removing later snapshots is supported by the :ref:`ADIOS2 backend <backends-adios2>`.
+Other backends and file-based iteration encoding do not define what happens when an existing snapshot is written again.
 
 The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).

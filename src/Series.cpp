@@ -1318,14 +1318,6 @@ Given file pattern: ')END"
         {
             break;
         }
-        if (series.m_appendAfterSnapshot.has_value())
-        {
-            throw error::OperationUnsupportedInBackend(
-                IOHandler()->backendName(),
-                "Appending after a selected snapshot "
-                "('append.after_snapshot') is not implemented for file-based "
-                "iteration encoding.");
-        }
         int padding = autoDetectPadding(
             matcher(
                 series.m_filenamePrefix,
