@@ -104,7 +104,7 @@ The openPMD-api distinguishes between a number of different access modes:
 
   **Tip:** Use the ``adios2.engine.access_mode`` :ref:`backend key <backendconfig>` of the :ref:`ADIOS2 backend <backends-adios2>` to finetune the backend-specific behavior of Append mode for niche use cases.
 
-  **Warning:** Apart from locating existing iterations, there is no reading involved in using Append mode.
+  **Warning:** Apart from inspecting existing iterations, there is no reading involved in using Append mode.
   It is a user's responsibility to ensure that the appended dataset and the appended-to dataset are compatible with each other.
   The results of using incompatible backend configurations are undefined.
 

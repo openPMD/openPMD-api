@@ -81,7 +81,8 @@ enum class Access
      *
      * By default, the new iterations are appended after the last one that
      * was written. Use the JSON/TOML option `append.after_snapshot` to
-     * continue after a selected iteration and drop the later ones.
+     * continue after a selected iteration and request removal of later
+     * snapshots.
      */
     APPEND_RANDOM_ACCESS = 5,
     /** write new iterations to an existing series without reading
