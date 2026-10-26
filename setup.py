@@ -178,7 +178,7 @@ for k, v in os.environ.items():
     else:
         continue
     if cmake_var:
-        extra_cmake_args.append("-D{0}={1}".format(cmake_var, v))
+        extra_cmake_args.append(f"-D{cmake_var}={v}")
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ["1", "ON", "TRUE", "YES"]:
@@ -188,7 +188,7 @@ else:
 
 # Get the package requirements from the requirements.txt file
 with open("./requirements.txt") as f:
-    install_requires = [line.strip("\n") for line in f.readlines()]
+    install_requires = [line.strip("\n") for line in f]
     if openPMD_USE_MPI == "ON":
         install_requires.append("mpi4py>=2.1.0")
 
