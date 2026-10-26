@@ -868,29 +868,22 @@ namespace
         std::string const &filename,
         std::string const &engineType,
         adios2::Params const &engineParameters,
-        std::optional<float> timeout,
         std::optional<size_t> maxSteps,
-        std::string *engineOnDisk,
         StepFunctor &&onStep)
     {
+        constexpr float timeout = 0.0f;
         IO.SetEngine(engineType);
         IO.SetParameters(engineParameters);
         // needed in BP4 for seeing attributes as they were in each step
         IO.SetParameter("StreamReader", "ON");
         auto engine = IO.Open(filename, adios2::Mode::Read);
-        if (engineOnDisk)
-        {
-            *engineOnDisk = engine.Type();
-        }
 
         adios2::StepStatus status = adios2::StepStatus::EndOfStream;
         size_t step = 0;
         try
         {
-            auto beginStep = [&engine, timeout]() {
-                return timeout.has_value()
-                    ? engine.BeginStep(adios2::StepMode::Read, *timeout)
-                    : engine.BeginStep();
+            auto beginStep = [&engine, timeout_lambda = timeout]() {
+                return engine.BeginStep(adios2::StepMode::Read, timeout_lambda);
             };
             while ((!maxSteps.has_value() || step < *maxSteps) &&
                    (status = beginStep()) == adios2::StepStatus::OK)
@@ -906,6 +899,17 @@ namespace
             throw;
         }
         engine.Close();
+        if (status == adios2::StepStatus::OtherError)
+        {
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::Other,
+                "ADIOS2",
+                "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error "
+                "occurred "
+                "while reading '" +
+                    filename + "'.");
+        }
         return status;
     }
 
@@ -1843,7 +1847,11 @@ namespace
      * per IO step. Used for random-access reads.
      */
     std::vector<detail::PreloadAdiosAttributes> *preparseAttributeAllSteps(
-        detail::ADIOS2File &ba, std::string const &filename, adios2::IO &IO)
+        detail::ADIOS2File &ba,
+        std::string const &filename,
+        adios2::IO &IO,
+        std::string const &engineType,
+        adios2::Params const &params)
     {
         ba.variables().m_availableVariables.reset();
         auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
@@ -1892,11 +1900,9 @@ namespace
         adios2::StepStatus status = iterateExistingFileSteps(
             IO,
             filename,
-            ba.m_IO.EngineType(),
-            ba.m_IO.Parameters(),
-            0.0f,
+            engineType,
+            params,
             totalNumSteps,
-            nullptr,
             [&](size_t step, adios2::IO &) {
                 auto &new_entry = preload.emplace_back();
                 new_entry.preloadAttributes(IO);
@@ -1905,18 +1911,6 @@ namespace
                     preparseVariablesForStep(step, IO, preparsedVariableData);
                 }
             });
-        if (status == adios2::StepStatus::OtherError)
-        {
-            throw error::ReadError(
-                error::AffectedObject::File,
-                error::Reason::Other,
-                "ADIOS2",
-                "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error "
-                "occurred while reading step " +
-                    std::to_string(preload.size()) + " of " +
-                    std::to_string(totalNumSteps) + " steps of '" + filename +
-                    "'.");
-        }
         if (preload.size() < totalNumSteps)
         {
             char const *statusName = status == adios2::StepStatus::NotReady
@@ -2002,6 +1996,39 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         filename = fullPath(*file);
         ba = &getFileData(*file, IfFileNotOpen::ThrowError);
     }
+    std::string const engineType =
+        param.file.has_value() ? "file" : ba->m_IO.EngineType();
+    adios2::Params engineParameters{
+        {"OpenTimeoutSecs", "0"}, {"StreamReader", "ON"}};
+    if (ba)
+    {
+        auto base_params = ba->m_IO.Parameters();
+        // prefer the parameters hardcoded above
+        for (auto &[key, value] : engineParameters)
+        {
+            base_params[key] = std::move(value);
+        }
+        engineParameters = std::move(base_params);
+    }
+    auto make_io = [&]() {
+    // Lightweight path: read only the requested attribute, one entry per step.
+#if openPMD_HAVE_MPI
+        auto adios = [&]() {
+            if (m_communicator.has_value())
+            {
+                return adios2::ADIOS(*m_communicator);
+            }
+            else
+            {
+                return adios2::ADIOS{};
+            }
+        }();
+#else
+        adios2::ADIOS adios;
+#endif
+        auto IO = adios.DeclareIO("ReadAttributeAllsteps");
+        return std::make_tuple(std::move(adios), IO);
+    };
 
     // can only preparse if we have a storage location for it, i.e. the file and
     // its associated data were opened previously. otherwise, we are acting
@@ -2021,65 +2048,30 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         }
         else
         {
-#if openPMD_HAVE_MPI
-            auto adios = [&]() {
-                if (m_communicator.has_value())
-                {
-                    return adios2::ADIOS(*m_communicator);
-                }
-                else
-                {
-                    return adios2::ADIOS{};
-                }
-            }();
-#else
-            adios2::ADIOS adios;
-#endif
-            auto IO = adios.DeclareIO("PreparseSnapshots");
-            preload = preparseAttributeAllSteps(*ba, filename, IO);
+            auto [adios, IO] = make_io();
+            preload = preparseAttributeAllSteps(
+                *ba, filename, IO, engineType, engineParameters);
         }
         switchType<ReadAttributeAllsteps>(
             type, *preload, ba->m_IO, name, param);
         return;
     }
 
-    // Lightweight path: read only the requested attribute, one entry per step.
-#if openPMD_HAVE_MPI
-    auto adios = [&]() {
-        if (m_communicator.has_value())
-        {
-            return adios2::ADIOS(*m_communicator);
-        }
-        else
-        {
-            return adios2::ADIOS{};
-        }
-    }();
-#else
-    adios2::ADIOS adios;
-#endif
-    auto IO = adios.DeclareIO("ReadAttributeAllsteps");
-
-    std::string const engineType =
-        param.file.has_value() ? "file" : ba->m_IO.EngineType();
-    adios2::Params const engineParameters = param.file.has_value()
-        ? adios2::Params{{"OpenTimeoutSecs", "0"}}
-        : ba->m_IO.Parameters();
+    auto [adios, IO] = make_io();
 
     Datatype type = Datatype::UNDEFINED;
     bool initialized = false;
-    adios2::StepStatus status = iterateExistingFileSteps(
+    iterateExistingFileSteps(
         IO,
         filename,
         engineType,
         engineParameters,
-        0.0f,
         std::nullopt,
-        nullptr,
-        [&](size_t, adios2::IO &) {
+        [&, IO_lambda = &IO](size_t, adios2::IO &) {
             if (!initialized)
             {
-                type = detail::attributeInfo(IO, name, /* verbose = */ true);
+                type = detail::attributeInfo(
+                    *IO_lambda, name, /* verbose = */ true);
                 if (type == Datatype::UNDEFINED)
                 {
                     throw error::ReadError(
@@ -2092,18 +2084,8 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
                 switchType<DirectReadAllstepsInit>(type, param);
                 initialized = true;
             }
-            switchType<DirectReadAllsteps>(type, IO, name, param);
+            switchType<DirectReadAllsteps>(type, *IO_lambda, name, param);
         });
-    if (status == adios2::StepStatus::OtherError)
-    {
-        throw error::ReadError(
-            error::AffectedObject::File,
-            error::Reason::Other,
-            "ADIOS2",
-            "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error occurred "
-            "while reading '" +
-                filename + "'.");
-    }
     if (!initialized)
     {
         throw error::ReadError(
