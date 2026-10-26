@@ -7874,6 +7874,17 @@ void append_after_snapshot(std::string const &extension, bool variableBased)
                 {30},
                 7),
             error::BackendConfigSchema);
+
+        // not to be combined with an explicit write access mode
+        REQUIRE_THROWS_AS(
+            write(
+                json::merge(
+                    after("20"),
+                    R"({"adios2": {"engine": {"access_mode": "write"}}})"),
+                {30},
+                7),
+            error::BackendConfigSchema);
+        verify({{0, 1}, {10, 1}, {20, 1}, {30, 6}, {50, 6}});
     }
 
     // steps can only be dropped from the end: the step of snapshot 15 comes
@@ -7943,7 +7954,7 @@ TEST_CASE("append_after_snapshot", "[serial]")
         write(R"({"append": {"after_snapshot": 5}})");
     }
 }
-#endif // openPMD_HAS_ADIOS_2_8
+#endif // openPMD_HAVE_ADIOS2
 
 void groupbased_read_write(std::string const &ext)
 {

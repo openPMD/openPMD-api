@@ -1005,7 +1005,7 @@ void ADIOS2IOHandlerImpl::truncateFile(
             try
             {
                 bool foundStep = false;
-                iterateExistingFileSteps(
+                adios2::StepStatus status = iterateExistingFileSteps(
                     IO,
                     name,
                     "file",
@@ -1014,7 +1014,19 @@ void ADIOS2IOHandlerImpl::truncateFile(
                     1,
                     nullptr,
                     [&foundStep](size_t, adios2::IO &) { foundStep = true; });
+                if (status == adios2::StepStatus::OtherError)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::File,
+                        error::Reason::Other,
+                        "ADIOS2",
+                        "Failed to read the existing file '" + name + "'.");
+                }
                 hasSteps = foundStep;
+            }
+            catch (error::ReadError const &)
+            {
+                throw;
             }
             catch (std::exception const &)
             {
@@ -1039,6 +1051,19 @@ void ADIOS2IOHandlerImpl::truncateFile(
             "ADIOS2",
             errorPrefix + "Not supported by the engine '" + realEngineType() +
                 "'.");
+    }
+    if (m_config.json().contains("engine") &&
+        m_config["engine"].json().contains("access_mode"))
+    {
+        auto const &accessModeJson = m_config.json({"engine", "access_mode"});
+        auto accessMode = json::asLowerCaseStringDynamic(accessModeJson);
+        if (accessMode.has_value() && *accessMode == "write")
+        {
+            throw error::BackendConfigSchema(
+                {"adios2", "engine", "access_mode"},
+                "Cannot be combined with the option 'append.after_snapshot', "
+                "which must append to the existing file.");
+        }
     }
 
     // e.g. "/data/" or "/data" -> "/data/snapshot"
