@@ -1837,85 +1837,28 @@ namespace
         }
         static constexpr char const *errorMsg = "VariableNumSteps";
     };
-} // namespace
 
-void ADIOS2IOHandlerImpl::readAttributeAllsteps(
-    Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
-{
-    auto hasFileInHierarchy = [](Writable *w) {
-        for (Writable *search = w; search; search = search->parent)
-        {
-            if (search->fileState.has_value())
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-    bool const writableHasFile = hasFileInHierarchy(writable);
-    if (param.file.has_value() == writableHasFile)
+    /*
+     * Pre-parse all attributes and variables of an existing file, one entry
+     * per IO step. Used for random-access reads.
+     */
+    std::vector<detail::PreloadAdiosAttributes> preparseAttributeAllSteps(
+        detail::ADIOS2File &ba,
+        std::string const &filename,
+        adios2::IO &IO)
     {
-        throw error::Internal(
-            "READ_ATT_ALLSTEPS: The file must be specified by exactly one of "
-            "the 'file' parameter and the Writable hierarchy.");
-    }
-
-    std::string name;
-    detail::ADIOS2File *ba = nullptr;
-    std::string filename;
-    if (param.file.has_value())
-    {
-        name = param.name;
-        if (!auxiliary::starts_with(name, '/'))
-        {
-            name = "/" + name;
-        }
-        filename = fullPath(*param.file + fileSuffix(/* verbose = */ false));
-    }
-    else
-    {
-        setAndGetFilePosition(writable);
-        name = nameOfAttribute(writable, param.name);
-        auto &file =
-            refreshFileFromParent(writable, /* preferParentFile = */ false);
-        filename = fullPath(*file);
-        ba = &getFileData(*file, IfFileNotOpen::ThrowError);
-    }
-
-    if (ba &&
-        std::holds_alternative<detail::AdiosAttributes::RandomAccess_t>(
-            ba->attributes().m_data))
-    {
-        auto type = detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
-        switchType<ReadAttributeAllsteps>(
-            type,
-            std::get<detail::AdiosAttributes::RandomAccess_t>(
-                ba->attributes().m_data),
-            ba->m_IO,
-            name,
-            param);
-        return;
-    }
-
-    bool const usePreparsing =
-        ba && m_handler->m_backendAccess == Access::READ_RANDOM_ACCESS;
-    if (usePreparsing)
-    {
-        auto type =
-            detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
-
-        ba->variables().m_availableVariables.reset();
-        auto &preparsedVariableData = ba->variables().m_preparsed.emplace();
-        preparsedVariableData.m_allVariables = ba->m_IO.AvailableVariables();
+        ba.variables().m_availableVariables.reset();
+        auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
+        preparsedVariableData.m_allVariables = ba.m_IO.AvailableVariables();
 
         bool requires_variable_preparsing = false;
-        size_t totalNumSteps = ba->getEngine().Steps();
+        size_t totalNumSteps = ba.getEngine().Steps();
         for ([[maybe_unused]] auto const &[varName, _] :
              preparsedVariableData.m_allVariables)
         {
-            auto dtype = detail::fromADIOS2Type(ba->m_IO.VariableType(varName));
+            auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
             size_t variable_num_steps = switchAdios2VariableType<VariableNumSteps>(
-                dtype, varName, ba->m_IO);
+                dtype, varName, ba.m_IO);
             if (variable_num_steps != totalNumSteps)
             {
                 preparsedVariableData.m_partialVariables[varName].reserve(
@@ -1926,25 +1869,9 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
 
         if (!requires_variable_preparsing)
         {
-            ba->variables().m_preparsed.reset();
-            ba->variables().variables_are_static = true;
+            ba.variables().m_preparsed.reset();
+            ba.variables().variables_are_static = true;
         }
-
-#if openPMD_HAVE_MPI
-        auto adios = [&]() {
-            if (m_communicator.has_value())
-            {
-                return adios2::ADIOS(*m_communicator);
-            }
-            else
-            {
-                return adios2::ADIOS{};
-            }
-        }();
-#else
-        adios2::ADIOS adios;
-#endif
-        auto IO = adios.DeclareIO("PreparseSnapshots");
 
         std::vector<detail::PreloadAdiosAttributes> preload;
 
@@ -1966,8 +1893,8 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         adios2::StepStatus status = iterateExistingFileSteps(
             IO,
             filename,
-            ba->m_IO.EngineType(),
-            ba->m_IO.Parameters(),
+            ba.m_IO.EngineType(),
+            ba.m_IO.Parameters(),
             0.0f,
             totalNumSteps,
             nullptr,
@@ -2027,9 +1954,88 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             std::cout << "NO PREPARSING NEEDED" << std::endl;
         }
 #endif
-        auto &attributes = ba->attributes();
-        switchType<ReadAttributeAllsteps>(type, preload, IO, name, param);
-        attributes.m_data = std::move(preload);
+        return preload;
+    }
+} // namespace
+
+void ADIOS2IOHandlerImpl::readAttributeAllsteps(
+    Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
+{
+    auto hasFileInHierarchy = [](Writable *w) {
+        for (Writable *search = w; search; search = search->parent)
+        {
+            if (search->fileState.has_value())
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    bool const writableHasFile = hasFileInHierarchy(writable);
+    if (param.file.has_value() == writableHasFile)
+    {
+        throw error::Internal(
+            "READ_ATT_ALLSTEPS: The file must be specified by exactly one of "
+            "the 'file' parameter and the Writable hierarchy.");
+    }
+
+    std::string name;
+    detail::ADIOS2File *ba = nullptr;
+    std::string filename;
+    if (param.file.has_value())
+    {
+        name = param.name;
+        if (!auxiliary::starts_with(name, '/'))
+        {
+            name = "/" + name;
+        }
+        filename = fullPath(*param.file + fileSuffix(/* verbose = */ false));
+    }
+    else
+    {
+        setAndGetFilePosition(writable);
+        name = nameOfAttribute(writable, param.name);
+        auto &file =
+            refreshFileFromParent(writable, /* preferParentFile = */ false);
+        filename = fullPath(*file);
+        ba = &getFileData(*file, IfFileNotOpen::ThrowError);
+    }
+
+    if (ba &&
+        (std::holds_alternative<detail::AdiosAttributes::RandomAccess_t>(
+             ba->attributes().m_data) ||
+         m_handler->m_backendAccess == Access::READ_RANDOM_ACCESS))
+    {
+        auto type = detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
+        if (auto *preload =
+                std::get_if<detail::AdiosAttributes::RandomAccess_t>(
+                    &ba->attributes().m_data))
+        {
+            switchType<ReadAttributeAllsteps>(
+                type, *preload, ba->m_IO, name, param);
+        }
+        else
+        {
+#if openPMD_HAVE_MPI
+            auto adios = [&]() {
+                if (m_communicator.has_value())
+                {
+                    return adios2::ADIOS(*m_communicator);
+                }
+                else
+                {
+                    return adios2::ADIOS{};
+                }
+            }();
+#else
+            adios2::ADIOS adios;
+#endif
+            auto IO = adios.DeclareIO("PreparseSnapshots");
+            auto preparsed = preparseAttributeAllSteps(*ba, filename, IO);
+            auto &attributes = ba->attributes();
+            switchType<ReadAttributeAllsteps>(type, preparsed, IO, name, param);
+            attributes.m_data = std::move(preparsed);
+        }
         return;
     }
 
