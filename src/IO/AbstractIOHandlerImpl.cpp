@@ -583,23 +583,6 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
 void AbstractIOHandlerImpl::readAttributeAllsteps(
     Writable *w, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
-    auto hasFileInHierarchy = [](Writable *writable) {
-        for (Writable *search = writable; search; search = search->parent)
-        {
-            if (search->fileState.has_value())
-            {
-                return true;
-            }
-        }
-        return false;
-    };
-    bool const writableHasFile = hasFileInHierarchy(w);
-    if (param.file.has_value() == writableHasFile)
-    {
-        throw error::Internal(
-            "READ_ATT_ALLSTEPS: The file must be specified by exactly one of "
-            "the 'file' parameter and the Writable hierarchy.");
-    }
     if (param.file.has_value())
     {
         throw error::OperationUnsupportedInBackend(
