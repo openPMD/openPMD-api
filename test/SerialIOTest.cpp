@@ -7767,7 +7767,7 @@ TEST_CASE("append_mode_filebased", "[serial]")
 /*
  * A simulation restarts from a checkpoint at some snapshot and continues a
  * Series that already holds later snapshots, which it writes again:
- * `append.after_snapshot` drops the later snapshots first.
+ * `append.after_snapshot` asks the backend to drop later snapshots first.
  */
 void append_after_snapshot(std::string const &extension, bool variableBased)
 {
@@ -7843,19 +7843,9 @@ void append_after_snapshot(std::string const &extension, bool variableBased)
     // later snapshots again
     if (extension == "bp4")
     {
-        // BP4 cannot drop steps, the Series must stay as it is
-        REQUIRE_THROWS_AS(
-            write(after("20"), {30, 40}, 5),
-            error::OperationUnsupportedInBackend);
-        verify(
-            {{0, 1},
-             {10, 1},
-             {20, 1},
-             {30, 1},
-             {40, 1},
-             {50, 2},
-             {60, 3},
-             {70, 4}});
+        // BP4 cannot drop steps. The request is ignored with a warning and
+        // the new snapshots coexist with the old ones.
+        write(after("20"), {30, 40}, 5);
     }
     else
     {
@@ -7888,10 +7878,10 @@ void append_after_snapshot(std::string const &extension, bool variableBased)
     }
 
     // steps can only be dropped from the end: the step of snapshot 15 comes
-    // after later snapshots and would be dropped with them
+    // after later snapshots and would be dropped with them. Only the safe
+    // suffix is removed and a warning is emitted.
     write(jsonConfig, {15}, 7);
-    REQUIRE_THROWS_AS(
-        write(after("15"), {20}, 8), error::OperationUnsupportedInBackend);
+    write(after("15"), {20}, 8);
 
     // restart from before the first snapshot: a new Series, in all engines
     auxiliary::remove_directory("../samples/append_after_snapshot");
@@ -7932,9 +7922,8 @@ TEST_CASE("append_after_snapshot", "[serial]")
                 series.close();
             };
             write("{}");
-            REQUIRE_THROWS_AS(
-                write(R"({"append": {"after_snapshot": 5}})"),
-                error::OperationUnsupportedInBackend);
+            // the backend ignores the request and warns
+            write(R"({"append": {"after_snapshot": 5}})");
         }
     }
     // implicitly supported for file-based iteration encoding: Append simply
