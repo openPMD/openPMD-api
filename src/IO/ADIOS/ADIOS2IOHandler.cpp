@@ -1842,10 +1842,8 @@ namespace
      * Pre-parse all attributes and variables of an existing file, one entry
      * per IO step. Used for random-access reads.
      */
-    std::vector<detail::PreloadAdiosAttributes> preparseAttributeAllSteps(
-        detail::ADIOS2File &ba,
-        std::string const &filename,
-        adios2::IO &IO)
+    std::vector<detail::PreloadAdiosAttributes> *preparseAttributeAllSteps(
+        detail::ADIOS2File &ba, std::string const &filename, adios2::IO &IO)
     {
         ba.variables().m_availableVariables.reset();
         auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
@@ -1857,8 +1855,9 @@ namespace
              preparsedVariableData.m_allVariables)
         {
             auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
-            size_t variable_num_steps = switchAdios2VariableType<VariableNumSteps>(
-                dtype, varName, ba.m_IO);
+            size_t variable_num_steps =
+                switchAdios2VariableType<VariableNumSteps>(
+                    dtype, varName, ba.m_IO);
             if (variable_num_steps != totalNumSteps)
             {
                 preparsedVariableData.m_partialVariables[varName].reserve(
@@ -1954,13 +1953,16 @@ namespace
             std::cout << "NO PREPARSING NEEDED" << std::endl;
         }
 #endif
-        return preload;
+        return &ba.attributes().m_data.emplace<decltype(preload)>(
+            std::move(preload));
     }
 } // namespace
 
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
+    // We might relax this in a future update, but for now, let's forbid code
+    // paths that we dont take
     auto hasFileInHierarchy = [](Writable *w) {
         for (Writable *search = w; search; search = search->parent)
         {
@@ -2001,18 +2003,21 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         ba = &getFileData(*file, IfFileNotOpen::ThrowError);
     }
 
+    // can only preparse if we have a storage location for it, i.e. the file and
+    // its associated data were opened previously. otherwise, we are acting
+    // read-only.
     if (ba &&
         (std::holds_alternative<detail::AdiosAttributes::RandomAccess_t>(
              ba->attributes().m_data) ||
          m_handler->m_backendAccess == Access::READ_RANDOM_ACCESS))
     {
         auto type = detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
-        if (auto *preload =
-                std::get_if<detail::AdiosAttributes::RandomAccess_t>(
-                    &ba->attributes().m_data))
+        detail::AdiosAttributes::RandomAccess_t *preload;
+        if (auto *p = std::get_if<detail::AdiosAttributes::RandomAccess_t>(
+                &ba->attributes().m_data))
         {
-            switchType<ReadAttributeAllsteps>(
-                type, *preload, ba->m_IO, name, param);
+            // preparsing already occurred previously, no need to run it again
+            preload = p;
         }
         else
         {
@@ -2031,11 +2036,10 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             adios2::ADIOS adios;
 #endif
             auto IO = adios.DeclareIO("PreparseSnapshots");
-            auto preparsed = preparseAttributeAllSteps(*ba, filename, IO);
-            auto &attributes = ba->attributes();
-            switchType<ReadAttributeAllsteps>(type, preparsed, IO, name, param);
-            attributes.m_data = std::move(preparsed);
+            preload = preparseAttributeAllSteps(*ba, filename, IO);
         }
+        switchType<ReadAttributeAllsteps>(
+            type, *preload, ba->m_IO, name, param);
         return;
     }
 
@@ -2075,8 +2079,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         [&](size_t, adios2::IO &) {
             if (!initialized)
             {
-                type =
-                    detail::attributeInfo(IO, name, /* verbose = */ true);
+                type = detail::attributeInfo(IO, name, /* verbose = */ true);
                 if (type == Datatype::UNDEFINED)
                 {
                     throw error::ReadError(
@@ -2591,8 +2594,7 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
     return setAndGetFilePosition(writable)->gd;
 }
 
-detail::ADIOS2File &
-ADIOS2IOHandlerImpl::getFileData(
+detail::ADIOS2File &ADIOS2IOHandlerImpl::getFileData(
     internal::FileState &file,
     IfFileNotOpen flag,
     std::optional<size_t> stepsToKeep)
@@ -2622,8 +2624,7 @@ ADIOS2IOHandlerImpl::getFileData(
                 file.name);
         default: {
             file.backendSpecificState = std::make_any<BackendSpecificFileState>(
-                new detail::ADIOS2File(
-                    *this, file, openFileAs(), stepsToKeep));
+                new detail::ADIOS2File(*this, file, openFileAs(), stepsToKeep));
             break;
         }
         }
