@@ -756,7 +756,10 @@ void ADIOS2IOHandlerImpl::createFile(
         auto &fileData = [&]() -> detail::ADIOS2File & {
             try
             {
-                return getFileData(file_state, IfFileNotOpen::CreateImplicitly);
+                return getFileData(
+                    file_state,
+                    IfFileNotOpen::CreateImplicitly,
+                    parameters.m_steps_to_keep);
             }
             catch (...)
             {
@@ -906,284 +909,7 @@ namespace
         return status;
     }
 
-    template <typename T>
-    bool readSnapshotsAs(
-        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
-    {
-        if (IO.AttributeType(name) != adios2::GetType<T>())
-        {
-            return false;
-        }
-        auto attribute = IO.InquireAttribute<T>(name);
-        if (!attribute)
-        {
-            return false;
-        }
-        for (T const &snapshot : attribute.Data())
-        {
-            res.push_back(static_cast<uint64_t>(snapshot));
-        }
-        return true;
-    }
-
-    template <typename... T>
-    bool readSnapshotsAsAnyOf(
-        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
-    {
-        return (readSnapshotsAs<T>(IO, name, res) || ...);
-    }
-
-    /*
-     * Read the snapshots of the current step from the snapshot attribute.
-     * Returns false if there is no such attribute of integer type.
-     */
-    bool readSnapshotsOfCurrentStep(
-        adios2::IO &IO, std::string const &name, std::vector<uint64_t> &res)
-    {
-        res.clear();
-        return readSnapshotsAsAnyOf<
-            uint64_t,
-            int64_t,
-            uint32_t,
-            int32_t,
-            uint16_t,
-            int16_t,
-            uint8_t,
-            int8_t>(IO, name, res);
-    }
 } // namespace
-
-void ADIOS2IOHandlerImpl::truncateFile(
-    Writable *, Parameter<Operation::TRUNCATE_FILE> &parameters)
-{
-    using Result = Parameter<Operation::TRUNCATE_FILE>::Result;
-    std::string const name =
-        fullPath(parameters.name + fileSuffix(/* verbose = */ false));
-
-    bool fileEngineWithSteps = false;
-    for (auto const &engine : {"file", "filestream", "bp", "bp4", "bp5"})
-    {
-        fileEngineWithSteps = fileEngineWithSteps || realEngineType() == engine;
-    }
-
-#if openPMD_HAVE_MPI
-    auto adios = [&]() {
-        if (m_communicator.has_value())
-        {
-            return adios2::ADIOS(*m_communicator);
-        }
-        else
-        {
-            return adios2::ADIOS{};
-        }
-    }();
-#else
-    adios2::ADIOS adios;
-#endif
-    auto IO = adios.DeclareIO("TruncateFile");
-
-    /*
-     * Do not wait for further steps. A file whose writer was killed is still
-     * marked as being written, and BeginStep() without a timeout would wait
-     * forever for a step that never comes. No other writer can be active
-     * now, since this Series is about to write to the file itself.
-     */
-    auto const timeout = 0.0f;
-    // the generic file engine detects the format of the existing file
-    adios2::Params const engineParameters{{"OpenTimeoutSecs", "0"}};
-
-    if (!parameters.afterSnapshot.has_value())
-    {
-        /*
-         * Keep all snapshots. A file without a complete step holds none,
-         * e.g. if its writer was killed before it finished the first step:
-         * it also lacks the attributes of the Series, so create it anew.
-         */
-        bool hasSteps = true;
-        if (fileEngineWithSteps)
-        {
-            try
-            {
-                bool foundStep = false;
-                adios2::StepStatus status = iterateExistingFileSteps(
-                    IO,
-                    name,
-                    "file",
-                    engineParameters,
-                    timeout,
-                    1,
-                    nullptr,
-                    [&foundStep](size_t, adios2::IO &) { foundStep = true; });
-                if (status == adios2::StepStatus::OtherError)
-                {
-                    throw error::ReadError(
-                        error::AffectedObject::File,
-                        error::Reason::Other,
-                        "ADIOS2",
-                        "Failed to read the existing file '" + name + "'.");
-                }
-                hasSteps = foundStep;
-            }
-            catch (error::ReadError const &)
-            {
-                throw;
-            }
-            catch (std::exception const &)
-            {
-                // leave it to the engine that appends to the file
-                hasSteps = true;
-            }
-        }
-        if (!hasSteps)
-        {
-            m_stepsToKeepInAppendMode[name] = 0;
-        }
-        *parameters.result = hasSteps ? Result::Unchanged : Result::Emptied;
-        return;
-    }
-
-    uint64_t const afterSnapshot = *parameters.afterSnapshot;
-    std::string const errorPrefix = "Cannot append to '" + name +
-        "' after snapshot " + std::to_string(afterSnapshot) + ": ";
-    if (!fileEngineWithSteps)
-    {
-        throw error::OperationUnsupportedInBackend(
-            "ADIOS2",
-            errorPrefix + "Not supported by the engine '" + realEngineType() +
-                "'.");
-    }
-    if (m_config.json().contains("engine") &&
-        m_config["engine"].json().contains("access_mode"))
-    {
-        auto const &accessModeJson = m_config.json({"engine", "access_mode"});
-        auto accessMode = json::asLowerCaseStringDynamic(accessModeJson);
-        if (accessMode.has_value() && *accessMode == "write")
-        {
-            throw error::BackendConfigSchema(
-                {"adios2", "engine", "access_mode"},
-                "Cannot be combined with the option 'append.after_snapshot', "
-                "which must append to the existing file.");
-        }
-    }
-
-    // e.g. "/data/" or "/data" -> "/data/snapshot"
-    std::string snapshotAttribute = parameters.snapshotsPath;
-    while (auxiliary::ends_with(snapshotAttribute, '/'))
-    {
-        snapshotAttribute.pop_back();
-    }
-    if (!auxiliary::starts_with(snapshotAttribute, '/'))
-    {
-        snapshotAttribute = "/" + snapshotAttribute;
-    }
-    snapshotAttribute += "/snapshot";
-
-    std::string engineOnDisk;
-    size_t numSteps = 0;
-    // index of the first step that holds a snapshot after `afterSnapshot`
-    std::optional<size_t> firstStepToDrop;
-    // snapshots up to `afterSnapshot` in the steps that would be dropped
-    std::set<uint64_t> wronglyDroppedSnapshots;
-    std::vector<uint64_t> snapshots;
-    adios2::StepStatus status = iterateExistingFileSteps(
-        IO,
-        name,
-        "file",
-        engineParameters,
-        timeout,
-        std::nullopt,
-        &engineOnDisk,
-        [&](size_t step, adios2::IO &) {
-            if (!readSnapshotsOfCurrentStep(IO, snapshotAttribute, snapshots))
-            {
-                throw error::OperationUnsupportedInBackend(
-                    "ADIOS2",
-                    errorPrefix + "Step " + std::to_string(step) +
-                        " does not define the integer attribute '" +
-                        snapshotAttribute +
-                        "', so its snapshots are not known. (Was the file "
-                        "written without ADIOS2 steps?)");
-            }
-            if (!firstStepToDrop.has_value() &&
-                std::any_of(
-                    snapshots.begin(),
-                    snapshots.end(),
-                    [&](uint64_t snapshot) {
-                        return snapshot > afterSnapshot;
-                    }))
-            {
-                firstStepToDrop = step;
-            }
-            if (firstStepToDrop.has_value())
-            {
-                for (uint64_t snapshot : snapshots)
-                {
-                    if (snapshot <= afterSnapshot)
-                    {
-                        wronglyDroppedSnapshots.emplace(snapshot);
-                    }
-                }
-            }
-            ++numSteps;
-        });
-    if (status == adios2::StepStatus::OtherError)
-    {
-        throw error::ReadError(
-            error::AffectedObject::File,
-            error::Reason::Other,
-            "ADIOS2",
-            errorPrefix + "Failed to read step " + std::to_string(numSteps) +
-                ".");
-    }
-    // StepStatus::NotReady: last step of a file that was not closed
-
-    if (numSteps == 0)
-    {
-        // e.g. a writer that was killed before it finished its first step
-        m_stepsToKeepInAppendMode[name] = 0;
-        *parameters.result = Result::Emptied;
-        return;
-    }
-    if (!firstStepToDrop.has_value())
-    {
-        *parameters.result = Result::Unchanged;
-        return;
-    }
-    if (!wronglyDroppedSnapshots.empty())
-    {
-        std::stringstream error;
-        error << errorPrefix << "Steps can only be dropped as a whole from the "
-              << "end of the file. Dropping the snapshots after "
-              << afterSnapshot << " means dropping all steps from step "
-              << *firstStepToDrop << " on, which would also drop the "
-              << "snapshot(s)";
-        for (uint64_t snapshot : wronglyDroppedSnapshots)
-        {
-            error << ' ' << snapshot;
-        }
-        error << ".";
-        throw error::OperationUnsupportedInBackend("ADIOS2", error.str());
-    }
-    if (*firstStepToDrop == 0)
-    {
-        m_stepsToKeepInAppendMode[name] = 0;
-        *parameters.result = Result::Emptied;
-        return;
-    }
-    if (!auxiliary::starts_with(
-            auxiliary::lowerCase(std::string(engineOnDisk)), "bp5"))
-    {
-        throw error::OperationUnsupportedInBackend(
-            "ADIOS2",
-            errorPrefix +
-                "The file has later snapshots, and only the BP5 "
-                "engine can drop steps from an existing file "
-                "(found: " +
-                engineOnDisk + ").");
-    }
-    m_stepsToKeepInAppendMode[name] = *firstStepToDrop;
-    *parameters.result = Result::Truncated;
-}
 
 void ADIOS2IOHandlerImpl::createPath(
     Writable *writable, const Parameter<Operation::CREATE_PATH> &parameters)
@@ -2015,6 +1741,71 @@ namespace
             "ReadAttributeAllsteps: preload attributes";
     };
 
+    struct DirectReadAllstepsInit
+    {
+        template <typename T>
+        static void call(Parameter<Operation::READ_ATT_ALLSTEPS> &param)
+        {
+            param.setResource(std::vector<T>{});
+            *param.dtype = determineDatatype<T>();
+        }
+
+        static constexpr char const *errorMsg = "DirectReadAllstepsInit";
+    };
+
+    /*
+     * Lightweight alternative to ReadAttributeAllsteps that reads the
+     * requested attribute directly from the ADIOS2 IO object of the current
+     * step instead of pre-parsing all attributes.
+     */
+    struct DirectReadAllsteps
+    {
+        struct GetAttribute
+        {
+            adios2::IO &IO;
+
+            template <typename AdiosType>
+            [[nodiscard]] auto call(std::string const &name) const
+                -> detail::AttributeWithShapeAndResource<AdiosType>
+            {
+                return detail::AttributeWithShapeAndResource<AdiosType>(
+                    IO.InquireAttribute<AdiosType>(name));
+            }
+        };
+
+        template <typename T>
+        static void call(
+            adios2::IO &IO,
+            std::string const &name,
+            Parameter<Operation::READ_ATT_ALLSTEPS> &param)
+        {
+            auto &res = std::get<std::vector<T>>(
+                param.resource<vector_of_attributes_type>());
+            genericReadAttribute<T>(
+                [&res](auto &&val) {
+                    using type = std::remove_reference_t<decltype(val)>;
+                    if constexpr (std::is_same_v<type, bool>)
+                    {
+                        throw error::ReadError(
+                            error::AffectedObject::Attribute,
+                            error::Reason::UnexpectedContent,
+                            "ADIOS2",
+                            "[ReadAttributeAllsteps] No support for Boolean "
+                            "attributes.");
+                    }
+                    else
+                    {
+                        res.emplace_back(static_cast<decltype(val)>(val));
+                    }
+                },
+                IO,
+                name,
+                GetAttribute{IO});
+        }
+
+        static constexpr char const *errorMsg = "DirectReadAllsteps";
+    };
+
     void preparseVariablesForStep(
         size_t step,
         adios2::IO &IO,
@@ -2051,40 +1842,198 @@ namespace
 void ADIOS2IOHandlerImpl::readAttributeAllsteps(
     Writable *writable, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
-    auto &file =
-        refreshFileFromParent(writable, /* preferParentFile = */ false);
-    setAndGetFilePosition(writable);
-    auto name = nameOfAttribute(writable, param.name);
-    detail::ADIOS2File &ba = getFileData(*file, IfFileNotOpen::ThrowError);
-
-    auto type = detail::attributeInfo(ba.m_IO, name, /* verbose = */ true);
-
-    ba.variables().m_availableVariables.reset();
-    auto &preparsedVariableData = ba.variables().m_preparsed.emplace();
-    preparsedVariableData.m_allVariables = ba.m_IO.AvailableVariables();
-
-    bool requires_variable_preparsing = false;
-    size_t totalNumSteps = ba.getEngine().Steps();
-    for ([[maybe_unused]] auto const &[varName, _] :
-         preparsedVariableData.m_allVariables)
-    {
-        auto dtype = detail::fromADIOS2Type(ba.m_IO.VariableType(varName));
-        size_t variable_num_steps =
-            switchAdios2VariableType<VariableNumSteps>(dtype, varName, ba.m_IO);
-        if (variable_num_steps != totalNumSteps)
+    auto hasFileInHierarchy = [](Writable *w) {
+        for (Writable *search = w; search; search = search->parent)
         {
-            preparsedVariableData.m_partialVariables[varName].reserve(
-                variable_num_steps);
-            requires_variable_preparsing = true;
+            if (search->fileState.has_value())
+            {
+                return true;
+            }
         }
-    }
-
-    if (!requires_variable_preparsing)
+        return false;
+    };
+    bool const writableHasFile = hasFileInHierarchy(writable);
+    if (param.file.has_value() == writableHasFile)
     {
-        ba.variables().m_preparsed.reset();
-        ba.variables().variables_are_static = true;
+        throw error::Internal(
+            "READ_ATT_ALLSTEPS: The file must be specified by exactly one of "
+            "the 'file' parameter and the Writable hierarchy.");
     }
 
+    std::string name;
+    detail::ADIOS2File *ba = nullptr;
+    std::string filename;
+    if (param.file.has_value())
+    {
+        name = param.name;
+        if (!auxiliary::starts_with(name, '/'))
+        {
+            name = "/" + name;
+        }
+        filename = fullPath(*param.file + fileSuffix(/* verbose = */ false));
+    }
+    else
+    {
+        setAndGetFilePosition(writable);
+        name = nameOfAttribute(writable, param.name);
+        auto &file =
+            refreshFileFromParent(writable, /* preferParentFile = */ false);
+        filename = fullPath(*file);
+        ba = &getFileData(*file, IfFileNotOpen::ThrowError);
+    }
+
+    if (ba &&
+        std::holds_alternative<detail::AdiosAttributes::RandomAccess_t>(
+            ba->attributes().m_data))
+    {
+        auto type = detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
+        switchType<ReadAttributeAllsteps>(
+            type,
+            std::get<detail::AdiosAttributes::RandomAccess_t>(
+                ba->attributes().m_data),
+            ba->m_IO,
+            name,
+            param);
+        return;
+    }
+
+    bool const usePreparsing =
+        ba && m_handler->m_backendAccess == Access::READ_RANDOM_ACCESS;
+    if (usePreparsing)
+    {
+        auto type =
+            detail::attributeInfo(ba->m_IO, name, /* verbose = */ true);
+
+        ba->variables().m_availableVariables.reset();
+        auto &preparsedVariableData = ba->variables().m_preparsed.emplace();
+        preparsedVariableData.m_allVariables = ba->m_IO.AvailableVariables();
+
+        bool requires_variable_preparsing = false;
+        size_t totalNumSteps = ba->getEngine().Steps();
+        for ([[maybe_unused]] auto const &[varName, _] :
+             preparsedVariableData.m_allVariables)
+        {
+            auto dtype = detail::fromADIOS2Type(ba->m_IO.VariableType(varName));
+            size_t variable_num_steps = switchAdios2VariableType<VariableNumSteps>(
+                dtype, varName, ba->m_IO);
+            if (variable_num_steps != totalNumSteps)
+            {
+                preparsedVariableData.m_partialVariables[varName].reserve(
+                    variable_num_steps);
+                requires_variable_preparsing = true;
+            }
+        }
+
+        if (!requires_variable_preparsing)
+        {
+            ba->variables().m_preparsed.reset();
+            ba->variables().variables_are_static = true;
+        }
+
+#if openPMD_HAVE_MPI
+        auto adios = [&]() {
+            if (m_communicator.has_value())
+            {
+                return adios2::ADIOS(*m_communicator);
+            }
+            else
+            {
+                return adios2::ADIOS{};
+            }
+        }();
+#else
+        adios2::ADIOS adios;
+#endif
+        auto IO = adios.DeclareIO("PreparseSnapshots");
+
+        std::vector<detail::PreloadAdiosAttributes> preload;
+
+        preload.reserve(totalNumSteps);
+        /*
+         * Random access means: read the steps that are on disk when the file is
+         * opened and do not wait for further steps. A file that is still being
+         * written, or whose writer was killed, is marked as active, so
+         * BeginStep() without a timeout would wait for a next step that may
+         * never come. Use a timeout of zero: the random-access engine already
+         * told us how many steps there are (`totalNumSteps`), and this second
+         * engine is only used to pre-parse attributes, so there is nothing to
+         * stream from.
+         * If a step cannot be read (StepStatus::NotReady) or the stream ends
+         * early (StepStatus::EndOfStream), stop here and warn. The pre-parsed
+         * steps are then a prefix of the steps that the random-access engine
+         * reports, and the parsing routines treat the missing steps as absent.
+         */
+        adios2::StepStatus status = iterateExistingFileSteps(
+            IO,
+            filename,
+            ba->m_IO.EngineType(),
+            ba->m_IO.Parameters(),
+            0.0f,
+            totalNumSteps,
+            nullptr,
+            [&](size_t step, adios2::IO &) {
+                auto &new_entry = preload.emplace_back();
+                new_entry.preloadAttributes(IO);
+                if (requires_variable_preparsing)
+                {
+                    preparseVariablesForStep(step, IO, preparsedVariableData);
+                }
+            });
+        if (status == adios2::StepStatus::OtherError)
+        {
+            throw error::ReadError(
+                error::AffectedObject::File,
+                error::Reason::Other,
+                "ADIOS2",
+                "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error "
+                "occurred while reading step " +
+                    std::to_string(preload.size()) + " of " +
+                    std::to_string(totalNumSteps) + " steps of '" + filename +
+                    "'.");
+        }
+        if (preload.size() < totalNumSteps)
+        {
+            char const *statusName = status == adios2::StepStatus::NotReady
+                ? "NotReady"
+                : "EndOfStream";
+            std::cerr << "[ADIOS2 backend] Could read only " << preload.size()
+                      << " of the " << totalNumSteps << " steps of '"
+                      << filename << "' (step status: " << statusName
+                      << "). The remaining steps will be skipped." << std::endl;
+        }
+        // some debugging output below
+#if 0
+        if (requires_variable_preparsing)
+        {
+            for (auto const &[varName, _] :
+                 preparsedVariableData.m_allVariables)
+            {
+                auto it = preparsedVariableData.m_partialVariables.find(varName);
+                std::cout << "\t" << varName << ":\t";
+                if (it == preparsedVariableData.m_partialVariables.end())
+                {
+                    std::cout << "TOTAL\n";
+                }
+                else
+                {
+                    auxiliary::write_vec_to_stream(std::cout, it->second)
+                        << "\n";
+                }
+            }
+            std::cout << "\n" << std::endl;
+        }
+        else
+        {
+            std::cout << "NO PREPARSING NEEDED" << std::endl;
+        }
+#endif
+        auto &attributes = ba->attributes();
+        switchType<ReadAttributeAllsteps>(type, preload, IO, name, param);
+        attributes.m_data = std::move(preload);
+        return;
+    }
+
+    // Lightweight path: read only the requested attribute, one entry per step.
 #if openPMD_HAVE_MPI
     auto adios = [&]() {
         if (m_communicator.has_value())
@@ -2099,39 +2048,42 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
 #else
     adios2::ADIOS adios;
 #endif
-    auto IO = adios.DeclareIO("PreparseSnapshots");
+    auto IO = adios.DeclareIO("ReadAttributeAllsteps");
 
-    std::vector<detail::PreloadAdiosAttributes> preload;
+    std::string const engineType =
+        param.file.has_value() ? "file" : ba->m_IO.EngineType();
+    adios2::Params const engineParameters = param.file.has_value()
+        ? adios2::Params{{"OpenTimeoutSecs", "0"}}
+        : ba->m_IO.Parameters();
 
-    preload.reserve(totalNumSteps);
-    /*
-     * Random access means: read the steps that are on disk when the file is
-     * opened and do not wait for further steps. A file that is still being
-     * written, or whose writer was killed, is marked as active, so
-     * BeginStep() without a timeout would wait for a next step that may never
-     * come. Use a timeout of zero: the random-access engine already told us how
-     * many steps there are (`totalNumSteps`), and this second engine is only
-     * used to pre-parse attributes, so there is nothing to stream from.
-     * If a step cannot be read (StepStatus::NotReady) or the stream ends early
-     * (StepStatus::EndOfStream), stop here and warn. The pre-parsed steps are
-     * then a prefix of the steps that the random-access engine reports, and the
-     * parsing routines treat the missing steps as absent.
-     */
+    Datatype type = Datatype::UNDEFINED;
+    bool initialized = false;
     adios2::StepStatus status = iterateExistingFileSteps(
         IO,
-        fullPath(*file),
-        ba.m_IO.EngineType(),
-        ba.m_IO.Parameters(),
+        filename,
+        engineType,
+        engineParameters,
         0.0f,
-        totalNumSteps,
+        std::nullopt,
         nullptr,
-        [&](size_t step, adios2::IO &) {
-            auto &new_entry = preload.emplace_back();
-            new_entry.preloadAttributes(IO);
-            if (requires_variable_preparsing)
+        [&](size_t, adios2::IO &) {
+            if (!initialized)
             {
-                preparseVariablesForStep(step, IO, preparsedVariableData);
+                type =
+                    detail::attributeInfo(IO, name, /* verbose = */ true);
+                if (type == Datatype::UNDEFINED)
+                {
+                    throw error::ReadError(
+                        error::AffectedObject::Attribute,
+                        error::Reason::NotFound,
+                        "ADIOS2",
+                        "Attribute '" + name + "' not found in '" + filename +
+                            "'.");
+                }
+                switchType<DirectReadAllstepsInit>(type, param);
+                initialized = true;
             }
+            switchType<DirectReadAllsteps>(type, IO, name, param);
         });
     if (status == adios2::StepStatus::OtherError)
     {
@@ -2139,49 +2091,18 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
             error::AffectedObject::File,
             error::Reason::Other,
             "ADIOS2",
-            "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error "
-            "occurred while reading step " +
-                std::to_string(preload.size()) + " of " +
-                std::to_string(totalNumSteps) + " steps of '" +
-                fullPath(*file) + "'.");
+            "[ADIOS2IOHandlerImpl::readAttributeAllsteps] An error occurred "
+            "while reading '" +
+                filename + "'.");
     }
-    if (preload.size() < totalNumSteps)
+    if (!initialized)
     {
-        char const *statusName = status == adios2::StepStatus::NotReady
-            ? "NotReady"
-            : "EndOfStream";
-        std::cerr << "[ADIOS2 backend] Could read only " << preload.size()
-                  << " of the " << totalNumSteps << " steps of '"
-                  << fullPath(*file) << "' (step status: " << statusName
-                  << "). The remaining steps will be skipped." << std::endl;
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "ADIOS2",
+            "File '" + filename + "' contains no IO steps.");
     }
-    // some debugging output below
-#if 0
-    if (requires_variable_preparsing)
-    {
-        for (auto const &[varName, _] : preparsedVariableData.m_allVariables)
-        {
-            auto it = preparsedVariableData.m_partialVariables.find(varName);
-            std::cout << "\t" << varName << ":\t";
-            if (it == preparsedVariableData.m_partialVariables.end())
-            {
-                std::cout << "TOTAL\n";
-            }
-            else
-            {
-                auxiliary::write_vec_to_stream(std::cout, it->second) << "\n";
-            }
-        }
-        std::cout << "\n" << std::endl;
-    }
-    else
-    {
-        std::cout << "NO PREPARSING NEEDED" << std::endl;
-    }
-#endif
-    auto &attributes = ba.attributes();
-    switchType<ReadAttributeAllsteps>(type, preload, IO, name, param);
-    attributes.m_data = std::move(preload);
 }
 
 void ADIOS2IOHandlerImpl::listPaths(
@@ -2665,7 +2586,10 @@ GroupOrDataset ADIOS2IOHandlerImpl::groupOrDataset(Writable *writable)
 }
 
 detail::ADIOS2File &
-ADIOS2IOHandlerImpl::getFileData(internal::FileState &file, IfFileNotOpen flag)
+ADIOS2IOHandlerImpl::getFileData(
+    internal::FileState &file,
+    IfFileNotOpen flag,
+    std::optional<size_t> stepsToKeep)
 {
     auto openFileAs = [&]() {
         using OF = adios_defs::OpenFileAs;
@@ -2692,7 +2616,8 @@ ADIOS2IOHandlerImpl::getFileData(internal::FileState &file, IfFileNotOpen flag)
                 file.name);
         default: {
             file.backendSpecificState = std::make_any<BackendSpecificFileState>(
-                new detail::ADIOS2File(*this, file, openFileAs()));
+                new detail::ADIOS2File(
+                    *this, file, openFileAs(), stepsToKeep));
             break;
         }
         }

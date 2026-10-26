@@ -81,6 +81,13 @@ namespace
         }
     };
 
+    auto snapshotsFromAllStepsAttribute(
+        Parameter<Operation::READ_ATT_ALLSTEPS> &)
+        -> std::vector<std::vector<uint64_t>>;
+    auto stepsToKeepForSnapshot(
+        std::vector<std::vector<uint64_t>> const &, uint64_t)
+        -> std::optional<size_t>;
+
     /** Remove the filename extension of a given storage format.
      *
      * @param   filename    String containing the filename, possibly with
@@ -1318,6 +1325,14 @@ Given file pattern: ')END"
         {
             break;
         }
+        if (series.m_appendAfterSnapshot.has_value())
+        {
+            std::cerr
+                << "[Warning] The option 'append.after_snapshot' is ignored "
+                   "for file-based iteration encoding. Snapshots are written "
+                   "to separate files and overwritten when written again."
+                << std::endl;
+        }
         int padding = autoDetectPadding(
             matcher(
                 series.m_filenamePrefix,
@@ -1650,6 +1665,7 @@ void Series::flushGorVBased(
     {
         if (!written())
         {
+            std::optional<size_t> stepsToKeep;
             if (access::append(IOHandler()->m_frontendAccess))
             {
                 Parameter<Operation::CHECK_FILE> param;
@@ -1660,27 +1676,67 @@ void Series::flushGorVBased(
                 {
                     using FE = Parameter<Operation::CHECK_FILE>::FileExists;
                 case FE::DontKnow:
+                    if (series.m_appendAfterSnapshot.has_value())
+                    {
+                        std::cerr
+                            << "[Warning] Cannot determine whether the existing "
+                               "file has snapshots that need to be removed. "
+                               "The option 'append.after_snapshot' is ignored."
+                            << std::endl;
+                    }
+                    initDefaults(iterationEncoding(), /* initAll = */ true);
+                    break;
                 case FE::No:
                     initDefaults(iterationEncoding(), /* initAll = */ true);
                     break;
                 case FE::Yes: {
-                    /*
-                     * Drop what this Series does not append to: the
-                     * snapshots after `append.after_snapshot` if specified,
-                     * and incomplete output of a writer that was killed.
-                     */
-                    Parameter<Operation::TRUNCATE_FILE> truncate;
-                    truncate.name = series.m_name;
-                    truncate.snapshotsPath =
-                        auxiliary::replace_first(basePath(), "%T/", "");
-                    truncate.afterSnapshot = series.m_appendAfterSnapshot;
-                    IOHandler()->enqueue(IOTask(this, truncate));
-                    IOHandler()->flush(internal::defaultFlushParams);
-                    using Result = Parameter<Operation::TRUNCATE_FILE>::Result;
-                    if (*truncate.result == Result::Emptied)
+                    if (series.m_appendAfterSnapshot.has_value())
                     {
-                        // No snapshot is kept, the file is created anew
-                        initDefaults(iterationEncoding(), /* initAll = */ true);
+                        try
+                        {
+                            std::string snapshotAttribute =
+                                auxiliary::replace_first(
+                                    basePath(), "%T/", "");
+                            while (auxiliary::ends_with(
+                                snapshotAttribute, '/'))
+                            {
+                                snapshotAttribute.pop_back();
+                            }
+                            if (!auxiliary::starts_with(
+                                    snapshotAttribute, '/'))
+                            {
+                                snapshotAttribute =
+                                    "/" + snapshotAttribute;
+                            }
+                            snapshotAttribute += "/snapshot";
+
+                            Parameter<Operation::READ_ATT_ALLSTEPS> readAttr;
+                            readAttr.name = snapshotAttribute;
+                            readAttr.file = series.m_name;
+                            IOHandler()->enqueue(
+                                IOTask(&series.iterations, readAttr));
+                            IOHandler()->flush(internal::defaultFlushParams);
+                            auto snapshotsPerStep =
+                                snapshotsFromAllStepsAttribute(readAttr);
+                            stepsToKeep = stepsToKeepForSnapshot(
+                                snapshotsPerStep,
+                                *series.m_appendAfterSnapshot);
+                        }
+                        catch (error::OperationUnsupportedInBackend const &e)
+                        {
+                            std::cerr
+                                << "[Warning] The backend cannot determine the "
+                                   "IO steps of the existing file, so the option "
+                                   "'append.after_snapshot' is ignored and later "
+                                   "snapshots may be kept.\n"
+                                << e.what() << std::endl;
+                        }
+                        if (stepsToKeep.has_value() && *stepsToKeep == 0)
+                        {
+                            // No IO step is kept, the file is recreated.
+                            initDefaults(
+                                iterationEncoding(), /* initAll = */ true);
+                        }
                     }
                     break;
                 }
@@ -1688,6 +1744,7 @@ void Series::flushGorVBased(
             }
             Parameter<Operation::CREATE_FILE> fCreate;
             fCreate.name = series.m_name;
+            fCreate.m_steps_to_keep = stepsToKeep;
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
@@ -3763,10 +3820,114 @@ AbstractIOHandler const *Series::IOHandler() const
     return res;
 }
 
+namespace
+{
+    using IterationIndex_t = uint64_t;
+
+    auto snapshotsFromAllStepsAttribute(
+        Parameter<Operation::READ_ATT_ALLSTEPS> &readAttr)
+        -> std::vector<std::vector<IterationIndex_t>>
+    {
+        using vec_t = std::vector<IterationIndex_t>;
+        auto wrong_datatype = [&]() {
+            std::stringstream s;
+            s << "Unexpected datatype for '/data/snapshot': " << *readAttr.dtype
+              << " (expected a vector of integer).";
+            return error::ReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::UnexpectedContent,
+                {},
+                s.str());
+        };
+        return std::visit(
+            [&](auto &vec) -> std::vector<vec_t> {
+                using containedType =
+                    typename std::decay_t<decltype(vec)>::value_type;
+                if constexpr (std::is_same_v<containedType, bool>)
+                {
+                    // need to keep the vector<bool> overload away from the
+                    // below implementation
+                    throw wrong_datatype();
+                }
+                else
+                {
+                    std::vector<vec_t> res;
+                    res.reserve(vec.size());
+                    for (auto const &val : vec)
+                    {
+                        auto converted =
+                            detail::doConvertOptional<containedType, vec_t>(
+                                &val);
+                        if (!converted.has_value())
+                        {
+                            throw wrong_datatype();
+                        }
+                        res.emplace_back(*converted);
+                    }
+                    return res;
+                }
+            },
+            readAttr.resource<vector_of_attributes_type>());
+    }
+
+    /*
+     * Compute the largest suffix of IO steps that can be dropped without
+     * dropping any snapshot at or before `afterSnapshot`.
+     * Returns the number of steps to keep, or nullopt if there is nothing to
+     * drop.
+     */
+    auto stepsToKeepForSnapshot(
+        std::vector<std::vector<IterationIndex_t>> const &snapshotsPerStep,
+        IterationIndex_t afterSnapshot) -> std::optional<size_t>
+    {
+        size_t stepsToKeep = snapshotsPerStep.size();
+        while (stepsToKeep > 0)
+        {
+            auto const &snapshots = snapshotsPerStep[stepsToKeep - 1];
+            bool onlyLaterSnapshots = std::all_of(
+                snapshots.begin(),
+                snapshots.end(),
+                [afterSnapshot](IterationIndex_t snapshot) {
+                    return snapshot > afterSnapshot;
+                });
+            if (!onlyLaterSnapshots)
+            {
+                break;
+            }
+            --stepsToKeep;
+        }
+
+        bool remainingLaterSnapshots = false;
+        for (size_t step = 0; step < stepsToKeep; ++step)
+        {
+            for (IterationIndex_t snapshot : snapshotsPerStep[step])
+            {
+                remainingLaterSnapshots =
+                    remainingLaterSnapshots || snapshot > afterSnapshot;
+            }
+        }
+        if (remainingLaterSnapshots)
+        {
+            std::cerr
+                << "[Warning] Cannot remove all snapshots after snapshot "
+                << afterSnapshot
+                << ": IO steps can only be dropped as a whole from the end of "
+                   "the file. The later snapshots that share a step with an "
+                   "earlier snapshot will be kept."
+                << std::endl;
+        }
+
+        if (stepsToKeep == snapshotsPerStep.size())
+        {
+            return std::nullopt;
+        }
+        return stepsToKeep;
+    }
+} // namespace
+
 auto Series::preparseSnapshots()
     -> std::optional<std::vector<std::vector<IterationIndex_t>>>
 {
-    using vec_t = std::vector<IterationIndex_t>;
     auto &series = get();
     if (!series.m_snapshotToStep.empty())
     {
@@ -3783,44 +3944,7 @@ auto Series::preparseSnapshots()
     readAttr.name = "snapshot";
     io_handler->enqueue(IOTask(&series.iterations, readAttr));
     io_handler->flush(internal::defaultFlushParams);
-    auto wrong_datatype = [&]() {
-        std::stringstream s;
-        s << "Unexpected datatype for '/data/snapshot': " << *readAttr.dtype
-          << " (expected a vector of integer).";
-        return error::ReadError(
-            error::AffectedObject::Attribute,
-            error::Reason::UnexpectedContent,
-            {},
-            s.str());
-    };
-    return std::visit(
-        [&](auto &vec) -> std::vector<vec_t> {
-            using containedType =
-                typename std::decay_t<decltype(vec)>::value_type;
-            if constexpr (std::is_same_v<containedType, bool>)
-            {
-                // need to keep the vector<bool> overload away from the
-                // below implementation
-                throw wrong_datatype();
-            }
-            else
-            {
-                std::vector<vec_t> res;
-                res.reserve(vec.size());
-                for (auto const &val : vec)
-                {
-                    auto converted =
-                        detail::doConvertOptional<containedType, vec_t>(&val);
-                    if (!converted.has_value())
-                    {
-                        throw wrong_datatype();
-                    }
-                    res.emplace_back(*converted);
-                }
-                return res;
-            }
-        },
-        readAttr.resource<vector_of_attributes_type>());
+    return snapshotsFromAllStepsAttribute(readAttr);
 }
 
 bool Series::randomAccessSteps() const

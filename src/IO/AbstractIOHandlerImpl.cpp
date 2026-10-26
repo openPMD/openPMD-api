@@ -104,7 +104,6 @@ namespace
         case Operation::ADVANCE:
         case Operation::CREATE_FILE:
         case Operation::CHECK_FILE:
-        case Operation::TRUNCATE_FILE:
         case Operation::OPEN_FILE:
         case Operation::CLOSE_FILE:
         case Operation::DELETE_FILE:
@@ -189,24 +188,6 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
                     "] CHECK_FILE: ",
                     parameter.name);
                 checkFile(i.writable, parameter);
-                break;
-            }
-            case O::TRUNCATE_FILE: {
-                auto &parameter =
-                    deref_dynamic_cast<Parameter<O::TRUNCATE_FILE>>(
-                        i.parameter.get());
-                writeToStderr(
-                    "[",
-                    i.writable->parent,
-                    "->",
-                    i.writable,
-                    "] TRUNCATE_FILE: ",
-                    parameter.name,
-                    " after snapshot ",
-                    parameter.afterSnapshot.has_value()
-                        ? std::to_string(*parameter.afterSnapshot)
-                        : std::string("last"));
-                truncateFile(i.writable, parameter);
                 break;
             }
             case O::CREATE_PATH: {
@@ -599,23 +580,34 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
     return std::future<void>();
 }
 
-void AbstractIOHandlerImpl::truncateFile(
-    Writable *, Parameter<Operation::TRUNCATE_FILE> &param)
-{
-    if (!param.afterSnapshot.has_value())
-    {
-        *param.result = Parameter<Operation::TRUNCATE_FILE>::Result::Unchanged;
-        return;
-    }
-    throw error::OperationUnsupportedInBackend(
-        m_handler->backendName(),
-        "Appending after a selected snapshot ('append.after_snapshot') is "
-        "not implemented in this backend.");
-}
-
 void AbstractIOHandlerImpl::readAttributeAllsteps(
     Writable *w, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
+    auto hasFileInHierarchy = [](Writable *writable) {
+        for (Writable *search = writable; search; search = search->parent)
+        {
+            if (search->fileState.has_value())
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    bool const writableHasFile = hasFileInHierarchy(w);
+    if (param.file.has_value() == writableHasFile)
+    {
+        throw error::Internal(
+            "READ_ATT_ALLSTEPS: The file must be specified by exactly one of "
+            "the 'file' parameter and the Writable hierarchy.");
+    }
+    if (param.file.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            m_handler->backendName(),
+            "Reading an attribute over steps from a file that is not opened is "
+            "not supported in this backend.");
+    }
+
     using result_type = vector_of_attributes_type;
     Parameter<Operation::READ_ATT> param_internal;
     param_internal.name = param.name;

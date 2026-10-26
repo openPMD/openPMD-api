@@ -58,7 +58,6 @@ Writable *getWritable(Attributable *);
 OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
     CREATE_FILE,
     CHECK_FILE,
-    TRUNCATE_FILE, //!< drop the snapshots of a file that are not appended to
     OPEN_FILE,
     CLOSE_FILE,
     DELETE_FILE,
@@ -173,6 +172,12 @@ struct OPENPMDAPI_EXPORT
     }
 
     std::string name = "";
+    /** Keep only the first N IO steps of an existing file and drop the rest.
+     *
+     * Used when appending to a Series. `0` means that no step is kept and the
+     * file is recreated. If empty, the file is kept as it is.
+     */
+    std::optional<size_t> m_steps_to_keep;
 };
 
 template <>
@@ -200,46 +205,6 @@ struct OPENPMDAPI_EXPORT
     };
     std::shared_ptr<FileExists> fileExists =
         std::make_shared<FileExists>(FileExists::DontKnow);
-};
-
-/** Drop the snapshots of an existing file that a Series does not append to.
- *
- * Used when appending to a Series, before the file is opened for writing by
- * Operation::CREATE_FILE. A backend may defer the actual removal until then.
- */
-template <>
-struct OPENPMDAPI_EXPORT
-    Parameter<Operation::TRUNCATE_FILE> : public AbstractParameter
-{
-    Parameter() = default;
-    Parameter(Parameter &&) = default;
-    Parameter(Parameter const &) = default;
-    Parameter &operator=(Parameter &&) = default;
-    Parameter &operator=(Parameter const &) = default;
-
-    std::unique_ptr<AbstractParameter> to_heap() && override
-    {
-        return std::unique_ptr<AbstractParameter>(
-            new Parameter<Operation::TRUNCATE_FILE>(std::move(*this)));
-    }
-
-    //! Name of the file, as in Operation::CHECK_FILE
-    std::string name = "";
-    //! Path of the group that holds the snapshots, e.g. "/data/"
-    std::string snapshotsPath = "";
-    /** Keep this snapshot and all snapshots before it, drop the later ones.
-     *
-     * If empty, keep all snapshots that were written completely.
-     */
-    std::optional<uint64_t> afterSnapshot;
-    enum class Result
-    {
-        Unchanged, //!< there are no later snapshots, nothing is dropped
-        Truncated, //!< later snapshots are dropped, earlier ones are kept
-        Emptied //!< no snapshot is kept, the file will be created anew
-    };
-    std::shared_ptr<Result> result =
-        std::make_shared<Result>(Result::Unchanged);
 };
 
 template <>
@@ -721,6 +686,12 @@ struct OPENPMDAPI_EXPORT
 
     std::string name = "";
     std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
+    /**
+     * Name of the file to read from, as in Operation::CREATE_FILE.
+     * If set, the file is not taken from the Writable hierarchy. Exactly one
+     * of this parameter and the Writable hierarchy must specify the file.
+     */
+    std::optional<std::string> file;
 
     // vector_of_attributes_type
     std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
