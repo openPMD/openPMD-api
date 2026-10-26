@@ -8,9 +8,9 @@
 # This file is a maintainer tool to bump the versions inside openPMD-api's
 # source directory at all places where necessary.
 #
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 # Maintainer Inputs ###########################################################
 
@@ -97,7 +97,7 @@ with open(cmakelists_path, encoding="utf-8") as f:
     cmakelists_content = f.read()
     cmakelists_content = re.sub(
         r"^(project.*openPMD.*VERSION *)(.*)(\).*)$",
-        r"\g<1>{}\g<3>".format(VERSION_STR),
+        rf"\g<1>{VERSION_STR}\g<3>",
         cmakelists_content,
         flags=re.MULTILINE,
     )
@@ -165,8 +165,8 @@ with open(version_hpp_path, encoding="utf-8") as f:
     def replace(key, value):
         global version_hpp_content
         version_hpp_content = re.sub(
-            r"^(#define OPENPMDAPI_VERSION_{}) .*$".format(re.escape(key)),
-            r"\1 {}".format(value),
+            rf"^(#define OPENPMDAPI_VERSION_{re.escape(key)}) .*$",
+            rf"\1 {value}",
             version_hpp_content,
             flags=re.MULTILINE,
         )
@@ -174,7 +174,7 @@ with open(version_hpp_path, encoding="utf-8") as f:
     replace("MAJOR", MAJOR)
     replace("MINOR", MINOR)
     replace("PATCH", PATCH)
-    replace("LABEL", '"{}"'.format(SUFFIX))
+    replace("LABEL", f'"{SUFFIX}"')
 
 with open(version_hpp_path, "w", encoding="utf-8") as f:
     f.write(version_hpp_content)

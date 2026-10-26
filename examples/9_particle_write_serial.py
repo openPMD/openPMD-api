@@ -8,6 +8,7 @@ License: LGPLv3+
 """
 
 import numpy as np
+
 from openpmd_api import Access, Dataset, Series, Unit_Dimension
 
 if __name__ == "__main__":
