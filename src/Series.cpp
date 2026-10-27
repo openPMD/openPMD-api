@@ -81,11 +81,11 @@ namespace
         }
     };
 
-    auto snapshotsFromAllStepsAttribute(
-        Parameter<Operation::READ_ATT_ALLSTEPS> &)
+    auto
+    snapshotsFromAllStepsAttribute(Parameter<Operation::READ_ATT_ALLSTEPS> &)
         -> std::vector<std::vector<uint64_t>>;
-    auto stepsToKeepForSnapshot(
-        std::vector<std::vector<uint64_t>> const &, uint64_t)
+    auto
+    stepsToKeepForSnapshot(std::vector<std::vector<uint64_t>> const &, uint64_t)
         -> std::optional<size_t>;
 
     /** Remove the filename extension of a given storage format.
@@ -1679,7 +1679,8 @@ void Series::flushGorVBased(
                     if (series.m_appendAfterSnapshot.has_value())
                     {
                         std::cerr
-                            << "[Warning] Cannot determine whether the existing "
+                            << "[Warning] Cannot determine whether the "
+                               "existing "
                                "file has snapshots that need to be removed. "
                                "The option 'append.after_snapshot' is ignored."
                             << std::endl;
@@ -1695,18 +1696,14 @@ void Series::flushGorVBased(
                         try
                         {
                             std::string snapshotAttribute =
-                                auxiliary::replace_first(
-                                    basePath(), "%T/", "");
-                            while (auxiliary::ends_with(
-                                snapshotAttribute, '/'))
+                                auxiliary::replace_first(basePath(), "%T/", "");
+                            while (auxiliary::ends_with(snapshotAttribute, '/'))
                             {
                                 snapshotAttribute.pop_back();
                             }
-                            if (!auxiliary::starts_with(
-                                    snapshotAttribute, '/'))
+                            if (!auxiliary::starts_with(snapshotAttribute, '/'))
                             {
-                                snapshotAttribute =
-                                    "/" + snapshotAttribute;
+                                snapshotAttribute = "/" + snapshotAttribute;
                             }
                             snapshotAttribute += "/snapshot";
 
@@ -1726,8 +1723,10 @@ void Series::flushGorVBased(
                         {
                             std::cerr
                                 << "[Warning] The backend cannot determine the "
-                                   "IO steps of the existing file, so the option "
-                                   "'append.after_snapshot' is ignored and later "
+                                   "IO steps of the existing file, so the "
+                                   "option "
+                                   "'append.after_snapshot' is ignored and "
+                                   "later "
                                    "snapshots may be kept.\n"
                                 << e.what() << std::endl;
                         }
