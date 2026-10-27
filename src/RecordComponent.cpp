@@ -46,6 +46,7 @@
 #include <climits>
 #include <complex>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -204,6 +205,17 @@ ConfigureLoadStore RecordComponent::prepareLoadStore()
 
 namespace
 {
+    size_t checkedMultiply(size_t left, size_t right)
+    {
+        if (right != 0 && left > std::numeric_limits<size_t>::max() / right)
+        {
+            throw error::WrongAPIUsage(
+                "Requested chunk is too large: its size exceeds the maximum "
+                "addressable buffer size.");
+        }
+        return left * right;
+    }
+
 #if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 11000) ||                   \
     (defined(__apple_build_version__) && __clang_major__ < 14)
     template <typename T>
@@ -261,13 +273,13 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
     size_t numPoints = 1;
     for (auto val : e)
     {
-        numPoints *= val;
+        numPoints = checkedMultiply(numPoints, val);
     }
+    size_t numBytes = checkedMultiply(numPoints, dtype_size);
 
-    auto newData =
-        std::shared_ptr<void>(new char[numPoints * dtype_size], [](void *p) {
-            delete[] (static_cast<char *>(p));
-        });
+    auto newData = std::shared_ptr<void>(new char[numBytes], [](void *p) {
+        delete[] (static_cast<char *>(p));
+    });
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
@@ -740,7 +752,8 @@ void RecordComponent::storeChunk_impl(
         }
         for (size_t i = 0; i < e.size(); ++i)
         {
-            if (mem_offset[i] + e[i] > mem_extent[i])
+            if (mem_offset[i] > mem_extent[i] ||
+                e[i] > mem_extent[i] - mem_offset[i])
             {
                 throw error::WrongAPIUsage(
                     "Memory selection: memory offset + chunk extent exceeds "

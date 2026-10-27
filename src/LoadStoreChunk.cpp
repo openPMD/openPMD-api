@@ -16,6 +16,7 @@
 #include "openPMD/DatatypeMacros.hpp"
 #include "openPMD/backend/Attributable.hpp"
 
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <optional>
@@ -156,8 +157,16 @@ auto ConfigureLoadStore::currentExtent() const -> Extent
     if (auto buffer_size = getBufferSize(); buffer_size.has_value())
     {
         size_t requestedExtent = std::accumulate(
-            res.begin(), res.end(), 1, [](size_t l, size_t r) -> size_t {
-                return r * l;
+            res.begin(),
+            res.end(),
+            size_t{1},
+            [](size_t l, size_t r) -> size_t {
+                if (r != 0 && l > std::numeric_limits<size_t>::max() / r)
+                {
+                    // Saturate: the extent exceeds any buffer size anyway.
+                    return std::numeric_limits<size_t>::max();
+                }
+                return l * r;
             });
         if (requestedExtent > *buffer_size)
         {
