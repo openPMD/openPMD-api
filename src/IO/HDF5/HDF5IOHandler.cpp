@@ -1660,7 +1660,8 @@ void HDF5IOHandlerImpl::openDataset(
                     throw_error();
                 }
 
-                auto defer_close_next_type = auxiliary::defer([&]() {
+                if (H5Tequal(dataset_type, next_type))
+                {
                     status = H5Tclose(next_type);
                     if (status != 0)
                     {
@@ -1669,22 +1670,16 @@ void HDF5IOHandlerImpl::openDataset(
                                "dataset type during dataset opening."
                             << std::endl;
                     }
-                });
-
-                if (H5Tequal(dataset_type, next_type))
-                {
                     throw_error();
                 }
 
-                status = H5Tclose(dataset_type);
+                status = H5Tclose(dataset_type); // the old dataset type
                 if (status != 0)
                 {
-                    std::cerr
-                        << "[HDF5] Internal error: Failed to close HDF5 "
-                           "dataset type during dataset opening."
-                        << std::endl;
+                    std::cerr << "[HDF5] Internal error: Failed to close HDF5 "
+                                 "dataset type during dataset opening."
+                              << std::endl;
                 }
-                defer_close_next_type.do_run_this = false;
                 dataset_type = next_type;
                 --remaining_tries;
                 repeat = true;
