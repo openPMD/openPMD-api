@@ -1997,7 +1997,7 @@ void ADIOS2IOHandlerImpl::readAttributeAllsteps(
         ba = &getFileData(*file, IfFileNotOpen::ThrowError);
     }
     std::string const engineType =
-        param.file.has_value() ? "file" : ba->m_IO.EngineType();
+        param.file.has_value() ? realEngineType() : ba->m_IO.EngineType();
     adios2::Params engineParameters{
         {"OpenTimeoutSecs", "0"}, {"StreamReader", "ON"}};
     if (ba)

@@ -820,10 +820,9 @@ adios2::Engine &ADIOS2File::getEngine()
                     tempMode = adios2::Mode::Write;
                 }
                 else if (
-                    m_impl->realEngineType() != "bp5" &&
-                    m_impl->realEngineType() != "bp" &&
-                    m_impl->realEngineType() != "file" &&
-                    m_impl->realEngineType() != "filestream")
+                    m_IO.EngineType() != "bp5" && m_IO.EngineType() != "bp" &&
+                    m_IO.EngineType() != "file" &&
+                    m_IO.EngineType() != "filestream")
                 {
                     std::cerr
                         << "[ADIOS2 backend] Cannot remove existing IO steps "
