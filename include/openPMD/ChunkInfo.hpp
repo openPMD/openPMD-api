@@ -25,10 +25,6 @@
 #include "openPMD/Dataset.hpp" // Offset, Extent
 #include "openPMD/auxiliary/BlockSlicer.hpp"
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include <map>
 #include <memory>
 #include <string>
@@ -587,11 +583,16 @@ namespace host_info
      *
      * This call is MPI collective.
      *
+     * @tparam Communicator The communicator type, e.g. \c MPI_Comm.
+     * @param communicator The MPI communicator.
+     * @param method The method used for retrieving the hostname.
      * @return chunk_assignment::RankMeta Hostname / processor name information
      *         for all MPI ranks known to the communicator.
      *         The result is returned on all ranks.
      */
-    chunk_assignment::RankMeta byMethodCollective(MPI_Comm, Method);
+    template <typename Communicator>
+    chunk_assignment::RankMeta
+    byMethodCollective(Communicator communicator, Method method);
 #endif
 } // namespace host_info
 } // namespace openPMD

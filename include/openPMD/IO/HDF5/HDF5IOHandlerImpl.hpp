@@ -23,6 +23,9 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/config.hpp"
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
 #if openPMD_HAVE_HDF5
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
