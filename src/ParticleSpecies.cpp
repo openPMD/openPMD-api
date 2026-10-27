@@ -38,8 +38,10 @@ void ParticleSpecies::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 
 ParticleSpecies::ParticleSpecies()
 {
+    m_child_filter.excludedKey = "particlePatches";
     particlePatches.writable().ownKeyWithinParent = "particlePatches";
-    container_back()["particlePatches"] = *particlePatches.m_attri;
+    writable().objectType.requireGroup()->children()["particlePatches"] =
+        *particlePatches.m_attri;
 }
 
 void ParticleSpecies::read()
@@ -114,11 +116,8 @@ void ParticleSpecies::read()
 
     if (!hasParticlePatches)
     {
-        auto container = particlePatches.container();
-        container.for_both([](auto &map_) {
-            map_.erase("numParticles");
-            map_.erase("numParticlesOffset");
-        });
+        particlePatches.erase_unchecked("numParticles");
+        particlePatches.erase_unchecked("numParticlesOffset");
         particlePatches.setDirty(false);
     }
 

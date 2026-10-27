@@ -80,8 +80,6 @@ void write(
     auto custom_groups = iteration.customHierarchies()["fully"]["custom"];
     auto custom_datasets = custom_groups.datasets();
     auto fully_custom_dataset_2 = custom_datasets["dataset2"];
-    REQUIRE(!custom_groups.contains("dataset2"));
-    custom_groups.refresh();
     REQUIRE(custom_groups.contains("dataset2"));
     fully_custom_dataset_2.resetDataset({Datatype::INT, {3}});
     fully_custom_dataset.setComment(
@@ -157,13 +155,25 @@ void read(
 
     auto custom_data_2 = iteration.customHierarchies()["fully"]
                              .datasets()
-                             .subhierarchies()["custom"]["dataset2"]
+                             .subgroups()["custom"]["dataset2"]
                              .asDataset()
                              .loadChunk<int>();
     iteration.seriesFlush();
     for (size_t i = 0; i < 3; ++i)
     {
         REQUIRE(custom_data_2.get()[i] == (int)i + 1);
+    }
+
+    {
+        auto custom = iteration.customHierarchies()["fully"]["custom"];
+        auto subgroups = custom.subgroups();
+        REQUIRE(!subgroups.contains("dataset"));
+        REQUIRE(subgroups.contains("constant_dataset"));
+
+        auto datasets = custom.datasets();
+        REQUIRE(datasets.contains("dataset"));
+        REQUIRE(datasets.contains("dataset2"));
+        REQUIRE(!datasets.contains("constant_dataset"));
     }
 
     iteration.customHierarchies().read(0).printRecursively();
@@ -214,6 +224,52 @@ struct test_config
     char const *json_params;
     IterationEncoding encoding;
 };
+
+void iteration_filtering()
+{
+    Series series(
+        "../samples/custom_hierarchy/iteration_filtering.json", Access::CREATE);
+    series.iterations[0];
+    auto custom = series.iterations.customHierarchies();
+    custom["not_an_index"].setAttribute("x", "y");
+
+    REQUIRE(series.iterations.size() == 1);
+    REQUIRE(series.iterations.begin()->first == 0);
+
+    custom["42"].setAttribute("x", "y");
+    REQUIRE(series.iterations.size() == 2);
+    REQUIRE(series.iterations.contains(42));
+    REQUIRE_THROWS_AS(series.iterations.begin(), error::WrongAPIUsage);
+
+    custom.erase("42");
+    custom.erase("not_an_index");
+}
+
+void materialization_error()
+{
+    Series series(
+        "../samples/custom_hierarchy/materialization_error.json",
+        Access::CREATE);
+    auto iteration = series.iterations[0];
+    iteration.meshes["E"]["x"].resetDataset({Datatype::INT, {3}});
+    iteration.customHierarchies()["meshes"]["custom_group"].setAttribute(
+        "a", "b");
+
+    // Already materialized children and their iterators remain valid.
+    REQUIRE(iteration.meshes.contains("E"));
+    auto it = iteration.meshes.begin();
+    REQUIRE(it != iteration.meshes.end());
+    REQUIRE(it->first == "E");
+    REQUIRE(&it->second == &iteration.meshes.at("E"));
+
+    // The custom-created group has no Mesh materialization. Dereferencing it
+    // throws, but the iterator remains valid and can still be advanced.
+    ++it;
+    REQUIRE(it != iteration.meshes.end());
+    REQUIRE_THROWS_AS(*it, error::WrongAPIUsage);
+    ++it;
+    REQUIRE(it == iteration.meshes.end());
+}
 
 void custom_hierarchy()
 {

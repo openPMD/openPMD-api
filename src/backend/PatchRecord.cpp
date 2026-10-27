@@ -101,8 +101,7 @@ void PatchRecord::read()
                       << component_name
                       << "' and will skip it due to read error:" << err.what()
                       << std::endl;
-            this->container().for_both(
-                [&component_name](auto &map) { map.erase(component_name); });
+            this->erase_unchecked(component_name);
         }
     }
 

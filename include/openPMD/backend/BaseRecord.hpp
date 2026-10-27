@@ -49,7 +49,7 @@ namespace internal
          */
         typename T_RecordComponentData = typename T_elem::Data_t>
     class BaseRecordData final
-        : public ContainerData<T_elem>
+        : virtual public AttributableData
         , public T_RecordComponentData
     {
         using T_RecordComponent = T_elem;
@@ -248,22 +248,18 @@ public:
     using pointer = typename Container<T_elem>::pointer;
     using const_pointer = typename Container<T_elem>::const_pointer;
 
-    using iterator = internal::ScalarIterator<
-        T_Self,
-        Data_t,
-        typename T_Container::InternalContainer::iterator>;
+    using iterator = internal::
+        ScalarIterator<T_Self, Data_t, typename T_Container::iterator>;
     using const_iterator = internal::ScalarIterator<
         T_Self const,
         Data_t const,
-        typename T_Container::InternalContainer::const_iterator>;
-    using reverse_iterator = internal::ScalarIterator<
-        T_Self,
-        Data_t,
-        typename T_Container::InternalContainer::reverse_iterator>;
+        typename T_Container::const_iterator>;
+    using reverse_iterator = internal::
+        ScalarIterator<T_Self, Data_t, typename T_Container::reverse_iterator>;
     using const_reverse_iterator = internal::ScalarIterator<
         T_Self const,
         Data_t const,
-        typename T_Container::InternalContainer::const_reverse_iterator>;
+        typename T_Container::const_reverse_iterator>;
 
 private:
     template <typename... Arg>
@@ -322,7 +318,6 @@ public:
     template <class InputIt>
     void insert(InputIt first, InputIt last);
     void insert(std::initializer_list<value_type> ilist);
-    void swap(BaseRecord &other) noexcept;
     bool contains(key_type const &key) const;
     template <class... Args>
     auto emplace(Args &&...args) -> std::pair<iterator, bool>;
@@ -352,7 +347,7 @@ public:
 
     void setDatasetDefined(BaseRecordComponent::Data_t &data) override
     {
-        if (!T_Container::empty())
+        if (this->writable().objectType.isGroup() && !T_Container::empty())
         {
             throw error::WrongAPIUsage(
                 "A scalar component can not be contained at the same time as "
@@ -382,7 +377,7 @@ protected:
 namespace detail
 {
     constexpr char const *const NO_SCALAR_INSERT =
-        "[BaseRecord] emplace()/insert()/swap() API invalid for scalar "
+        "[BaseRecord] emplace()/insert() API invalid for scalar "
         "records. Use the Record directly as a RecordComponent.";
 
     template <typename BaseRecord>
@@ -421,13 +416,11 @@ template <typename... Args>
 auto BaseRecord<T_elem>::emplace(Args &&...args) -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->syncInsertResult(
-        this->container_front().emplace(std::forward<Args>(args)...));
+    auto res = T_Container::emplace(std::forward<Args>(args)...);
     if (res.first->first == RecordComponent::SCALAR)
     {
         auto const key = res.first->first;
-        this->container_back().erase(key);
-        this->container_front().erase(res.first);
+        this->erase_unchecked(key);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};

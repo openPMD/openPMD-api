@@ -219,22 +219,13 @@ void Attributable::customHierarchyFlush(
     Parameter<Operation::CREATE_PATH> pCreate;
 
     data.m_writable.objectType.ifGroup([&](auto &group_metadata) {
-        for (auto &[name, subpath_pointer] :
-             group_metadata.m_children_managed_as_custom_hierarchy)
+        for (auto const &[name, child] : group_metadata.children())
         {
-            auto &subpath = *subpath_pointer;
-            auto backpointer = subpath.writable().attributable;
-            auto casted_backpointer =
-                dynamic_cast<CustomHierarchy::Data_t *>(backpointer);
-            auto casted_backpointer2 =
-                dynamic_cast<CustomDataset::Data_t *>(backpointer);
-            if (!casted_backpointer && !casted_backpointer2)
+            if (!child->managed_as_custom_hierarchy)
             {
-                throw error::Internal(
-                    "SharedAttributableData::m_children_managed_as_custom_"
-                    "hierarchy contained "
-                    "an object that should be flushed conventionally.");
+                continue;
             }
+            CustomHierarchy subpath{child};
             std::visit(
                 auxiliary::overloaded{
                     [&, &name_lambda = name](
@@ -250,7 +241,7 @@ void Attributable::customHierarchyFlush(
                         internal::object_type::DatasetMetaData const &) {
                         subpath.asDataset().flush(name_lambda, flushParams);
                     }},
-                subpath.writable().objectType);
+                child->m_writable.objectType);
         }
     });
 
@@ -387,16 +378,21 @@ void Attributable::visitHierarchy(HierarchyVisitor &visitor, bool recursive)
     if (recursive)
     {
         writable().objectType.ifGroup([&, recursive](auto &group_info) {
-            for (auto &pair : group_info.m_children_managed_as_custom_hierarchy)
+            for (auto const &[name, child] : group_info.children())
             {
-                auto &obj = *pair.second;
+                (void)name;
+                if (!child->managed_as_custom_hierarchy)
+                {
+                    continue;
+                }
+                CustomHierarchy obj{child};
                 if (obj.isDataset())
                 {
                     obj.asDataset().visitHierarchy(visitor, recursive);
                 }
                 else
                 {
-                    pair.second->visitHierarchy(visitor, recursive);
+                    obj.visitHierarchy(visitor, recursive);
                 }
             }
         });
@@ -450,12 +446,9 @@ uintptr_t Attributable::memoryID() const
 
 auto Attributable::customHierarchies() -> CustomHierarchy
 {
-    // No need to emplace this in
-    // SharedAttributableData::m_children_managed_as_custom_hierarchy. Only
-    // those instances of CustomHierarchy need to be emplaced that do not have a
-    // counter-object inside the openPMD hierarchy keeping it alive, e.g.
-    // children created or read by the returned instance outside the openPMD
-    // hierarchy.
+    // The returned instance does not need to be registered anywhere: typed
+    // handles are owned by the ChildrenCache, so children created through this
+    // view stay alive in the backend hierarchy.
     auto res = CustomHierarchy{*this};
     traits::ElementAccessPolicy<CustomHierarchy>::call(res);
     return res;
@@ -734,29 +727,7 @@ void Attributable::preferCurrentBackpointer() const
     // !this_as_custom_hierarchy && backpointer_as_custom_hierarchy
 
     w.attributable = m_attri.get();
-
-    // Now:
-    // !this_as_custom_hierarchy && !backpointer_as_custom_hierarchy
-
-    if (!w.parent)
-    {
-        throw error::Internal(
-            "CustomHierarchy object was created without parent. Why?");
-    }
-
-    // dont manage this as a customhierarchy instance
-    auto count_of_erased_elements =
-        (*w.parent->attributable)
-            ->m_writable.objectType.requireGroup()
-            ->m_children_managed_as_custom_hierarchy.erase(
-                w.ownKeyWithinParent);
-    if (count_of_erased_elements != 1)
-    {
-        throw error::Internal(
-            "Unexpected state: Expected to erase 1 element from internal "
-            "object storage, found " +
-            std::to_string(count_of_erased_elements) + " instead.");
-    }
+    shareddata.managed_as_custom_hierarchy = false;
 
     // std::cout << "REWIRED '" << myPath().openPMDPath() << "'." << std::endl;
 }

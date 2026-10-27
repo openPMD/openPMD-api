@@ -18,6 +18,11 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+namespace children_cache
+{
+auto children_cache() -> void;
+} // namespace children_cache
+
 namespace drain_set
 {
 auto drain_set() -> void;

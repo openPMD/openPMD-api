@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/backend/ChildrenCache.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -49,7 +50,6 @@ class AbstractIOHandlerImplCommon;
 template <typename>
 class Span;
 class Series;
-class CustomHierarchy;
 
 namespace traits
 {
@@ -72,6 +72,9 @@ namespace internal
     class ScientificDefaults;
     class BaseRecordComponentData;
     class RecordComponentData;
+    template <typename, typename>
+    class ChildView;
+    struct ChildFilter;
 } // namespace internal
 
 namespace internal::object_type
@@ -120,21 +123,35 @@ namespace internal::object_type
         // movability for map handling
         // Disallowing move in AttributableData is only a measure for code
         // discipline anyway.
-        using children_map_t =
-            std::map<std::string, std::shared_ptr<SharedAttributableData>>;
-        children_map_t m_children;
+        using children_map_t = ChildrenCache::children_map_t;
 
-        // Attributable::customHierarchies() creates objects of type
-        // CustomHierarchy ephemerally on the spot. If that object is the first
-        // object for its associated SharedAttributableData instance, it must be
-        // stored somewhere still, because the first instance is back-referenced
-        // by Writable class (TODO: turn that back-reference into a weak_ptr?).
-        // Store these objects in the parent to avoid reference cycles.
-        // Need shared_ptr because size is not yet known and unique_ptr cannot
-        // be managed by std::map.
-        using children_object_storage_t =
-            std::map<std::string, std::shared_ptr<CustomHierarchy>>;
-        children_object_storage_t m_children_managed_as_custom_hierarchy;
+        /**
+         * Authoritative child hierarchy plus lazily materialized typed views.
+         * This is the only persistent storage for children; all views of this
+         * group share it.
+         */
+        mutable ChildrenCache m_children_cache;
+
+        inline auto children() -> children_map_t &
+        {
+            return m_children_cache.children();
+        }
+        inline auto children() const -> children_map_t const &
+        {
+            return m_children_cache.children();
+        }
+
+        /** Remove a child from the authoritative map and every cache. */
+        void erase_child(std::string const &key)
+        {
+            m_children_cache.erase(key);
+        }
+
+        /** Clear the authoritative map and every cache. */
+        void clear_children()
+        {
+            m_children_cache.clear();
+        }
 
         bool phantom = false;
     };
@@ -188,6 +205,17 @@ namespace internal
         }
 
         auto requireGroup() -> object_type::GroupMetaData *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            throw error::Internal(
+                "Internal object status: Group type required.");
+        }
+
+        auto requireGroup() const -> object_type::GroupMetaData const *
         {
             if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
                 res)
@@ -283,6 +311,9 @@ class Writable final
     template <typename>
     friend class ConvertibleContainer;
     friend class CustomHierarchy;
+    template <typename, typename>
+    friend class internal::ChildView;
+    friend struct internal::ChildFilter;
     template <typename T>
     friend struct traits::GenerationPolicy;
     friend class internal::BaseRecordComponentData;

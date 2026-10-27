@@ -1229,7 +1229,7 @@ void Series::initSeries(
     series.iterations.writable().ownKeyWithinParent = "data";
     series->m_writable.ownKeyWithinParent = "ROOT";
     auto &container_back =
-        series->m_writable.objectType.requireGroup()->m_children;
+        series->m_writable.objectType.requireGroup()->children();
     container_back["data"] = *series.iterations.m_attri;
     series.m_perIterationData.m_rankTableAttributable.linkHierarchy(writable);
 
@@ -1988,10 +1988,7 @@ void Series::readFileBased(
 
     for (auto index : unparseableIterations)
     {
-        series.iterations.container().for_both_to_string(
-            [index](auto &map, auto &&to_string) {
-                map.erase(to_string(index));
-            });
+        series.iterations.erase_unchecked(index);
     }
 
     if (padding > 0)
@@ -2327,10 +2324,7 @@ creating new iterations.
                     std::cerr << "Cannot read iteration '" << index
                               << "' and will skip it due to read error:\n"
                               << err.what() << std::endl;
-                    series.iterations.container().for_both_to_string(
-                        [index](auto &map, auto &&to_string) {
-                            map.erase(to_string(index));
-                        });
+                    series.iterations.erase_unchecked(index);
                     return {err};
                 }
                 i.get().m_closed = internal::CloseStatus::Open;
@@ -3433,7 +3427,7 @@ namespace internal
         }
         // Not strictly necessary, but clear the map of iterations
         // This releases the openPMD hierarchy
-        iterations.container().for_both([](auto &map) { map.clear(); });
+        iterations.clear_children_unchecked();
         // Release the IO Handler
         if (IOHandler)
         {

@@ -41,7 +41,7 @@ namespace openPMD
 class CustomHierarchy;
 namespace internal
 {
-    struct CustomHierarchyData : ContainerData<CustomHierarchy>
+    struct CustomHierarchyData : public AttributableData
     {
         bool has_been_read = false;
     };
@@ -73,9 +73,6 @@ class ConvertibleContainer : public Container<MappedType>
 
 protected:
     using Container_t = Container<MappedType>;
-    using Data_t = internal::ContainerData<MappedType>;
-    static_assert(
-        std::is_base_of_v<typename Container_t::ContainerData, Data_t>);
 
     using Container_t::Container_t;
 
@@ -90,10 +87,7 @@ public:
     auto asDataset() -> CustomDataset;
 
     auto datasets() -> ConvertibleContainer<CustomDataset>;
-    auto subhierarchies() -> ConvertibleContainer<CustomHierarchy>;
-
-    // TODO when to refresh? refresh implicitly?
-    void refresh();
+    auto subgroups() -> ConvertibleContainer<CustomHierarchy>;
 };
 
 namespace traits
@@ -102,65 +96,26 @@ namespace traits
     struct ElementAccessPolicy<CustomHierarchy>
     {
         static void call(CustomHierarchy &);
-        static void call(Container<CustomHierarchy> const &);
+        static void call(CustomHierarchy const &);
     };
 
     namespace detail
     {
         template <typename Container, typename Iterator>
-        void emplace_object_as_customly_managed(Container &cont, Iterator &it)
+        void emplace_object_as_customly_managed(Container &, Iterator &it)
         {
-            auto cast_to_custom_hierarchy = [&it]() {
-                using MappedType = std::remove_cv_t<
-                    std::remove_reference_t<decltype(it->second)>>;
-                if constexpr (std::is_same_v<MappedType, CustomHierarchy>)
-                {
-                    return it->second;
-                }
-                else
-                {
-                    return it->second.customHierarchies();
-                }
-            };
             auto &writable = it->second.writable();
 
-            // These should be different
-            auto child_shared_data = &it->second.Attributable::get();
-            auto parent_shared_data = &cont.Attributable::get();
-            if (child_shared_data == parent_shared_data)
-            {
-                throw std::runtime_error(
-                    "Trying to emplace object as its own child");
-            }
-
-            // These might be different, but might also be the same
-            //
-            // For an explanation, ref. the documentation of
-            // Writable::attributable: This is a pointer back to the first
-            // created Attributable instance linking this Writable. There might
-            // be multiple Attributable objects linking the same backend
-            // Writable object when opening multiple "views" on the same backend
-            // object, e.g. when a scalar Record is at the same time a
-            // RecordComponent, or when reopening an object as a
-            // CustomHierarchy.
-            //
-            // Since CustomHierarchy performs no memory management by default,
-            // we must ensure that the backpointer in Writable::attributable
-            // remains valid when the frontend instance pointed by
-            // Writable::attributable *is* the CustomHierarchy instance (happens
-            // when it is the first frontend object created for that backend
-            // object).
+            // If this frontend instance is the first one for its backend
+            // object, the reference graph (Writable::attributable -> frontend
+            // data -> SharedAttributableData) is rooted at it. The typed cache
+            // now owns that instance, so only record that the object was
+            // created through the custom hierarchy.
             auto backpointer = writable.attributable;
             auto emplaced_pointer = it->second.m_attri.get();
-            auto *group_metadata =
-                (**cont.m_attri).m_writable.objectType.requireGroup();
             if (backpointer == emplaced_pointer)
             {
-                group_metadata
-                    ->m_children_managed_as_custom_hierarchy[it->first] =
-                    // NO move!! The iterator must stay alive
-                    std::make_shared<CustomHierarchy>(
-                        cast_to_custom_hierarchy());
+                (**it->second.m_attri).managed_as_custom_hierarchy = true;
             }
         }
     } // namespace detail
@@ -200,6 +155,8 @@ class CustomHierarchy : public ConvertibleContainer<CustomHierarchy>
     friend class Container;
     template <typename>
     friend class ConvertibleContainer;
+    template <typename>
+    friend struct internal::ChildMaterializer;
 
 private:
     using Parent_t = ConvertibleContainer<CustomHierarchy>;
@@ -266,4 +223,35 @@ private:
 protected:
     void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
+namespace internal
+{
+    template <>
+    struct ChildMaterializer<CustomHierarchy>
+    {
+        static auto materialize(
+            std::string const &,
+            std::shared_ptr<SharedAttributableData> const &child)
+            -> std::optional<CustomHierarchy>
+        {
+            return CustomHierarchy(child);
+        }
+    };
+
+    template <>
+    struct ChildMaterializer<CustomDataset>
+    {
+        static auto materialize(
+            std::string const &,
+            std::shared_ptr<SharedAttributableData> const &child)
+            -> std::optional<CustomDataset>
+        {
+            CustomHierarchy custom{child};
+            if (!custom.isDataset())
+            {
+                return std::nullopt;
+            }
+            return custom.asDataset();
+        }
+    };
+} // namespace internal
 } // namespace openPMD

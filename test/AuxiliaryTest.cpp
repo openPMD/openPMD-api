@@ -571,3 +571,8 @@ TEST_CASE("drain_set_test", "[auxiliary]")
 {
     drain_set::drain_set();
 }
+
+TEST_CASE("children_cache_test", "[auxiliary]")
+{
+    children_cache::children_cache();
+}

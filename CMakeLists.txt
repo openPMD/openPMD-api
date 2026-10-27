@@ -430,6 +430,7 @@ set(CORE_SOURCE
         src/backend/Attribute.cpp
         src/backend/BaseRecord.cpp
         src/backend/BaseRecordComponent.cpp
+        src/backend/ChildrenCache.cpp
         src/backend/Container.cpp
         src/backend/HierarchyVisitor.cpp
         src/backend/MeshRecordComponent.cpp
@@ -875,6 +876,7 @@ if(openPMD_BUILD_TESTING)
             )
         elseif(${test_name} STREQUAL "Auxiliary")
             list(APPEND ${out_list}
+                test/Files_Auxiliary/children_cache.cpp
                 test/Files_Auxiliary/drain_set.cpp
             )
         endif()

@@ -65,6 +65,8 @@ namespace internal
 {
     class IterationData;
     class SeriesData;
+    template <typename, typename>
+    class ChildView;
     struct HomogenizeExtents;
     struct ConfigAttribute;
     class ScientificDefaults;
@@ -96,6 +98,18 @@ namespace internal
          * The attributes defined by this Attributable.
          */
         A_MAP m_attributes;
+
+        /**
+         * True if the frontend instance owning Writable::attributable was
+         * created through a custom-hierarchy view and has not yet been
+         * replaced by a regular typed view.
+         *
+         * This cannot be inferred from the typed caches: a cache can contain
+         * either a custom-created handle or an alias materialized from the
+         * regular hierarchy. The flag distinguishes those cases for
+         * custom-hierarchy flush/visit and for preferCurrentBackpointer().
+         */
+        bool managed_as_custom_hierarchy = false;
     };
 
     /*
@@ -267,6 +281,8 @@ class Attributable
     template <typename T, typename Series_type>
     friend T &internal::makeOwning(T &self, Series_type);
     friend class StatefulSnapshotsContainer;
+    template <typename, typename>
+    friend class internal::ChildView;
     friend class internal::AttributableData;
     friend class Snapshots;
     friend struct internal::HomogenizeExtents;
@@ -501,23 +517,16 @@ public:
      */
     [[nodiscard]] uintptr_t memoryID() const;
 
-    // TODO: Add parse? parameter, dont parse, parse this object, parse
-    // recursively
-    // Alternatively, parse upon deferred initialization?
-    // CustomHierarchy is ephemeral, and i dont even know what that word
-    // means. but i want to say that things are created on the spot. if we go to
-    // the same place in the openPMD file using different paths, the objects
-    // will be different, except for the backend data stored in
-    // sharedattributabledata and writable classes. even when later turning a
-    // customhierarchy object into a recordcomponent, this will not be same
-    // recordcomponent object as in the usual openpmd hierarchy.
-    // All data that needs to be shared within instances, is inside
-    // SharedAttributableData (including Writable).
-    // If objects are *created* by customhierarchies, the pointer
-    // writable.attributable will point to that object as the first instance. so
-    // i guess we will still need to store the objects somewhere and cannot keep
-    // them fully ephemeral. This job is done by
-    // GroupMetaData::m_children_managed_as_custom_hierarchy.
+    /** Return a generic view of this object's hierarchy.
+     *
+     * The returned view is lazy: children are read from the backend and
+     * represented by frontend handles only when they are accessed.
+     *
+     * Children created or erased through the returned view affect the regular
+     * openPMD hierarchy. Handles created through this view are kept alive by
+     * the containing backend group, independently of the lifetime of the
+     * returned handle.
+     */
     auto customHierarchies() -> CustomHierarchy;
 
     // clang-format off

@@ -54,11 +54,11 @@ private:
     void read();
     void flush(std::string const &, internal::FlushParams const &);
 
-    using Data_t = Container<Record>::ContainerData;
+    using Data_t = internal::AttributableData;
 
     inline std::shared_ptr<Data_t> getShared()
     {
-        return m_containerData;
+        return m_attri;
     }
 
 protected:
