@@ -583,6 +583,14 @@ std::future<void> AbstractIOHandlerImpl::flush(FlushLevel l)
 void AbstractIOHandlerImpl::readAttributeAllsteps(
     Writable *w, Parameter<Operation::READ_ATT_ALLSTEPS> &param)
 {
+    if (param.file.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            m_handler->backendName(),
+            "Reading an attribute over steps from a file that is not opened is "
+            "not supported in this backend.");
+    }
+
     using result_type = vector_of_attributes_type;
     Parameter<Operation::READ_ATT> param_internal;
     param_internal.name = param.name;

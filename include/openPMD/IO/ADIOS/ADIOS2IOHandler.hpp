@@ -421,7 +421,10 @@ private:
         ReopenFileFoundOnDisk = OpenImplicitly,
     };
 
-    detail::ADIOS2File &getFileData(internal::FileState &file, IfFileNotOpen);
+    detail::ADIOS2File &getFileData(
+        internal::FileState &file,
+        IfFileNotOpen,
+        std::optional<size_t> stepsToKeep = std::nullopt);
 
     template <typename T>
     static void setStepSelectionForVariable(

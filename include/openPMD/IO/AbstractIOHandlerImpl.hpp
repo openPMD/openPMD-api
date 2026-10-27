@@ -369,6 +369,12 @@ public:
     readAttribute(Writable *, Parameter<Operation::READ_ATT> &) = 0;
     /** Collective task to read modifiable attributes over steps.
      *
+     * The file to read from must be specified by exactly one of:
+     * - `Parameter<Operation::READ_ATT_ALLSTEPS>::file`, or
+     * - the Writable hierarchy.
+     * Implementations must throw error::Internal if both or neither are
+     * specified.
+     *
      * Has a default implementation for backends that do not support steps;
      * here, the task is relayed to normal READ_ATT.
      * This task is key for implementing the preparsing logic needed in
@@ -382,6 +388,8 @@ public:
      * such as /data/time.
      * In future: Let this task preparse the entirety of all modifiable
      * attributes.
+     * Implementations may prepare the file for this operation lazily, but
+     * must not assume that the file has been opened by the frontend.
      */
     virtual void readAttributeAllsteps(
         Writable *, Parameter<Operation::READ_ATT_ALLSTEPS> &);

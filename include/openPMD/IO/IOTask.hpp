@@ -33,6 +33,7 @@
 
 #include <any>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -171,6 +172,12 @@ struct OPENPMDAPI_EXPORT
     }
 
     std::string name = "";
+    /** Keep only the first N IO steps of an existing file and drop the rest.
+     *
+     * Used when appending to a Series. `0` means that no step is kept and the
+     * file is recreated. If empty, the file is kept as it is.
+     */
+    std::optional<size_t> m_steps_to_keep;
 };
 
 template <>
@@ -679,6 +686,12 @@ struct OPENPMDAPI_EXPORT
 
     std::string name = "";
     std::shared_ptr<Datatype> dtype = std::make_shared<Datatype>();
+    /**
+     * Name of the file to read from, as in Operation::CREATE_FILE.
+     * If set, the file is not taken from the Writable hierarchy. Exactly one
+     * of this parameter and the Writable hierarchy must specify the file.
+     */
+    std::optional<std::string> file;
 
     // vector_of_attributes_type
     std::shared_ptr<std::any> m_resource = std::make_shared<std::any>();
