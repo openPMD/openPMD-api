@@ -21,11 +21,12 @@
 
 /*
  * A buffer-type load/store configuration (see withContiguousContainer() and
- * friends) consumes its buffer when the operation is enqueued: store() moves
- * the buffer out, load() reads from it. Reusing the same configuration (or a
- * copy of it, since the configuration is copyable and shares the buffer) for a
- * second operation used to dereference a moved-from buffer and crash. It must
- * instead be reported as error::WrongAPIUsage.
+ * friends) that borrows a shared or raw buffer can be reused for multiple
+ * operations: store() and load() copy the shared pointer instead of moving it
+ * out. Configurations backed by a unique pointer own their buffer and are
+ * single-use. A second operation on such a configuration (or on a copy that
+ * shares the buffer) used to dereference a moved-from buffer and crash; it
+ * must instead be reported as error::WrongAPIUsage.
  */
 #include "SerialIOTests.hpp"
 
