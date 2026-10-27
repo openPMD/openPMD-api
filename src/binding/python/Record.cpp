@@ -32,13 +32,14 @@
 #include <string>
 #include <vector>
 
-void init_Record(py::module &m)
+void init_Record(nb::module_ &m)
 {
     auto py_r_cnt = declare_container<PyRecordContainer, Attributable>(
         m, "Record_Container");
 
-    py::class_<Record, BaseRecord<RecordComponent> > cl(m, "Record");
-    cl.def(py::init<Record const &>())
+    auto cl =
+        python::bind_class<Record, BaseRecord<RecordComponent>>(m, "Record");
+    cl.def(nb::init<Record const &>())
 
         .def(
             "__repr__",
@@ -48,7 +49,7 @@ void init_Record(py::module &m)
                     " attribute(s)>";
             })
 
-        .def_property(
+        .def_prop_rw(
             "unit_dimension",
             &Record::unitDimension,
             [](Record &self,
@@ -63,15 +64,15 @@ void init_Record(py::module &m)
             },
             python::doc_unit_dimension)
 
-        .def_property(
+        .def_prop_rw(
             "time_offset",
             &Record::timeOffset<float>,
             &Record::setTimeOffset<float>)
-        .def_property(
+        .def_prop_rw(
             "time_offset",
             &Record::timeOffset<double>,
             &Record::setTimeOffset<double>)
-        .def_property(
+        .def_prop_rw(
             "time_offset",
             &Record::timeOffset<long double>,
             &Record::setTimeOffset<long double>)
@@ -79,7 +80,7 @@ void init_Record(py::module &m)
         // TODO remove in future versions (deprecated)
         .def(
             "set_unit_dimension",
-            py::overload_cast<unit_representations::AsMap const &>(
+            nb::overload_cast<unit_representations::AsMap const &>(
                 &Record::setUnitDimension))
         .def("set_time_offset", &Record::setTimeOffset<float>)
         .def("set_time_offset", &Record::setTimeOffset<double>)

@@ -78,47 +78,41 @@ extern unpickled_series cache;
 
 /** Helper to Pickle Attributable Classes
  *
- * @tparam T_Args the types in pybind11::class_ - the first type will be pickled
+ * @tparam T the type in nanobind::class_ that will be pickled
  * @tparam T_SeriesAccessor During unpickle, this accesses the object inside
  *                          a newly constructed series
- * @param cl the pybind11 class that gets the pickle methods defined
+ * @param cl the nanobind class that gets the pickle methods defined
  * @param seriesAccessor accessor from series to object during unpickling
  */
-template <typename... T_Args, typename T_SeriesAccessor>
+template <typename T, typename... T_Args, typename T_SeriesAccessor>
 inline void
-add_pickle(pybind11::class_<T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
+add_pickle(nb::class_<T, T_Args...> &cl, T_SeriesAccessor &&seriesAccessor)
 {
-    // helper: get first class in py::class_ - that's the type we pickle
-    using PickledClass =
-        typename std::tuple_element<0, std::tuple<T_Args...>>::type;
+    cl.def("__getstate__", [](T const &a) {
+        // Return a tuple that fully encodes the state of the object
+        Attributable::MyPath const myPath = a.myPath();
+        // retrieve Series even though retrieveSeries is protected...
+        return nb::make_tuple(a.memoryID(), myPath.filePath(), myPath.group);
+    });
 
     cl.def(
-        py::pickle(
-            // __getstate__
-            [](const PickledClass &a) {
-                // Return a tuple that fully encodes the state of the object
-                Attributable::MyPath const myPath = a.myPath();
-                // retrieve Series even though retrieveSeries is protected...
-                return py::make_tuple(
-                    a.memoryID(), myPath.filePath(), myPath.group);
-            },
+        "__setstate__",
+        [seriesAccessor = std::forward<T_SeriesAccessor>(seriesAccessor)](
+            T &self, nb::tuple const &t) {
+            // Our tuple has exactly three elements: Series ID, filePath &
+            // group.
+            //  Check the documentation of unpickled_series above for
+            // the reasoning behind Series ID.
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state!");
 
-            // __setstate__
-            [&seriesAccessor](py::tuple const &t) {
-                // Our tuple has exactly three elements: Series ID, filePath &
-                // group.
-                //  Check the documentation of unpickled_series above for
-                // the reasoning behind Series ID.
-                if (t.size() != 3)
-                    throw std::runtime_error("Invalid state!");
+            auto id = nb::cast<uintptr_t>(t[0]);
+            std::string const filename = nb::cast<std::string>(t[1]);
+            std::vector<std::string> const group =
+                nb::cast<std::vector<std::string>>(t[2]);
 
-                auto id = t[0].cast<uintptr_t>();
-                std::string const filename = t[1].cast<std::string>();
-                std::vector<std::string> const group =
-                    t[2].cast<std::vector<std::string>>();
-
-                auto series = cache.get(id, filename);
-                return seriesAccessor(std::move(series), group);
-            }));
+            auto series = cache.get(id, filename);
+            new (&self) T(seriesAccessor(std::move(series), group));
+        });
 }
 } // namespace openPMD

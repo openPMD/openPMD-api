@@ -30,14 +30,14 @@
 
 #include <variant>
 
-void init_PatchRecord(py::module &m)
+void init_PatchRecord(nb::module_ &m)
 {
     auto py_pr_cnt = declare_container<PyPatchRecordContainer, Attributable>(
         m, "Patch_Record_Container");
 
-    py::class_<PatchRecord, BaseRecord<PatchRecordComponent> >(
+    python::bind_class<PatchRecord, BaseRecord<PatchRecordComponent>>(
         m, "Patch_Record")
-        .def_property(
+        .def_prop_rw(
             "unit_dimension",
             &PatchRecord::unitDimension,
             [](PatchRecord &self,
@@ -55,7 +55,7 @@ void init_PatchRecord(py::module &m)
         // TODO remove in future versions (deprecated)
         .def(
             "set_unit_dimension",
-            py::overload_cast<unit_representations::AsMap const &>(
+            nb::overload_cast<unit_representations::AsMap const &>(
                 &PatchRecord::setUnitDimension));
 
     finalize_container<PyPatchRecordContainer>(py_pr_cnt);

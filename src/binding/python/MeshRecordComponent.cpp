@@ -32,21 +32,24 @@
 #include <string>
 #include <vector>
 
-void init_MeshRecordComponent(py::module &m)
+void init_MeshRecordComponent(nb::module_ &m)
 {
     auto py_mrc_cnt =
         declare_container<PyMeshRecordComponentContainer, Attributable>(
             m, "Mesh_Record_Component_Container");
 
-    py::class_<MeshRecordComponent, RecordComponent> cl(
+    using python::Self;
+    using python::self_method;
+
+    auto cl = python::bind_class<MeshRecordComponent, RecordComponent>(
         m, "Mesh_Record_Component");
     cl.def(
           "__repr__",
-          [](RecordComponent const &rc) {
+          [](Self<RecordComponent> rc) {
               std::stringstream stream;
               stream << "<openPMD.Record_Component of type '"
-                     << rc.getDatatype() << "' and with extent ";
-              if (auto extent = rc.getExtent(); extent.empty())
+                     << rc->getDatatype() << "' and with extent ";
+              if (auto extent = rc->getExtent(); extent.empty())
               {
                   stream << "[]>";
               }
@@ -63,22 +66,22 @@ void init_MeshRecordComponent(py::module &m)
               return stream.str();
           })
 
-        .def_property(
+        .def_prop_rw(
             "position",
-            &MeshRecordComponent::position<float>,
-            &MeshRecordComponent::setPosition<float>,
+            self_method(&MeshRecordComponent::position<float>),
+            self_method(&MeshRecordComponent::setPosition<float>),
             "Relative position of the component on an element "
             "(node/cell/voxel) of the mesh")
-        .def_property(
+        .def_prop_rw(
             "position",
-            &MeshRecordComponent::position<double>,
-            &MeshRecordComponent::setPosition<double>,
+            self_method(&MeshRecordComponent::position<double>),
+            self_method(&MeshRecordComponent::setPosition<double>),
             "Relative position of the component on an element "
             "(node/cell/voxel) of the mesh")
-        .def_property(
+        .def_prop_rw(
             "position",
-            &MeshRecordComponent::position<long double>,
-            &MeshRecordComponent::setPosition<long double>,
+            self_method(&MeshRecordComponent::position<long double>),
+            self_method(&MeshRecordComponent::setPosition<long double>),
             "Relative position of the component on an element "
             "(node/cell/voxel) of the mesh");
     add_pickle(
@@ -96,14 +99,20 @@ void init_MeshRecordComponent(py::module &m)
         });
 
     finalize_container<PyMeshRecordComponentContainer>(py_mrc_cnt);
-    addRecordComponentSetGet(
-        finalize_container<PyBaseRecordMeshRecordComponent>(
-            declare_container<
-                PyBaseRecordMeshRecordComponent,
-                PyMeshRecordComponentContainer,
-                MeshRecordComponent>(m, "Base_Record_Mesh_Record_Component")))
-        .def_property_readonly(
-            "scalar",
-            &BaseRecord<MeshRecordComponent>::scalar,
-            &docstring::is_scalar[1]);
+    auto py_base_record =
+        addRecordComponentSetGet(
+            finalize_container<PyBaseRecordMeshRecordComponent>(
+                declare_container<
+                    PyBaseRecordMeshRecordComponent,
+                    PyMeshRecordComponentContainer>(
+                    m, "Base_Record_Mesh_Record_Component")))
+            .def_prop_ro(
+                "scalar",
+                &BaseRecord<MeshRecordComponent>::scalar,
+                &docstring::is_scalar[1]);
+    // BaseRecord<MeshRecordComponent> also is a MeshRecordComponent
+    python::inherit_attributes(
+        py_base_record,
+        nb::type<MeshRecordComponent>(),
+        nb::type<Attributable>());
 }

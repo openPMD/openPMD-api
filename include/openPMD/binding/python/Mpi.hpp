@@ -62,9 +62,8 @@ struct py_object_to_mpi_comm_error
 };
 
 inline std::variant<MPI_Comm, py_object_to_mpi_comm_error>
-pythonObjectAsMpiComm(pybind11::object &comm)
+pythonObjectAsMpiComm(nb::object &comm)
 {
-    namespace py = pybind11;
     //! TODO perform mpi4py import test and check min-version
     //!       careful: double MPI_Init risk? only import mpi4py.MPI?
     //!       required C-API init? probably just checks:
@@ -86,15 +85,13 @@ pythonObjectAsMpiComm(pybind11::object &comm)
     //   __repr__ (unambiguous)
     //   mpi4py: <mpi4py.MPI.Intracomm object at 0x7f998e6e28d0>
     //   pyMPI:  ... (TODO)
-    py::str const comm_pystr = py::repr(comm);
-    std::string const comm_str = comm_pystr.cast<std::string>();
+    std::string const comm_str = nb::cast<std::string>(nb::repr(comm));
     if (comm_str.substr(0, 12) != std::string("<mpi4py.MPI."))
         return e{
             "comm is not an mpi4py communicator: " + comm_str,
             e_t::is_not_an_mpi_communicator};
     // only checks same layout, e.g. an `int` in `PyObject` could pass this
-    if (!py::isinstance<py::class_<openPMD_PyMPIIntracommObject> >(
-            py::type::of(comm)))
+    if (!nb::isinstance<nb::type_object>(comm.type()))
         // TODO add mpi4py version from above import check to error message
         return e{
             "comm has unexpected type layout in " + comm_str +

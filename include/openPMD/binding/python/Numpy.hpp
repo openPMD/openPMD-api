@@ -25,12 +25,204 @@
 #include "Common.hpp"
 
 #include <exception>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <vector>
+
+/*
+ * nanobind does not wrap the numpy C API (unlike pybind11 with py::array and
+ * py::dtype), so the helpers in this file go through the Python-level numpy
+ * API and the Python buffer protocol instead.
+ */
+namespace openPMD::python
+{
+/** The numpy module, imported on first use */
+inline nb::handle numpy()
+{
+    // intentionally leaked: must not be released after interpreter shutdown
+    static PyObject *module = nb::module_::import_("numpy").release().ptr();
+    return module;
+}
+
+namespace detail
+{
+    /** isinstance(obj, numpy.<type_name>), false if numpy is not available
+     */
+    inline bool is_numpy_instance(PyObject *obj, char const *type_name)
+    {
+        try
+        {
+            int res = PyObject_IsInstance(obj, numpy().attr(type_name).ptr());
+            if (res < 0)
+            {
+                PyErr_Clear();
+            }
+            return res == 1;
+        }
+        catch (std::exception const &)
+        {
+            return false;
+        }
+    }
+
+    inline bool is_numpy_dtype(PyObject *obj)
+    {
+        return is_numpy_instance(obj, "dtype");
+    }
+
+    inline bool check_buffer(PyObject *obj)
+    {
+        return PyObject_CheckBuffer(obj) != 0;
+    }
+} // namespace detail
+
+/** A numpy.dtype object */
+class dtype : public nb::object
+{
+    NB_OBJECT_DEFAULT(dtype, object, "numpy.dtype", detail::is_numpy_dtype)
+
+    /** numpy.dtype(arg) */
+    explicit dtype(char const *format)
+        : nb::object(numpy().attr("dtype")(format))
+    {}
+
+    /** The character code of the dtype */
+    char char_() const
+    {
+        return nb::cast<std::string>(attr("char")).at(0);
+    }
+};
+
+/** Any object supporting the Python buffer protocol */
+class buffer : public nb::object
+{
+    NB_OBJECT_DEFAULT(
+        buffer, object, "collections.abc.Buffer", detail::check_buffer)
+};
+
+/** Information on a buffer as returned by the Python buffer protocol
+ *
+ * The view is released upon construction, so the referenced object must be
+ * kept alive while using ptr.
+ */
+struct buffer_info
+{
+    void *ptr = nullptr;
+    Py_ssize_t itemsize = 0;
+    Py_ssize_t size = 0;
+    std::string format;
+    Py_ssize_t ndim = 0;
+    std::vector<Py_ssize_t> shape;
+    std::vector<Py_ssize_t> strides;
+    bool readonly = false;
+    /** PyBuffer_IsContiguous(view, 'C') and (..., 'A') */
+    bool c_contiguous = false;
+    bool any_contiguous = false;
+
+    buffer_info(nb::handle obj, bool writable = false)
+    {
+        Py_buffer view;
+        int flags = PyBUF_STRIDES | PyBUF_FORMAT;
+        if (writable)
+        {
+            flags |= PyBUF_WRITABLE;
+        }
+        if (PyObject_GetBuffer(obj.ptr(), &view, flags) != 0)
+        {
+            throw nb::python_error();
+        }
+        ptr = view.buf;
+        itemsize = view.itemsize;
+        format = view.format ? view.format : "B";
+        ndim = view.ndim;
+        shape.assign(view.shape, view.shape + view.ndim);
+        strides.assign(view.strides, view.strides + view.ndim);
+        size = 1;
+        for (auto extent : shape)
+        {
+            size *= extent;
+        }
+        readonly = view.readonly != 0;
+        c_contiguous = PyBuffer_IsContiguous(&view, 'C') != 0;
+        any_contiguous = PyBuffer_IsContiguous(&view, 'A') != 0;
+        PyBuffer_Release(&view);
+    }
+};
+
+/** A numpy.ndarray (or subclass), same as pybind11::array */
+class array : public nb::object
+{
+public:
+    array() = default;
+    explicit array(nb::object obj) : nb::object(std::move(obj))
+    {}
+
+    /** numpy.empty(shape, dtype) */
+    template <typename Shape>
+    array(python::dtype const &dt, Shape const &shape)
+        : nb::object(numpy().attr("empty")(nb::cast(shape), dt))
+    {}
+
+    static bool check_(nb::handle h)
+    {
+        return detail::is_numpy_instance(h.ptr(), "ndarray");
+    }
+
+    Py_ssize_t ndim() const
+    {
+        return nb::cast<Py_ssize_t>(attr("ndim"));
+    }
+
+    std::vector<Py_ssize_t> shape() const
+    {
+        return nb::cast<std::vector<Py_ssize_t>>(attr("shape"));
+    }
+
+    python::dtype dtype() const
+    {
+        return nb::borrow<python::dtype>(attr("dtype"));
+    }
+
+    void *mutable_data() const
+    {
+        if (!nb::cast<bool>(attr("flags").attr("writeable")))
+        {
+            throw std::domain_error("array is not writeable");
+        }
+        return buffer_info(*this).ptr;
+    }
+};
+} // namespace openPMD::python
+
+namespace nanobind::detail
+{
+template <>
+struct type_caster<openPMD::python::array>
+{
+    NB_TYPE_CASTER(openPMD::python::array, const_name("numpy.ndarray"))
+
+    bool from_python(handle src, uint32_t, cleanup_list *) noexcept
+    {
+        if (!openPMD::python::array::check_(src))
+        {
+            return false;
+        }
+        value = openPMD::python::array(borrow(src));
+        return true;
+    }
+
+    static handle from_cpp(
+        openPMD::python::array const &value, rv_policy, cleanup_list *) noexcept
+    {
+        return value.inc_ref();
+    }
+};
+} // namespace nanobind::detail
 
 namespace openPMD
 {
-inline Datatype dtype_from_numpy(pybind11::dtype const dt)
+inline Datatype dtype_from_numpy(python::dtype const dt)
 {
     // Use explicit PEP 3118 / struct format character codes for portable
     // cross-platform behavior. This ensures consistency with
@@ -91,25 +283,25 @@ inline Datatype dtype_from_numpy(pybind11::dtype const dt)
     case '?': // bool
         return Datatype::BOOL;
     default:
-        pybind11::print(dt);
+        nb::print(dt);
         throw std::runtime_error(
             std::string("Datatype '") + c +
             std::string("' not known in 'dtype_from_numpy'!"));
     }
 }
 
-inline Datatype dtype_from_numpy(pybind11::object dt)
+inline Datatype dtype_from_numpy(nb::object dt)
 {
-    if (py::isinstance<pybind11::dtype>(dt))
+    if (nb::isinstance<python::dtype>(dt))
     {
-        return dtype_from_numpy(py::cast<pybind11::dtype>(std::move(dt)));
+        return dtype_from_numpy(nb::borrow<python::dtype>(dt));
     }
     else
     {
-        pybind11::module_ numpy;
+        nb::handle numpy;
         try
         {
-            numpy = pybind11::module_::import("numpy");
+            numpy = python::numpy();
         }
         catch (std::exception const &e)
         {
@@ -119,24 +311,24 @@ inline Datatype dtype_from_numpy(pybind11::object dt)
                     "datatype without numpy, failed importing: ") +
                 e.what());
         }
-        pybind11::object create_dtype = numpy.attr("dtype");
-        pybind11::object dtype_obj;
+        nb::object create_dtype = numpy.attr("dtype");
+        nb::object dtype_obj;
         try
         {
-            dtype_obj = create_dtype(std::move(dt));
+            dtype_obj = create_dtype(dt);
         }
         catch (std::exception const &e)
         {
             throw std::runtime_error(
                 std::string("dtype_from_numpy: Failed to create dtype from: ") +
-                pybind11::str(dt).cast<std::string>() +
-                std::string(", error: ") + e.what());
+                nb::cast<std::string>(nb::str(dt)) + std::string(", error: ") +
+                e.what());
         }
-        return dtype_from_numpy(py::cast<pybind11::dtype>(dtype_obj));
+        return dtype_from_numpy(nb::borrow<python::dtype>(dtype_obj));
     }
 }
 
-/** Return openPMD::Datatype from py::buffer_info::format
+/** Return openPMD::Datatype from python::buffer_info::format
  */
 inline Datatype dtype_from_bufferformat(std::string const &fmt)
 {
@@ -202,7 +394,7 @@ inline Datatype dtype_from_bufferformat(std::string const &fmt)
             fmt + "'");
 }
 
-inline pybind11::dtype dtype_to_numpy(Datatype const dt)
+inline python::dtype dtype_to_numpy(Datatype const dt)
 {
     // Use explicit PEP 3118 format character codes for portable behavior.
     // This ensures round-trip consistency with dtype_from_numpy().
@@ -215,63 +407,63 @@ inline pybind11::dtype dtype_to_numpy(Datatype const dt)
     case DT::VEC_STRING:
         if constexpr (std::is_signed_v<char>)
         {
-            return pybind11::dtype("b");
+            return python::dtype("b");
         }
         else
         {
-            return pybind11::dtype("B");
+            return python::dtype("B");
         }
     case DT::SCHAR:
     case DT::VEC_SCHAR:
-        return pybind11::dtype("b");
+        return python::dtype("b");
     case DT::UCHAR:
     case DT::VEC_UCHAR:
-        return pybind11::dtype("B");
+        return python::dtype("B");
     case DT::SHORT:
     case DT::VEC_SHORT:
-        return pybind11::dtype("h");
+        return python::dtype("h");
     case DT::INT:
     case DT::VEC_INT:
-        return pybind11::dtype("i");
+        return python::dtype("i");
     case DT::LONG:
     case DT::VEC_LONG:
-        return pybind11::dtype("l");
+        return python::dtype("l");
     case DT::LONGLONG:
     case DT::VEC_LONGLONG:
-        return pybind11::dtype("q");
+        return python::dtype("q");
     case DT::USHORT:
     case DT::VEC_USHORT:
-        return pybind11::dtype("H");
+        return python::dtype("H");
     case DT::UINT:
     case DT::VEC_UINT:
-        return pybind11::dtype("I");
+        return python::dtype("I");
     case DT::ULONG:
     case DT::VEC_ULONG:
-        return pybind11::dtype("L");
+        return python::dtype("L");
     case DT::ULONGLONG:
     case DT::VEC_ULONGLONG:
-        return pybind11::dtype("Q");
+        return python::dtype("Q");
     case DT::FLOAT:
     case DT::VEC_FLOAT:
-        return pybind11::dtype("f");
+        return python::dtype("f");
     case DT::DOUBLE:
     case DT::VEC_DOUBLE:
     case DT::ARR_DBL_7:
-        return pybind11::dtype("d");
+        return python::dtype("d");
     case DT::LONG_DOUBLE:
     case DT::VEC_LONG_DOUBLE:
-        return pybind11::dtype("g");
+        return python::dtype("g");
     case DT::CFLOAT:
     case DT::VEC_CFLOAT:
-        return pybind11::dtype("F");
+        return python::dtype("F");
     case DT::CDOUBLE:
     case DT::VEC_CDOUBLE:
-        return pybind11::dtype("D");
+        return python::dtype("D");
     case DT::CLONG_DOUBLE:
     case DT::VEC_CLONG_DOUBLE:
-        return pybind11::dtype("G");
+        return python::dtype("G");
     case DT::BOOL:
-        return pybind11::dtype("?");
+        return python::dtype("?");
     case DT::UNDEFINED:
     default:
         throw std::runtime_error("dtype_to_numpy: Invalid Datatype!");
