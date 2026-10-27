@@ -2148,6 +2148,11 @@ void ADIOS2IOHandlerImpl::touch(
     {
         this->m_dirty.emplace(writable->fileState);
     }
+    else if (!writable->fileState->backendSpecificState.has_value())
+    {
+        throw error::Internal(
+            "ADIOS2: Tried activating a file that is not open.");
+    }
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
