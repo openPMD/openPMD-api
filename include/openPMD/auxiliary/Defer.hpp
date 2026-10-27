@@ -11,7 +11,8 @@ struct defer_type
 {
     F functor;
     bool do_run_this = true;
-    ~defer_type()
+
+    auto operator()() -> void
     {
         if (!do_run_this)
         {
@@ -19,6 +20,11 @@ struct defer_type
         }
         do_run_this = false;
         std::move(functor)();
+    }
+
+    ~defer_type()
+    {
+        operator()();
     }
 
     explicit defer_type() : do_run_this(false)
