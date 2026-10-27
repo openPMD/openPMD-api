@@ -81,19 +81,22 @@ install:
   - cmd: set PYTHONUNBUFFERED=1
 
   # Add our channels.
-  # x64: use conda-forge only, drop the defaults channel.
   # x86: `defaults` must stay, as conda-forge is unmaintained for Win32.
   - cmd: conda config --set show_channel_urls true
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
 
-  # Bootstrap a current conda plus the libmamba solver,
-  # then install CMake with the fast libmamba solver.
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda conda-libmamba-solver cython numpy hdf5 adios2 python=%CONDA_PY%
+  # x64 needs conda-forge for ADIOS2, but the preinstalled conda cannot solve
+  # the full conda-forge graph with its classic solver: it backtracks until the
+  # job hits the 60-minute limit. The x86 job avoids this by resolving against
+  # `defaults`, so do the same here: bootstrap a current conda plus the
+  # libmamba solver from `defaults`, then solve the conda-forge packages with
+  # libmamba. Pinning the bootstrap avoids searching the whole defaults graph.
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c defaults conda=23.10.0 conda-libmamba-solver=23.9.3 python=%CONDA_PY%
   # conda < 22.11 spells the option "experimental_solver", newer releases use
   # "solver"; set whichever this conda understands.
   - cmd: if "%TARGET_ARCH%"=="x64" (conda config --set solver libmamba 2>nul || conda config --set experimental_solver libmamba)
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge "cmake>=3.22"
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge cython numpy "cmake>=3.22" hdf5 adios2 python=%CONDA_PY%
 
   # Plain install with default solver on Win32 and defaults channel.
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
