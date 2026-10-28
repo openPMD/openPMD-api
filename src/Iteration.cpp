@@ -846,9 +846,8 @@ auto Iteration::beginStep(
                 [](auto const &pair) { return pair.first; });
             break;
         case AdvanceStatus::OVER:
-            break;
         case AdvanceStatus::TRY_AGAIN:
-            // Handled above already.
+            // TRY_AGAIN is handled above already.
             break;
         }
     }

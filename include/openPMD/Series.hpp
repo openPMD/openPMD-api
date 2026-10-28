@@ -981,6 +981,8 @@ OPENPMD_private
      *             based layout, it's the Series object.
      * @param it The iterator within Series::iterations pointing to that
      *           iteration.
+     * @param stepTimeout Maximum time in seconds to wait for the next IO
+     *                    step. If unset, wait indefinitely.
      * @return AdvanceStatus
      */
     AdvanceStatus advance(

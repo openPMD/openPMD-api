@@ -259,7 +259,7 @@ struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
         return m_iterator.tryNext(timeout);
     }
 
-    IndexedIteration current() const
+    [[nodiscard]] IndexedIteration current() const
     {
         return static_cast<LegacyIteratorAdaptor const &>(*this).operator*();
     }

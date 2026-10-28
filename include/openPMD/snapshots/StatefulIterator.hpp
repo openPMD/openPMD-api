@@ -364,7 +364,7 @@ public:
      * the returned status, not is_end(), to distinguish this from the end of
      * the data.
      */
-    AdvanceStatus tryNext(float stepTimeout);
+    AdvanceStatus tryNext(float stepTimeout) override;
 
 private:
     std::optional<StatefulIterator *> nextIterationInStep();

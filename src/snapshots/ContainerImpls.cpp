@@ -68,15 +68,16 @@ operator=(StatefulSnapshotsContainer &&other) noexcept(noexcept(
 
 auto StatefulSnapshotsContainer::get(bool lazy) -> StatefulIterator *
 {
-    return std::visit(
-        auxiliary::overloaded{
-            [this, lazy](Members::Deferred_t &deferred_initialization) {
-                auto it = (*deferred_initialization)(lazy);
-                this->members.m_bufferedIterator = it;
-                return it;
-            },
-            [](Members::Evaluated_t it) { return it; }},
-        members.m_bufferedIterator);
+    // Avoid std::visit with a capturing lambda here: NVHPC 25.11 crashes with
+    // an internal compiler error in lower_dynamic_init otherwise.
+    if (auto *deferred_initialization =
+            std::get_if<Members::Deferred_t>(&members.m_bufferedIterator))
+    {
+        auto it = (**deferred_initialization)(lazy);
+        this->members.m_bufferedIterator = it;
+        return it;
+    }
+    return std::get<Members::Evaluated_t>(members.m_bufferedIterator);
 }
 auto StatefulSnapshotsContainer::get() const -> StatefulIterator const *
 {
