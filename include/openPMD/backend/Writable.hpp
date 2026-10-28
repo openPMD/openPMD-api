@@ -415,6 +415,6 @@ OPENPMD_private
      */
     bool written = false;
 
-    internal::ObjectType objectType = internal::object_type::GroupMetaData{};
+    internal::ObjectType objectType{internal::object_type::GroupMetaData{}};
 };
 } // namespace openPMD

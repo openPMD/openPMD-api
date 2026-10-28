@@ -203,6 +203,7 @@ class ChildrenCache
         virtual void
         for_each_key(std::function<void(std::string const &)> const &) = 0;
         virtual auto size() -> std::size_t = 0;
+        virtual ~EntryI() = default;
     };
 
     template <typename Key, typename T>
