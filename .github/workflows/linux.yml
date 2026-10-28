@@ -349,8 +349,9 @@ jobs:
         auto-update-conda: true
         activate-environment: openpmd-api-dev
         environment-file: conda.yml
-        channels: conda-forge,defaults
+        channels: conda-forge
         channel-priority: true
+        conda-remove-defaults: true
     - name: Build
       shell: bash -eo pipefail -l {0}
       env:
