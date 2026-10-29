@@ -62,7 +62,16 @@ OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_DEFINE_CONTAINER_TYPE_ID)
     ChildrenCache::get_or_create_cache<type, key>() const;                     \
     template std::optional<ChildrenCacheMap<type, key>>                        \
     ChildrenCache::find_cache<type, key>() const;                              \
-    template bool ChildrenCache::contains_cache<type, key>() const noexcept;
+    template bool ChildrenCache::contains_cache<type, key>() const noexcept;   \
+    template std::pair<typename std::map<key, type>::iterator, bool>           \
+    ChildrenCache::try_emplace<type, key>(                                     \
+        key const &,                                                           \
+        std::shared_ptr<SharedAttributableData> const &,                       \
+        type &&);                                                              \
+    template std::pair<typename std::map<key, type>::iterator, bool>           \
+    ChildrenCache::try_emplace<type, key>(                                     \
+        key const &, std::shared_ptr<SharedAttributableData> const &, type &&) \
+        const;
 
 OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE_CONTAINER_CACHE)
 #undef OPENPMD_INSTANTIATE_CONTAINER_CACHE

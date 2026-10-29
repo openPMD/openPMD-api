@@ -191,10 +191,9 @@ namespace children_cache_detail
  *    entry behind;
  *  - clear() empties every materialized map.
  *
- * ChildrenCache enforces these invariants on erase()/clear() and validates
- * them in assert_consistent(). Callers of ChildrenCacheMap's
- * unsafe_try_emplace() (currently ChildView) are responsible for only
- * materializing keys that exist in the authoritative child map.
+ * ChildrenCache enforces these invariants on insertion, erase(), and clear(),
+ * and validates them in assert_consistent(). Typed insertion goes through
+ * try_emplace(), which also maintains the authoritative child map.
  *
  * Assertions validate these invariants. In particular, assert_consistent()
  * verifies that every materialized key can be reconstructed from its canonical
@@ -248,6 +247,25 @@ public:
     template <typename T, typename Key>
     [[nodiscard]] auto contains_cache() const noexcept -> bool;
 
+    /** Insert a typed child handle.
+     *
+     * The non-const overload also inserts the supplied backend child into the
+     * authoritative children map if it is not present yet. The const overload
+     * is used for lazy materialization and requires the child to exist.
+     */
+    template <typename T, typename Key>
+    auto try_emplace(
+        Key const &key,
+        std::shared_ptr<SharedAttributableData> const &child,
+        T &&value) -> std::pair<typename std::map<Key, T>::iterator, bool>;
+
+    template <typename T, typename Key>
+    auto try_emplace(
+        Key const &key,
+        std::shared_ptr<SharedAttributableData> const &child,
+        T &&value) const
+        -> std::pair<typename std::map<Key, T>::iterator, bool>;
+
     children_map_t &children();
     children_map_t const &children() const;
 
@@ -264,6 +282,9 @@ public:
     void assert_consistent() const;
 
 private:
+    template <typename T, typename Key>
+    auto get_or_create_typed_entry() const -> TypedEntry<Key, T> &;
+
     /** Authoritative children of this group. */
     children_map_t m_children;
 

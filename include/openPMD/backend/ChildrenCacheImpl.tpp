@@ -83,7 +83,7 @@ struct ChildrenCache::TypedEntry : ChildrenCache::EntryI
 };
 
 template <typename T, typename Key>
-auto ChildrenCache::get_or_create_cache() const -> ChildrenCacheMap<T, Key>
+auto ChildrenCache::get_or_create_typed_entry() const -> TypedEntry<Key, T> &
 {
     using entry_type = TypedEntry<Key, T>;
     auto const type = container_type_id<T, Key>();
@@ -97,7 +97,62 @@ auto ChildrenCache::get_or_create_cache() const -> ChildrenCacheMap<T, Key>
 
     auto *typed_entry = static_cast<entry_type *>(it->second.get());
     assert(typed_entry != nullptr);
-    return ChildrenCacheMap<T, Key>(typed_entry->map);
+    return *typed_entry;
+}
+
+template <typename T, typename Key>
+auto ChildrenCache::get_or_create_cache() const -> ChildrenCacheMap<T, Key>
+{
+    return ChildrenCacheMap<T, Key>(get_or_create_typed_entry<T, Key>().map);
+}
+
+template <typename T, typename Key>
+auto ChildrenCache::try_emplace(
+    Key const &key,
+    std::shared_ptr<SharedAttributableData> const &child,
+    T &&value) -> std::pair<typename std::map<Key, T>::iterator, bool>
+{
+    auto const &canonicalKey = children_cache_detail::key_to_string(key);
+    auto &typed_entry = get_or_create_typed_entry<T, Key>();
+
+    auto typed_it = typed_entry.map.find(key);
+    if (typed_it != typed_entry.map.end())
+    {
+        assert(m_children.find(canonicalKey) != m_children.end());
+        return {typed_it, false};
+    }
+
+    auto child_it = m_children.find(canonicalKey);
+    if (child_it == m_children.end())
+    {
+        child_it = m_children.emplace(canonicalKey, child).first;
+    }
+    else
+    {
+        assert(child_it->second == child);
+    }
+
+    auto inserted = typed_entry.map.try_emplace(key, std::move(value));
+    assert(inserted.second);
+    assert_consistent();
+    return inserted;
+}
+
+template <typename T, typename Key>
+auto ChildrenCache::try_emplace(
+    Key const &key,
+    std::shared_ptr<SharedAttributableData> const &child,
+    T &&value) const -> std::pair<typename std::map<Key, T>::iterator, bool>
+{
+    auto const &canonicalKey = children_cache_detail::key_to_string(key);
+    auto const child_it = m_children.find(canonicalKey);
+    assert(child_it != m_children.end());
+    assert(child_it->second == child);
+
+    auto &typed_entry = get_or_create_typed_entry<T, Key>();
+    auto inserted = typed_entry.map.try_emplace(key, std::move(value));
+    assert_consistent();
+    return inserted;
 }
 
 template <typename T, typename Key>

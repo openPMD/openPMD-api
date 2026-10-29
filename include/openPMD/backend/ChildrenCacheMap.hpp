@@ -32,15 +32,10 @@ class ChildrenCache;
 /** Non-owning, restricted view of one typed map inside a ChildrenCache.
  *
  * The only purpose of this class is to ban access to modifying calls and
- * thereby enforce code discipline: structural removal must go through
- * ChildrenCache::erase() / clear(), which keep the authoritative child map and
- * every materialized typed map in sync. Apart from that restriction, all
- * accessors forward to the underlying std::map.
- *
- * unsafe_try_emplace() is the single intentional mutation hook, used only for
- * lazy materialization. Its name highlights that callers must ensure the
- * canonical key exists in the authoritative child map and that the emplaced
- * handle refers to that child.
+ * thereby enforce code discipline: structural removal and typed insertion must
+ * go through ChildrenCache, which keeps the authoritative child map and every
+ * materialized typed map in sync. Apart from that restriction, all accessors
+ * forward to the underlying std::map.
  */
 template <typename T, typename Key>
 class ChildrenCacheMap
@@ -120,21 +115,6 @@ public:
     auto at(Key const &key) const -> T const &
     {
         return m_map->at(key);
-    }
-
-    /** Materialize a child handle (unsafe mutation hook).
-     *
-     * The caller is responsible for the authoritative side of the contract:
-     * the canonical key must exist in the parent's child collection and the
-     * emplaced handle must refer to the corresponding backend node.
-     * Duplicate keys are not replaced silently; use the returned `second`
-     * flag to detect them.
-     */
-    template <typename... Args>
-    auto unsafe_try_emplace(Key const &key, Args &&...args)
-        -> std::pair<iterator, bool>
-    {
-        return m_map->try_emplace(key, std::forward<Args>(args)...);
     }
 
 private:

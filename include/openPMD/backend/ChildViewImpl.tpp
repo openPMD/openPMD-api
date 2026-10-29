@@ -52,8 +52,8 @@ auto materialize_child_at(
                 "No frontend handle was produced while materializing child '" +
                 canonicalKey + "'.");
         }
-        auto inserted =
-            typed_cache.unsafe_try_emplace(key, std::move(*materialized));
+        auto inserted = cache.template try_emplace<T, Key>(
+            key, child, std::move(*materialized));
         it = inserted.first;
     }
 
@@ -456,10 +456,9 @@ auto ChildView<T, Key, Const>::get_or_create(Key const &key, bool access_policy)
     assert(m_self != nullptr);
     assert(m_create_child.has_value());
     T child = (*m_create_child)(key, *m_self);
-    children.emplace(canonical, child.m_attri->asSharedPtrOfAttributable());
-
-    auto typed_view = typed();
-    auto inserted = typed_view.unsafe_try_emplace(key, std::move(child));
+    auto child_ptr = child.m_attri->asSharedPtrOfAttributable();
+    auto inserted =
+        m_cache->template try_emplace<T, Key>(key, child_ptr, std::move(child));
     assert(inserted.second);
     traits::GenerationPolicy<T> generation;
     generation(*this, inserted.first);
@@ -616,7 +615,8 @@ void ChildView<T, Key, Const>::sync() const
                 ChildMaterializer<T>::materialize(canonical, child);
             if (materialized)
             {
-                typed_view.unsafe_try_emplace(*key, std::move(*materialized));
+                m_cache->template try_emplace<T, Key>(
+                    *key, child, std::move(*materialized));
             }
         }
     }
@@ -670,22 +670,18 @@ auto ChildView<T, Key, Const>::insert_impl(value_type &&value)
     -> std::pair<iterator, bool>
 {
     auto const &canonical = children_cache_detail::key_to_string(value.first);
-    auto &children = m_cache->children();
+    auto const &children = m_cache->children();
     auto child_it = children.find(canonical);
-    if (child_it == children.end())
+    auto child_ptr = value.second.m_attri->asSharedPtrOfAttributable();
+    if (child_it != children.end())
     {
-        children.emplace(
-            canonical, value.second.m_attri->asSharedPtrOfAttributable());
-    }
-    else
-    {
-        value.second.m_attri->asSharedPtrOfAttributable() = child_it->second;
+        child_ptr = child_it->second;
+        value.second.m_attri->asSharedPtrOfAttributable() = child_ptr;
         value.second.preferCurrentBackpointer();
     }
 
-    auto typed_view = typed();
-    auto inserted =
-        typed_view.unsafe_try_emplace(value.first, std::move(value).second);
+    auto inserted = m_cache->template try_emplace<T, Key>(
+        value.first, child_ptr, std::move(value).second);
     if (!inserted.second)
     {
         return {find(value.first), false};
