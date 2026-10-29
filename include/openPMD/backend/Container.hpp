@@ -138,7 +138,8 @@ class Container : virtual public Attributable
 
 protected:
     using InternalContainer = T_container;
-    using View = internal::ChildView<T, T_key>;
+    using View = internal::ChildView<T, T_key, false>;
+    using ConstView = internal::ChildView<T, T_key, true>;
 
     internal::ChildFilter m_child_filter = internal::default_child_filter();
 
@@ -174,17 +175,16 @@ protected:
     inline auto container() -> View
     {
         return View(
-            group_data().m_children_cache,
+            &group_data().m_children_cache,
             &this->writable(),
             m_child_filter,
             &Container::create_child);
     }
 
-    inline auto container() const -> View
+    inline auto container() const -> ConstView
     {
-        return View(
-            const_cast<internal::ChildrenCache &>(
-                group_data().m_children_cache),
+        return ConstView(
+            &group_data().m_children_cache,
             nullptr,
             m_child_filter,
             nullptr);

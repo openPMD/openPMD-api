@@ -109,7 +109,7 @@ struct ChildMaterializer
 
 template <typename T, typename Key>
 auto materialize_child_at(
-    ChildrenCache &cache,
+    ChildrenCache const &cache,
     std::string const &canonicalKey,
     std::shared_ptr<SharedAttributableData> const &child,
     bool access_policy = true) -> typename std::map<Key, T>::iterator
@@ -151,9 +151,10 @@ auto materialize_child_at(
 template <typename T, typename Key>
 struct ProjectedChildIteratorMembers
 {
-    using children_iterator = typename ChildrenCache::children_map_t::iterator;
+    using children_iterator =
+        typename ChildrenCache::children_map_t::const_iterator;
 
-    ChildrenCache *cache = nullptr;
+    ChildrenCache const *cache = nullptr;
     children_iterator iterator;
     children_iterator end;
     ChildFilter filter;
@@ -165,9 +166,9 @@ class ProjectedChildIterator
 {
 public:
     using children_map_t = ChildrenCache::children_map_t;
-    // Deliberately non-const even for Const iterators: Members must not depend
-    // on Const. Constness is enforced on the returned reference.
-    using children_iterator = typename children_map_t::iterator;
+    // Const-independent: both mutable and const projected iterators traverse
+    // the authoritative children map read-only.
+    using children_iterator = typename children_map_t::const_iterator;
     using typed_map = std::map<Key, T>;
     using typed_iterator = std::conditional_t<
         Const,
@@ -202,7 +203,7 @@ public:
     {}
 
     ProjectedChildIterator(
-        ChildrenCache *cache,
+        ChildrenCache const *cache,
         children_iterator iterator,
         children_iterator end,
         ChildFilter filter,
@@ -294,15 +295,18 @@ private:
 };
 
 /** Stateless, filtered projection of one group's authoritative children. */
-template <typename T, typename Key>
+template <typename T, typename Key, bool Const>
 class ChildView
 {
 public:
     using materialized_t = std::true_type;
     using projected_t = std::false_type;
     static constexpr bool non_string = non_string_key_v<Key>;
+    static constexpr bool is_const = Const;
 
     using children_map_t = ChildrenCache::children_map_t;
+    using cache_t =
+        std::conditional_t<Const, ChildrenCache const, ChildrenCache>;
     using InternalContainer = std::map<Key, T>;
     using key_type = Key;
     using mapped_type = T;
@@ -310,12 +314,13 @@ public:
     using size_type = typename InternalContainer::size_type;
     using difference_type = typename InternalContainer::difference_type;
     using allocator_type = typename InternalContainer::allocator_type;
-    using reference = typename InternalContainer::reference;
-    using const_reference = typename InternalContainer::const_reference;
-    using pointer = typename InternalContainer::pointer;
-    using const_pointer = typename InternalContainer::const_pointer;
+    using reference =
+        std::conditional_t<Const, value_type const &, value_type &>;
+    using const_reference = value_type const &;
+    using pointer = std::conditional_t<Const, value_type const *, value_type *>;
+    using const_pointer = value_type const *;
 
-    using iterator = std::conditional_t<
+    using mut_iterator = std::conditional_t<
         non_string_key_v<Key>,
         typename InternalContainer::iterator,
         ProjectedChildIterator<T, Key, false>>;
@@ -323,23 +328,26 @@ public:
         non_string_key_v<Key>,
         typename InternalContainer::const_iterator,
         ProjectedChildIterator<T, Key, true>>;
-    using reverse_iterator = std::conditional_t<
+    using iterator = std::conditional_t<Const, const_iterator, mut_iterator>;
+    using mut_reverse_iterator = std::conditional_t<
         non_string_key_v<Key>,
         typename InternalContainer::reverse_iterator,
-        std::reverse_iterator<iterator>>;
+        std::reverse_iterator<mut_iterator>>;
     using const_reverse_iterator = std::conditional_t<
         non_string_key_v<Key>,
         typename InternalContainer::const_reverse_iterator,
         std::reverse_iterator<const_iterator>>;
+    using reverse_iterator =
+        std::conditional_t<Const, const_reverse_iterator, mut_reverse_iterator>;
 
     using CreateChild = T (*)(Key const &, Writable &);
 
     ChildView(
-        ChildrenCache &cache,
+        cache_t *cache,
         Writable *self,
         ChildFilter const &filter,
         CreateChild create_child)
-        : m_cache(&cache)
+        : m_cache(cache)
         , m_self(self)
         , m_filter(std::cref(filter))
         , m_create_child(
@@ -376,7 +384,15 @@ public:
         if constexpr (non_string)
         {
             sync();
-            return typed().rbegin();
+            if constexpr (Const)
+            {
+                auto const typed_view = typed();
+                return typed_view.rbegin();
+            }
+            else
+            {
+                return typed().rbegin();
+            }
         }
         else
         {
@@ -388,7 +404,8 @@ public:
         if constexpr (non_string)
         {
             sync();
-            return typed().rbegin();
+            auto const typed_view = typed();
+            return typed_view.rbegin();
         }
         else
         {
@@ -403,7 +420,15 @@ public:
     {
         if constexpr (non_string)
         {
-            return typed().rend();
+            if constexpr (Const)
+            {
+                auto const typed_view = typed();
+                return typed_view.rend();
+            }
+            else
+            {
+                return typed().rend();
+            }
         }
         else
         {
@@ -414,7 +439,8 @@ public:
     {
         if constexpr (non_string)
         {
-            return typed().rend();
+            auto const typed_view = typed();
+            return typed_view.rend();
         }
         else
         {
@@ -529,7 +555,7 @@ public:
         return contains(key) ? 1 : 0;
     }
 
-    auto at(Key const &key) -> T &
+    auto at(Key const &key) -> std::conditional_t<Const, T const &, T &>
     {
         auto it = find(key);
         if (it == end())
@@ -552,11 +578,13 @@ public:
 
     auto operator[](Key const &key) -> T &
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         return get_or_create(key, /* access_policy = */ true);
     }
 
     auto get_or_create(Key const &key, bool access_policy) -> T &
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         auto const &canonical = children_cache_detail::key_to_string(key);
         auto &children = m_cache->children();
         auto it = children.find(canonical);
@@ -590,25 +618,30 @@ public:
 
     auto insert(value_type const &value) -> std::pair<iterator, bool>
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         return insert_impl(value);
     }
     auto insert(value_type &&value) -> std::pair<iterator, bool>
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         return insert_impl(std::move(value));
     }
     auto insert(const_iterator hint, value_type const &value) -> iterator
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         (void)hint;
         return insert_impl(value).first;
     }
     auto insert(const_iterator hint, value_type &&value) -> iterator
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         (void)hint;
         return insert_impl(std::move(value)).first;
     }
     template <typename InputIt>
     void insert(InputIt first, InputIt last)
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         for (auto it = first; it != last; ++it)
         {
             insert(*it);
@@ -618,11 +651,13 @@ public:
     template <typename... Args>
     auto emplace(Args &&...args) -> std::pair<iterator, bool>
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         return insert_impl(value_type(std::forward<Args>(args)...));
     }
 
     auto erase(Key const &key) -> size_type
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         auto const &canonical = children_cache_detail::key_to_string(key);
         auto it = m_cache->children().find(canonical);
         if (it == m_cache->children().end() ||
@@ -636,6 +671,7 @@ public:
 
     auto erase(iterator it) -> iterator
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         auto next = it;
         ++next;
         if constexpr (non_string)
@@ -651,6 +687,7 @@ public:
 
     void clear()
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         m_cache->clear();
     }
 
@@ -661,6 +698,7 @@ public:
     }
     void set_access_policy(bool access_policy) noexcept
     {
+        static_assert(!Const, "Cannot modify a const ChildView.");
         assert(!non_string);
         m_access_policy = access_policy;
     }
@@ -802,7 +840,7 @@ private:
         return {find(value.first), true};
     }
 
-    ChildrenCache *m_cache;
+    cache_t *m_cache;
     Writable *m_self;
     // References the owning Container's filter and is therefore valid for the
     // lifetime of that Container. Iterators copy the (trivial) filter.

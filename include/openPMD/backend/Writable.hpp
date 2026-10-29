@@ -72,7 +72,7 @@ namespace internal
     class ScientificDefaults;
     class BaseRecordComponentData;
     class RecordComponentData;
-    template <typename, typename>
+    template <typename, typename, bool>
     class ChildView;
     struct ChildFilter;
 } // namespace internal
@@ -311,7 +311,7 @@ class Writable final
     template <typename>
     friend class ConvertibleContainer;
     friend class CustomHierarchy;
-    template <typename, typename>
+    template <typename, typename, bool>
     friend class internal::ChildView;
     friend struct internal::ChildFilter;
     template <typename T>

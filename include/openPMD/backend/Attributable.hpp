@@ -65,7 +65,7 @@ namespace internal
 {
     class IterationData;
     class SeriesData;
-    template <typename, typename>
+    template <typename, typename, bool>
     class ChildView;
     struct HomogenizeExtents;
     struct ConfigAttribute;
@@ -281,7 +281,7 @@ class Attributable
     template <typename T, typename Series_type>
     friend T &internal::makeOwning(T &self, Series_type);
     friend class StatefulSnapshotsContainer;
-    template <typename, typename>
+    template <typename, typename, bool>
     friend class internal::ChildView;
     friend class internal::AttributableData;
     friend class Snapshots;
