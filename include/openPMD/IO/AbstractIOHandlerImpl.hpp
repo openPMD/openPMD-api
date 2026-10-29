@@ -430,6 +430,9 @@ public:
     virtual void
     setWritten(Writable *, Parameter<Operation::SET_WRITTEN> const &param);
 
+    virtual void increaseFlushCounter(
+        Writable *, Parameter<Operation::INCREASE_FLUSH_COUNTER> const &param);
+
     AbstractIOHandler *m_handler;
     bool m_verboseIOTasks = false;
 
