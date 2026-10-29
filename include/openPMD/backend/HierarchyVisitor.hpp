@@ -15,6 +15,7 @@ class PatchRecordComponent;
 class Record;
 class RecordComponent;
 class Series;
+class CustomHierarchy;
 
 class HierarchyVisitor
 {
@@ -32,5 +33,6 @@ public:
     virtual void operator()(Record &) = 0;
     virtual void operator()(RecordComponent &) = 0;
     virtual void operator()(Series &) = 0;
+    virtual void operator()(CustomHierarchy &);
 };
 } // namespace openPMD

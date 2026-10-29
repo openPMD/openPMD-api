@@ -20,11 +20,15 @@
  */
 #pragma once
 
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/backend/ChildrenCache.hpp"
 
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <variant>
 #include <vector>
 
 // expose private and protected members for invasive testing
@@ -47,12 +51,205 @@ template <typename>
 class Span;
 class Series;
 
+namespace traits
+{
+    template <typename T>
+    struct GenerationPolicy;
+    template <typename>
+    struct ElementAccessPolicy;
+    namespace detail
+    {
+        template <typename Container, typename Iterator>
+        void emplace_object_as_customly_managed(Container &cont, Iterator &it);
+    }
+} // namespace traits
+
 namespace internal
 {
     class SharedAttributableData;
     class AttributableData;
     class SeriesData;
     class ScientificDefaults;
+    class BaseRecordComponentData;
+    class RecordComponentData;
+    template <typename, typename, bool>
+    class ChildView;
+    struct ChildFilter;
+} // namespace internal
+
+namespace internal::object_type
+{
+    struct DatasetMetaData
+    {
+        /**
+         * Chunk reading/writing requests on the contained dataset.
+         */
+        std::queue<IOTask> m_chunks;
+        /**
+         * The type and extent of the dataset defined by this component.
+         */
+        std::optional<Dataset> m_dataset;
+        /**
+         * Stores the value for constant record components.
+         * Ignored otherwise.
+         */
+        Attribute m_constantValue{-1};
+        /**
+         * True if this is defined as a constant record component as specified
+         * in the openPMD standard.
+         * If yes, then no heavy-weight dataset is created and the dataset is
+         * instead defined via light-weight attributes.
+         */
+        bool m_isConstant = false;
+
+        /**
+         * True if this component is an empty dataset, i.e. its extent is zero
+         * in at least one dimension.
+         * Treated by the openPMD-api as a special case of constant record
+         * components.
+         */
+        bool m_isEmpty = false;
+        /**
+         * User has extended the dataset, but the EXTEND task must yet be
+         * flushed to the backend
+         */
+        bool m_hasBeenExtended = false;
+    };
+
+    struct GroupMetaData
+    {
+        // Using shared_ptr<SharedAttributableData> in here because
+        // AttributableData is non-copyable and non-movable, but we need
+        // movability for map handling
+        // Disallowing move in AttributableData is only a measure for code
+        // discipline anyway.
+        using children_map_t = ChildrenCache::children_map_t;
+
+        /**
+         * Authoritative child hierarchy plus lazily materialized typed views.
+         * This is the only persistent storage for children; all views of this
+         * group share it.
+         */
+        mutable ChildrenCache m_children_cache;
+
+        inline auto children() -> children_map_t &
+        {
+            return m_children_cache.children();
+        }
+        inline auto children() const -> children_map_t const &
+        {
+            return m_children_cache.children();
+        }
+
+        /** Remove a child from the authoritative map and every cache. */
+        void erase_child(std::string const &key)
+        {
+            m_children_cache.erase(key);
+        }
+
+        /** Clear the authoritative map and every cache. */
+        void clear_children()
+        {
+            m_children_cache.clear();
+        }
+
+        bool phantom = false;
+    };
+} // namespace internal::object_type
+
+namespace internal
+{
+    struct ObjectType
+        : std::variant<object_type::DatasetMetaData, object_type::GroupMetaData>
+    {
+        using variant_t = std::
+            variant<object_type::DatasetMetaData, object_type::GroupMetaData>;
+        using variant_t::variant;
+
+        [[nodiscard]] auto as_base() const -> variant_t const &
+        {
+            return *this;
+        }
+        auto as_base() -> variant_t &
+        {
+            return *this;
+        }
+        [[nodiscard]] auto isDataset() const -> bool
+        {
+            return std::holds_alternative<object_type::DatasetMetaData>(
+                as_base());
+        }
+        [[nodiscard]] auto isGroup() const -> bool
+        {
+            return std::holds_alternative<object_type::GroupMetaData>(
+                as_base());
+        }
+        auto initDataset() -> object_type::DatasetMetaData *
+        {
+            if (auto res =
+                    std::get_if<object_type::DatasetMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            return &as_base().emplace<object_type::DatasetMetaData>();
+        }
+        auto initGroup() -> object_type::GroupMetaData *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            return &as_base().emplace<object_type::GroupMetaData>();
+        }
+
+        auto requireGroup() -> object_type::GroupMetaData *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            throw error::Internal(
+                "Internal object status: Group type required.");
+        }
+
+        auto requireGroup() const -> object_type::GroupMetaData const *
+        {
+            if (auto res = std::get_if<object_type::GroupMetaData>(&as_base());
+                res)
+            {
+                return res;
+            }
+            throw error::Internal(
+                "Internal object status: Group type required.");
+        }
+
+        template <typename Functor>
+        void ifGroup(Functor &&f)
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&f](object_type::GroupMetaData &object_metadata) {
+                        std::forward<Functor>(f)(object_metadata);
+                    },
+                    [](object_type::DatasetMetaData &) {}},
+                as_base());
+        }
+
+        template <typename Functor>
+        void ifGroup(Functor &&f) const
+        {
+            std::visit(
+                auxiliary::overloaded{
+                    [&f](object_type::GroupMetaData const &object_metadata) {
+                        std::forward<Functor>(f)(object_metadata);
+                    },
+                    [](object_type::DatasetMetaData const &) {}},
+                as_base());
+        }
+    };
 } // namespace internal
 namespace detail
 {
@@ -111,6 +308,21 @@ class Writable final
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
     friend class internal::ScientificDefaults;
+    template <typename>
+    friend class ConvertibleContainer;
+    friend class CustomHierarchy;
+    template <typename, typename, bool>
+    friend class internal::ChildView;
+    friend struct internal::ChildFilter;
+    template <typename T>
+    friend struct traits::GenerationPolicy;
+    friend class internal::BaseRecordComponentData;
+    friend class internal::RecordComponentData;
+    template <typename>
+    friend struct traits::ElementAccessPolicy;
+    template <typename Container, typename Iterator>
+    friend void traits::detail::emplace_object_as_customly_managed(
+        Container &cont, Iterator &it);
 
 private:
     Writable(internal::AttributableData *);
@@ -159,6 +371,7 @@ OPENPMD_private
      * If multiple Attributables share the same Writable, then the creating one.
      * (See SharedAttributableData)
      */
+    // TODO turn this into a weak pointer
     internal::AttributableData *attributable = nullptr;
     Writable *parent = nullptr;
 
@@ -201,5 +414,7 @@ OPENPMD_private
      *
      */
     bool written = false;
+
+    internal::ObjectType objectType{internal::object_type::GroupMetaData{}};
 };
 } // namespace openPMD

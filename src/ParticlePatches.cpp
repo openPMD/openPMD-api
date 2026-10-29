@@ -35,9 +35,9 @@ size_t ParticlePatches::numPatches() const
     return this->at("numParticles").getExtent()[0];
 }
 
-void ParticlePatches::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void ParticlePatches::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<ParticlePatches>(v, recursive);
+    visitHierarchyContainer<ParticlePatches>(v, recursive);
 }
 
 void ParticlePatches::read()
@@ -61,7 +61,7 @@ void ParticlePatches::read()
             std::cerr << "Cannot read patch record '" << record_name
                       << "' due to read error and will skip it:" << err.what()
                       << std::endl;
-            this->container().erase(record_name);
+            this->erase_unchecked(record_name);
         }
     }
 
@@ -113,7 +113,7 @@ void ParticlePatches::read()
                 << "Cannot read record component '" << component_name
                 << "' in particle patch and will skip it due to read error:\n"
                 << err.what() << std::endl;
-            Container<PatchRecord>::container().erase(component_name);
+            this->erase_unchecked(component_name);
         }
     }
     setDirty(false);

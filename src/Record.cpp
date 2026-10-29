@@ -31,9 +31,9 @@
 
 namespace openPMD
 {
-void Record::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void Record::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<Record>(v, recursive);
+    visitHierarchyContainer<Record>(v, recursive);
 }
 Record::Record() = default;
 
@@ -71,9 +71,13 @@ void Record::flush_impl(
         }
         else
         {
+            customHierarchyFlush(
+                flushParams, /* managed_as_custom_object = */ false);
             for (auto &comp : *this)
                 comp.second.flush(comp.first, flushParams);
         }
+        // Dirty flags are unset centrally by BaseRecord::flush() after
+        // flush_impl() returns, so no unsetDirty operation is needed here.
     }
     else
     {
@@ -89,6 +93,9 @@ void Record::flush_impl(
                 Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
+
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                 {
                     comp.second.parent() = getWritable(this);
@@ -98,13 +105,14 @@ void Record::flush_impl(
         }
         else
         {
-
             if (scalar())
             {
                 T_RecordComponent::flush(name, flushParams);
             }
             else
             {
+                customHierarchyFlush(
+                    flushParams, /* managed_as_custom_object = */ false);
                 for (auto &comp : *this)
                     comp.second.flush(comp.first, flushParams);
             }
@@ -151,7 +159,7 @@ auto Record::read() -> internal::HomogenizeExtents
             RecordComponent &rc = (*this)[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            rc.get().m_isConstant = true;
+            rc.get().isConstant() = true;
             try
             {
                 rc.read();
@@ -161,7 +169,7 @@ auto Record::read() -> internal::HomogenizeExtents
                 std::cerr << "Cannot read record component '" << component
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                this->container().erase(component);
+                this->erase_unchecked(component);
                 continue;
             }
             check_extent(rc);
@@ -190,7 +198,7 @@ auto Record::read() -> internal::HomogenizeExtents
                 std::cerr << "Cannot read record component '" << component
                           << "' and will skip it due to read error:\n"
                           << err.what() << std::endl;
-                this->container().erase(component);
+                this->erase_unchecked(component);
                 continue;
             }
             check_extent(rc);

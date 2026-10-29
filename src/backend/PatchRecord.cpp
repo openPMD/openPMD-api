@@ -47,9 +47,9 @@ PatchRecord::setUnitDimension(unit_representations::AsArray const &udim)
     return *this;
 }
 
-void PatchRecord::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void PatchRecord::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
-    visitHierarchyImpl<PatchRecord>(v, recursive);
+    visitHierarchyContainer<PatchRecord>(v, recursive);
 }
 
 void PatchRecord::flush_impl(
@@ -61,16 +61,17 @@ void PatchRecord::flush_impl(
     }
     if (!this->scalar())
     {
-        if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
-            Container<PatchRecordComponent>::flush(
-                path, flushParams); // warning (clang-tidy-10):
-                                    // bugprone-parent-virtual-call
+        Container<PatchRecordComponent>::flush(
+            path, flushParams); // warning (clang-tidy-10):
+                                // bugprone-parent-virtual-call
+
         for (auto &comp : *this)
             comp.second.flush(comp.first, flushParams);
     }
     else
         T_RecordComponent::flush(path, flushParams);
-    determineUnsetDirty(flushParams.flushLevel);
+    // Dirty flags are unset centrally by BaseRecord::flush() after
+    // flush_impl() returns, so no unsetDirty operation is needed here.
 }
 
 void PatchRecord::read()
@@ -100,7 +101,7 @@ void PatchRecord::read()
                       << component_name
                       << "' and will skip it due to read error:" << err.what()
                       << std::endl;
-            this->container().erase(component_name);
+            this->erase_unchecked(component_name);
         }
     }
 
