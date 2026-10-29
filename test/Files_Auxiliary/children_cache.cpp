@@ -157,6 +157,7 @@ auto children_cache() -> void
         REQUIRE(cache.contains_cache<int, std::string>());
         auto found = cache.find_cache<int, std::string>();
         REQUIRE(found.has_value());
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         REQUIRE(found->at("a") == 1);
     }
 
@@ -166,7 +167,9 @@ auto children_cache() -> void
         using U = std::uint64_t;
         using I = int;
 
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         REQUIRE(key_from_string<U>("42").value() == 42);
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
         REQUIRE(key_from_string<I>("-42").value() == -42);
         REQUIRE(!key_from_string<U>("042"));
         REQUIRE(!key_from_string<U>("+42"));

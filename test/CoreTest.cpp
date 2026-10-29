@@ -281,7 +281,7 @@ TEST_CASE("versions_test", "[core]")
 
 TEST_CASE("dataset_initialization", "[core]")
 {
-    Series s("f.json", Access::CREATE);
+    Series s("../samples/f.json", Access::CREATE);
     auto rc = s.iterations[0].meshes["E"]["x"];
     rc.getDatatype();
     auto scalar_rc = s.iterations[0].meshes["theta"];
@@ -600,7 +600,7 @@ TEST_CASE("output_constructor_test", "[core]")
 
 TEST_CASE("optional_attribute_test", "[core]")
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("../samples/new_openpmd_output.json", Access::CREATE);
 
     // Missing attributes yield an empty optional instead of throwing.
     REQUIRE(!o.getAttributeOptional("meshesPath").has_value());
