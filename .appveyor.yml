@@ -2,7 +2,7 @@ environment:
   matrix:
     - TARGET_ARCH: x64
       CONDA_PY: 3.10
-      CONDA_INSTALL_LOCN: C:\\Miniconda37-x64
+      CONDA_INSTALL_LOCN: C:\\openpmd-conda
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       platform: x64
       SHARED: OFF
@@ -75,30 +75,24 @@ install:
   # Cywin's git breaks conda-build. (see https://github.com/conda-forge/conda-smithy-feedstock/pull/2)
   - cmd: rmdir C:\cygwin /s /q
 
-  # Add path, activate `conda` and update conda.
-  - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+  # x86: activate the preinstalled Miniconda. `defaults` must stay there, as
+  # it is the only channel still shipping Python 3.10 for Win32.
+  - cmd: if "%TARGET_ARCH%"=="x86" call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
 
   - cmd: set PYTHONUNBUFFERED=1
 
-  # Add our channels.
-  # x86: `defaults` must stay, as conda-forge is unmaintained for Win32.
-  - cmd: conda config --set show_channel_urls true
+  # x64: use micromamba with conda-forge only. The preinstalled Miniconda's
+  # classic solver cannot resolve the conda-forge graph and backtracks until
+  # the job hits the 60-minute limit. Avoid the `defaults` channel entirely.
+  - cmd: if "%TARGET_ARCH%"=="x64" curl -L -o C:\micromamba.exe https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-win-64
+  - cmd: if "%TARGET_ARCH%"=="x64" C:\micromamba.exe create -y -p "%CONDA_INSTALL_LOCN%" -c conda-forge python=%CONDA_PY% cython numpy "cmake>=3.22" hdf5 adios2
+  - cmd: if "%TARGET_ARCH%"=="x64" set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Library\bin;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
+  - cmd: if "%TARGET_ARCH%"=="x64" set CMAKE_PREFIX_PATH=%CONDA_INSTALL_LOCN%
+
+  # x86: plain install with the default solver and `defaults` channel.
+  - cmd: if "%TARGET_ARCH%"=="x86" conda config --set show_channel_urls true
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
-
-  # x64 needs conda-forge for ADIOS2, but the preinstalled conda cannot solve
-  # the full conda-forge graph with its classic solver: it backtracks until the
-  # job hits the 60-minute limit. The x86 job avoids this by resolving against
-  # `defaults`, so do the same here: bootstrap a current conda plus the
-  # libmamba solver from `defaults`, then solve the conda-forge packages with
-  # libmamba. Pinning the bootstrap avoids searching the whole defaults graph.
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c defaults conda=23.10.0 conda-libmamba-solver=23.12.0 python=%CONDA_PY%
-  # conda < 22.11 spells the option "experimental_solver", newer releases use
-  # "solver"; set whichever this conda understands.
-  - cmd: if "%TARGET_ARCH%"=="x64" (conda config --set solver libmamba 2>nul || conda config --set experimental_solver libmamba)
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge cython numpy "cmake>=3.22" hdf5 adios2 python=%CONDA_PY%
-
-  # Plain install with default solver on Win32 and defaults channel.
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
