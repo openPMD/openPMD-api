@@ -80,6 +80,7 @@ class DeferredComputation
     std::variant<detail::OneTimeTask<T>, detail::CachedValue<T>> m_task;
 
 public:
+    using result_type = T;
     static constexpr bool noexcept_move =
         std::is_move_constructible_v<detail::OneTimeTask<T>> &&
         std::is_move_assignable_v<detail::OneTimeTask<T>> &&
@@ -150,7 +151,16 @@ public:
     [[nodiscard]] auto valid() const noexcept -> bool;
 
 private:
-    auto hasUnconsumedTask() const noexcept -> bool;
+    [[nodiscard]] auto hasUnconsumedTask() const noexcept -> bool;
     void warnUnconsumedTask() const noexcept;
 };
+
+template <typename... Args>
+auto get_deferred(Args &&...args)
+    -> std::tuple<typename std::remove_reference_t<Args>::result_type...>
+{
+    return std::make_tuple<
+        typename std::remove_reference_t<Args>::result_type...>(
+        std::forward<Args>(args).get()...);
+}
 } // namespace openPMD::auxiliary

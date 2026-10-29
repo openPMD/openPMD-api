@@ -578,9 +578,8 @@ void available_chunks_test(std::string const &file_ending)
         auto last_row_deferred =
             E_y.prepareLoadStore().offset({4, 0}).load<int>();
 
-        auto first_row = first_row_deferred.get();
-        auto middle_rows = middle_rows_deferred.get();
-        auto last_row = last_row_deferred.get();
+        auto [first_row, middle_rows, last_row] = get_deferred(
+            first_row_deferred, middle_rows_deferred, last_row_deferred);
 
         for (auto row : {&first_row, &last_row})
         {
