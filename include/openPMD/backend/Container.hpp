@@ -184,10 +184,7 @@ protected:
     inline auto container() const -> ConstView
     {
         return ConstView(
-            &group_data().m_children_cache,
-            nullptr,
-            m_child_filter,
-            nullptr);
+            &group_data().m_children_cache, nullptr, m_child_filter, nullptr);
     }
 
     OPENPMD_protected
