@@ -75,21 +75,18 @@ install:
   # Cywin's git breaks conda-build. (see https://github.com/conda-forge/conda-smithy-feedstock/pull/2)
   - cmd: rmdir C:\cygwin /s /q
 
-  # x86: activate the preinstalled Miniconda. `defaults` must stay there, as
-  # it is the only channel still shipping Python 3.10 for Win32.
+  # x86: defaults required for Win32 Python 3.10.
   - cmd: if "%TARGET_ARCH%"=="x86" call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
 
   - cmd: set PYTHONUNBUFFERED=1
 
-  # x64: use micromamba with conda-forge only. The preinstalled Miniconda's
-  # classic solver cannot resolve the conda-forge graph and backtracks until
-  # the job hits the 60-minute limit. Avoid the `defaults` channel entirely.
+  # x64: conda-forge only via micromamba.
   - cmd: if "%TARGET_ARCH%"=="x64" curl -L -o C:\micromamba.exe https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-win-64
   - cmd: if "%TARGET_ARCH%"=="x64" C:\micromamba.exe create -y -p "%CONDA_INSTALL_LOCN%" -c conda-forge python=%CONDA_PY% cython numpy "cmake>=3.22" hdf5 adios2
   - cmd: if "%TARGET_ARCH%"=="x64" set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Library\bin;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
   - cmd: if "%TARGET_ARCH%"=="x64" set CMAKE_PREFIX_PATH=%CONDA_INSTALL_LOCN%
 
-  # x86: plain install with the default solver and `defaults` channel.
+  # x86: install with defaults.
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --set show_channel_urls true
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
