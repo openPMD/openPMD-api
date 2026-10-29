@@ -21,33 +21,27 @@
 
 #include "openPMD/backend/ContainerImpl.tpp"
 
+#include "ContainerTypeMacros.hpp"
+
 #include "openPMD/CustomHierarchy.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Record.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/HierarchyVisitorImpl.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 namespace openPMD
 {
-#define OPENPMD_COMMA ,
-#define OPENPMD_INSTANTIATE(type) template class Container<type>;
+#define OPENPMD_INSTANTIATE(type, key) template class Container<type, key>;
 
-OPENPMD_INSTANTIATE(Mesh)
-OPENPMD_INSTANTIATE(MeshRecordComponent)
-OPENPMD_INSTANTIATE(ParticlePatches)
-OPENPMD_INSTANTIATE(ParticleSpecies)
-OPENPMD_INSTANTIATE(PatchRecord)
-OPENPMD_INSTANTIATE(PatchRecordComponent)
-OPENPMD_INSTANTIATE(Record)
-OPENPMD_INSTANTIATE(RecordComponent)
-OPENPMD_INSTANTIATE(CustomHierarchy)
-OPENPMD_INSTANTIATE(CustomDataset)
-OPENPMD_INSTANTIATE(Iteration OPENPMD_COMMA Iteration::IterationIndex_t)
+OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE)
 #undef OPENPMD_INSTANTIATE
-#undef OPENPMD_COMMA
 
 namespace internal
 {

@@ -112,40 +112,7 @@ auto materialize_child_at(
     ChildrenCache const &cache,
     std::string const &canonicalKey,
     std::shared_ptr<SharedAttributableData> const &child,
-    bool access_policy = true) -> typename std::map<Key, T>::iterator
-{
-    auto typed_cache = cache.template get_or_create_cache<T, Key>();
-    auto const &key =
-        children_cache_detail::key_from_string_or_throw<Key>(canonicalKey);
-
-    auto it = typed_cache.find(key);
-    if (it == typed_cache.end())
-    {
-        auto materialized =
-            ChildMaterializer<T>::materialize(canonicalKey, child);
-        assert(materialized.has_value());
-        if (!materialized)
-        {
-            // A materializer returned "no value" for a child that passed the
-            // view filter. That is a broken materializer contract, not a user
-            // error.
-            throw error::Internal(
-                "No frontend handle was produced while materializing child '" +
-                canonicalKey + "'.");
-        }
-        auto inserted =
-            typed_cache.unsafe_try_emplace(key, std::move(*materialized));
-        it = inserted.first;
-    }
-
-    if (access_policy)
-    {
-        // The cache is mutable even for const views; only the returned
-        // reference is const-qualified.
-        traits::ElementAccessPolicy<T>::call(it->second);
-    }
-    return it;
-}
+    bool access_policy = true) -> typename std::map<Key, T>::iterator;
 
 /** Const-independent state shared by mutable and const projected iterators. */
 template <typename T, typename Key>
@@ -207,89 +174,26 @@ public:
         children_iterator iterator,
         children_iterator end,
         ChildFilter filter,
-        bool access_policy)
-        : m_members{cache, iterator, end, std::move(filter), access_policy}
-    {
-        if (m_members.iterator != m_members.end)
-        {
-            skip_forward();
-        }
-    }
+        bool access_policy);
 
-    auto key() const -> std::string const &
-    {
-        return m_members.iterator->first;
-    }
+    auto key() const -> std::string const &;
 
-    auto operator*() const -> reference
-    {
-        auto it = materialize_child_at<T, Key>(
-            *m_members.cache,
-            m_members.iterator->first,
-            m_members.iterator->second,
-            m_members.access_policy);
-        return *typed_iterator(it);
-    }
+    auto operator*() const -> reference;
 
-    auto operator->() const -> pointer
-    {
-        return &operator*();
-    }
+    auto operator->() const -> pointer;
 
-    auto operator++() -> ProjectedChildIterator &
-    {
-        ++m_members.iterator;
-        skip_forward();
-        return *this;
-    }
-    auto operator++(int) -> ProjectedChildIterator
-    {
-        auto res = *this;
-        ++(*this);
-        return res;
-    }
+    auto operator++() -> ProjectedChildIterator &;
+    auto operator++(int) -> ProjectedChildIterator;
 
-    auto operator--() -> ProjectedChildIterator &
-    {
-        --m_members.iterator;
-        skip_backward();
-        return *this;
-    }
-    auto operator--(int) -> ProjectedChildIterator
-    {
-        auto res = *this;
-        --(*this);
-        return res;
-    }
+    auto operator--() -> ProjectedChildIterator &;
+    auto operator--(int) -> ProjectedChildIterator;
 
-    auto operator==(ProjectedChildIterator const &other) const -> bool
-    {
-        return m_members.iterator == other.m_members.iterator;
-    }
-    auto operator!=(ProjectedChildIterator const &other) const -> bool
-    {
-        return !(*this == other);
-    }
+    auto operator==(ProjectedChildIterator const &other) const -> bool;
+    auto operator!=(ProjectedChildIterator const &other) const -> bool;
 
 private:
-    void skip_forward()
-    {
-        while (m_members.iterator != m_members.end &&
-               !m_members.filter.accepts(
-                   m_members.iterator->first, *m_members.iterator->second))
-        {
-            ++m_members.iterator;
-        }
-    }
-
-    void skip_backward()
-    {
-        while (!m_members.filter.accepts(
-            m_members.iterator->first, *m_members.iterator->second))
-        {
-            --m_members.iterator;
-        }
-    }
+    void skip_forward();
+    void skip_backward();
 
     Members m_members;
 };
@@ -346,298 +250,44 @@ public:
         cache_t *cache,
         Writable *self,
         ChildFilter const &filter,
-        CreateChild create_child)
-        : m_cache(cache)
-        , m_self(self)
-        , m_filter(std::cref(filter))
-        , m_create_child(
-              create_child ? std::optional<CreateChild>(create_child)
-                           : std::nullopt)
-    {}
+        CreateChild create_child);
 
-    auto begin() -> iterator
-    {
-        return make_begin<iterator>();
-    }
-    auto begin() const -> const_iterator
-    {
-        return make_begin<const_iterator>();
-    }
-    auto cbegin() const -> const_iterator
-    {
-        return begin();
-    }
-    auto end() -> iterator
-    {
-        return make_end<iterator>();
-    }
-    auto end() const -> const_iterator
-    {
-        return make_end<const_iterator>();
-    }
-    auto cend() const -> const_iterator
-    {
-        return end();
-    }
-    auto rbegin() -> reverse_iterator
-    {
-        if constexpr (non_string)
-        {
-            sync();
-            if constexpr (Const)
-            {
-                auto const typed_view = typed();
-                return typed_view.rbegin();
-            }
-            else
-            {
-                return typed().rbegin();
-            }
-        }
-        else
-        {
-            return reverse_iterator(end());
-        }
-    }
-    auto rbegin() const -> const_reverse_iterator
-    {
-        if constexpr (non_string)
-        {
-            sync();
-            auto const typed_view = typed();
-            return typed_view.rbegin();
-        }
-        else
-        {
-            return const_reverse_iterator(end());
-        }
-    }
-    auto crbegin() const -> const_reverse_iterator
-    {
-        return rbegin();
-    }
-    auto rend() -> reverse_iterator
-    {
-        if constexpr (non_string)
-        {
-            if constexpr (Const)
-            {
-                auto const typed_view = typed();
-                return typed_view.rend();
-            }
-            else
-            {
-                return typed().rend();
-            }
-        }
-        else
-        {
-            return reverse_iterator(begin());
-        }
-    }
-    auto rend() const -> const_reverse_iterator
-    {
-        if constexpr (non_string)
-        {
-            auto const typed_view = typed();
-            return typed_view.rend();
-        }
-        else
-        {
-            return const_reverse_iterator(begin());
-        }
-    }
-    auto crend() const -> const_reverse_iterator
-    {
-        return rend();
-    }
+    auto begin() -> iterator;
+    auto begin() const -> const_iterator;
+    auto cbegin() const -> const_iterator;
 
-    auto empty() const -> bool
-    {
-        auto const &children = m_cache->children();
-        for (auto const &[key, child] : children)
-        {
-            if (matches(key, *child))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+    auto end() -> iterator;
+    auto end() const -> const_iterator;
+    auto cend() const -> const_iterator;
 
-    auto size() const -> size_type
-    {
-        size_type res = 0;
-        for (auto const &[key, child] : m_cache->children())
-        {
-            (void)child;
-            if (matches(key, *child))
-            {
-                ++res;
-            }
-        }
-        return res;
-    }
+    auto rbegin() -> reverse_iterator;
+    auto rbegin() const -> const_reverse_iterator;
+    auto crbegin() const -> const_reverse_iterator;
 
-    auto find(Key const &key) -> iterator
-    {
-        auto const &canonical = children_cache_detail::key_to_string(key);
-        auto it = m_cache->children().find(canonical);
-        if (it == m_cache->children().end() ||
-            !filter().accepts(canonical, *it->second))
-        {
-            return end();
-        }
+    auto rend() -> reverse_iterator;
+    auto rend() const -> const_reverse_iterator;
+    auto crend() const -> const_reverse_iterator;
 
-        if constexpr (non_string)
-        {
-            auto typed_view = typed();
-            auto typed_it = typed_view.find(key);
-            if (typed_it == typed_view.end())
-            {
-                typed_it = materialize_child_at<T, Key>(
-                    *m_cache, canonical, it->second, m_access_policy);
-            }
-            return typed_it;
-        }
-        else
-        {
-            return iterator(
-                m_cache,
-                it,
-                m_cache->children().end(),
-                filter(),
-                m_access_policy);
-        }
-    }
-    auto find(Key const &key) const -> const_iterator
-    {
-        auto const &canonical = children_cache_detail::key_to_string(key);
-        auto it = m_cache->children().find(canonical);
-        if (it == m_cache->children().end() ||
-            !filter().accepts(canonical, *it->second))
-        {
-            return end();
-        }
+    auto empty() const -> bool;
+    auto size() const -> size_type;
 
-        if constexpr (non_string)
-        {
-            auto typed_view = typed();
-            auto typed_it = typed_view.find(key);
-            if (typed_it == typed_view.end())
-            {
-                typed_it = materialize_child_at<T, Key>(
-                    *m_cache, canonical, it->second, m_access_policy);
-            }
-            return typed_it;
-        }
-        else
-        {
-            return const_iterator(
-                m_cache,
-                it,
-                m_cache->children().end(),
-                filter(),
-                m_access_policy);
-        }
-    }
+    auto find(Key const &key) -> iterator;
+    auto find(Key const &key) const -> const_iterator;
 
-    auto contains(Key const &key) const -> bool
-    {
-        auto const &canonical = children_cache_detail::key_to_string(key);
-        auto it = m_cache->children().find(canonical);
-        return it != m_cache->children().end() &&
-            filter().accepts(canonical, *it->second);
-    }
+    auto contains(Key const &key) const -> bool;
+    auto count(Key const &key) const -> size_type;
 
-    auto count(Key const &key) const -> size_type
-    {
-        return contains(key) ? 1 : 0;
-    }
+    auto at(Key const &key) -> std::conditional_t<Const, T const &, T &>;
+    auto at(Key const &key) const -> T const &;
 
-    auto at(Key const &key) -> std::conditional_t<Const, T const &, T &>
-    {
-        auto it = find(key);
-        if (it == end())
-        {
-            throw std::out_of_range(
-                "ChildView::at(): key not found in the child hierarchy.");
-        }
-        return it->second;
-    }
-    auto at(Key const &key) const -> T const &
-    {
-        auto it = find(key);
-        if (it == end())
-        {
-            throw std::out_of_range(
-                "ChildView::at(): key not found in the child hierarchy.");
-        }
-        return it->second;
-    }
+    auto operator[](Key const &key) -> T &;
+    auto get_or_create(Key const &key, bool access_policy) -> T &;
 
-    auto operator[](Key const &key) -> T &
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        return get_or_create(key, /* access_policy = */ true);
-    }
+    auto insert(value_type const &value) -> std::pair<iterator, bool>;
+    auto insert(value_type &&value) -> std::pair<iterator, bool>;
+    auto insert(const_iterator hint, value_type const &value) -> iterator;
+    auto insert(const_iterator hint, value_type &&value) -> iterator;
 
-    auto get_or_create(Key const &key, bool access_policy) -> T &
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        auto const &canonical = children_cache_detail::key_to_string(key);
-        auto &children = m_cache->children();
-        auto it = children.find(canonical);
-
-        if (it != children.end())
-        {
-            if (!filter().accepts(canonical, *it->second))
-            {
-                throw error::WrongAPIUsage(
-                    "Cannot access child '" + canonical +
-                    "' through a filtered view.");
-            }
-            auto typed_it = materialize_child_at<T, Key>(
-                *m_cache, canonical, it->second, access_policy);
-            return typed_it->second;
-        }
-
-        check_writable();
-        assert(m_self != nullptr);
-        assert(m_create_child.has_value());
-        T child = (*m_create_child)(key, *m_self);
-        children.emplace(canonical, child.m_attri->asSharedPtrOfAttributable());
-
-        auto typed_view = typed();
-        auto inserted = typed_view.unsafe_try_emplace(key, std::move(child));
-        assert(inserted.second);
-        traits::GenerationPolicy<T> generation;
-        generation(*this, inserted.first);
-        return inserted.first->second;
-    }
-
-    auto insert(value_type const &value) -> std::pair<iterator, bool>
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        return insert_impl(value);
-    }
-    auto insert(value_type &&value) -> std::pair<iterator, bool>
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        return insert_impl(std::move(value));
-    }
-    auto insert(const_iterator hint, value_type const &value) -> iterator
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        (void)hint;
-        return insert_impl(value).first;
-    }
-    auto insert(const_iterator hint, value_type &&value) -> iterator
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        (void)hint;
-        return insert_impl(std::move(value)).first;
-    }
     template <typename InputIt>
     void insert(InputIt first, InputIt last)
     {
@@ -655,190 +305,31 @@ public:
         return insert_impl(value_type(std::forward<Args>(args)...));
     }
 
-    auto erase(Key const &key) -> size_type
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        auto const &canonical = children_cache_detail::key_to_string(key);
-        auto it = m_cache->children().find(canonical);
-        if (it == m_cache->children().end() ||
-            !filter().accepts(canonical, *it->second))
-        {
-            return 0;
-        }
-        m_cache->erase(canonical);
-        return 1;
-    }
+    auto erase(Key const &key) -> size_type;
+    auto erase(iterator it) -> iterator;
+    void clear();
 
-    auto erase(iterator it) -> iterator
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        auto next = it;
-        ++next;
-        if constexpr (non_string)
-        {
-            m_cache->erase(children_cache_detail::key_to_string(it->first));
-        }
-        else
-        {
-            m_cache->erase(it.key());
-        }
-        return next;
-    }
-
-    void clear()
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        m_cache->clear();
-    }
-
-    auto filter() const -> ChildFilter const &
-    {
-        assert(m_filter.has_value());
-        return m_filter->get();
-    }
-    void set_access_policy(bool access_policy) noexcept
-    {
-        static_assert(!Const, "Cannot modify a const ChildView.");
-        assert(!non_string);
-        m_access_policy = access_policy;
-    }
+    auto filter() const -> ChildFilter const &;
+    void set_access_policy(bool access_policy) noexcept;
 
 private:
     template <typename Iterator>
-    auto make_begin() const -> Iterator
-    {
-        if constexpr (non_string)
-        {
-            sync();
-            return typed().begin();
-        }
-        else
-        {
-            auto it = m_cache->children().begin();
-            Iterator res(
-                m_cache,
-                it,
-                m_cache->children().end(),
-                filter(),
-                m_access_policy);
-            return res;
-        }
-    }
+    auto make_begin() const -> Iterator;
+
     template <typename Iterator>
-    auto make_end() const -> Iterator
-    {
-        if constexpr (non_string)
-        {
-            return typed().end();
-        }
-        else
-        {
-            return Iterator(
-                m_cache,
-                m_cache->children().end(),
-                m_cache->children().end(),
-                filter(),
-                m_access_policy);
-        }
-    }
+    auto make_end() const -> Iterator;
 
-    auto typed() const -> ChildrenCacheMap<T, Key>
-    {
-        return m_cache->template get_or_create_cache<T, Key>();
-    }
-
-    void sync() const
-    {
-        if constexpr (non_string)
-        {
-            auto typed_view = typed();
-            for (auto const &[canonical, child] : m_cache->children())
-            {
-                auto const key =
-                    children_cache_detail::key_from_string<Key>(canonical);
-                if (!key)
-                {
-                    continue;
-                }
-                if (typed_view.find(*key) != typed_view.end())
-                {
-                    continue;
-                }
-                auto materialized =
-                    ChildMaterializer<T>::materialize(canonical, child);
-                if (materialized)
-                {
-                    typed_view.unsafe_try_emplace(
-                        *key, std::move(*materialized));
-                }
-            }
-        }
-    }
+    auto typed() const -> ChildrenCacheMap<T, Key>;
+    void sync() const;
 
     auto matches(
         std::string const &canonicalKey,
-        SharedAttributableData const &child) const -> bool
-    {
-        if (!filter().accepts(canonicalKey, child))
-        {
-            return false;
-        }
-        if constexpr (std::is_same_v<Key, std::string>)
-        {
-            return true;
-        }
-        else
-        {
-            return children_cache_detail::key_from_string<Key>(canonicalKey)
-                .has_value();
-        }
-    }
+        SharedAttributableData const &child) const -> bool;
 
-    void check_writable() const
-    {
-        if (m_self == nullptr || !m_self->IOHandler || !*m_self->IOHandler)
-        {
-            return;
-        }
-        auto const &handler = **m_self->IOHandler;
-        if (handler && access::readOnly(handler->m_frontendAccess) &&
-            handler->m_seriesStatus != internal::SeriesStatus::Parsing)
-        {
-            throw std::out_of_range(
-                "Cannot create a new child in a read-only Series.");
-        }
-    }
+    void check_writable() const;
 
-    template <typename Value>
-    auto insert_impl(Value &&value) -> std::pair<iterator, bool>
-    {
-        auto const &canonical =
-            children_cache_detail::key_to_string(value.first);
-        auto &children = m_cache->children();
-        auto child_it = children.find(canonical);
-        if (child_it == children.end())
-        {
-            children.emplace(
-                canonical, value.second.m_attri->asSharedPtrOfAttributable());
-        }
-        else
-        {
-            value.second.m_attri->asSharedPtrOfAttributable() =
-                child_it->second;
-            value.second.preferCurrentBackpointer();
-        }
-
-        auto typed_view = typed();
-        auto inserted = typed_view.unsafe_try_emplace(
-            value.first, std::forward<Value>(value).second);
-        if (!inserted.second)
-        {
-            return {find(value.first), false};
-        }
-        traits::GenerationPolicy<T> generation;
-        generation(*this, inserted.first);
-        return {find(value.first), true};
-    }
+    auto insert_impl(value_type const &value) -> std::pair<iterator, bool>;
+    auto insert_impl(value_type &&value) -> std::pair<iterator, bool>;
 
     cache_t *m_cache;
     Writable *m_self;

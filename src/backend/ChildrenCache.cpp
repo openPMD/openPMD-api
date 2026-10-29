@@ -20,8 +20,53 @@
  */
 #include "openPMD/backend/ChildrenCache.hpp"
 
+#include "ContainerTypeMacros.hpp"
+
+#include "openPMD/CustomHierarchy.hpp"
+#include "openPMD/Iteration.hpp"
+#include "openPMD/Mesh.hpp"
+#include "openPMD/ParticlePatches.hpp"
+#include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Record.hpp"
+#include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/ChildrenCacheImpl.tpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
+
+#include <cstdint>
+
 namespace openPMD::internal
 {
+namespace
+{
+    enum class ContainerTypeId : std::uint8_t
+    {
+#define OPENPMD_ENUMERATE_CONTAINER_TYPE(type, key) type,
+        OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_ENUMERATE_CONTAINER_TYPE)
+#undef OPENPMD_ENUMERATE_CONTAINER_TYPE
+    };
+} // namespace
+
+#define OPENPMD_DEFINE_CONTAINER_TYPE_ID(type, key)                            \
+    template <>                                                                \
+    auto container_type_id<type, key>() -> std::uint8_t                        \
+    {                                                                          \
+        return static_cast<std::uint8_t>(ContainerTypeId::type);               \
+    }
+OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_DEFINE_CONTAINER_TYPE_ID)
+#undef OPENPMD_DEFINE_CONTAINER_TYPE_ID
+
+#define OPENPMD_INSTANTIATE_CONTAINER_CACHE(type, key)                         \
+    template ChildrenCacheMap<type, key>                                       \
+    ChildrenCache::get_or_create_cache<type, key>() const;                     \
+    template std::optional<ChildrenCacheMap<type, key>>                        \
+    ChildrenCache::find_cache<type, key>() const;                              \
+    template bool ChildrenCache::contains_cache<type, key>() const noexcept;
+
+OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE_CONTAINER_CACHE)
+#undef OPENPMD_INSTANTIATE_CONTAINER_CACHE
+
 ChildrenCache::children_map_t &ChildrenCache::children()
 {
     return m_children;

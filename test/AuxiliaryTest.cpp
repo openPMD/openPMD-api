@@ -31,6 +31,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/ChildViewImpl.tpp"
+#include "openPMD/backend/ChildrenCacheImpl.tpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/ContainerImpl.tpp"
 #include "openPMD/backend/Variant_internal.hpp"
@@ -169,6 +171,15 @@ struct S : public TestHelper
 };
 } // namespace openPMD::test
 
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::S, std::string>() -> std::uint8_t
+{
+    return 246;
+}
+} // namespace openPMD::internal
+
 TEST_CASE("container_default_test", "[auxiliary]")
 {
 #if openPMD_USE_INVASIVE_TESTS
@@ -208,6 +219,15 @@ struct structure : public TestHelper
     }
 };
 } // namespace openPMD::test
+
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::structure, std::string>() -> std::uint8_t
+{
+    return 247;
+}
+} // namespace openPMD::internal
 
 TEST_CASE("container_retrieve_test", "[auxiliary]")
 {
@@ -283,6 +303,15 @@ struct Widget : public TestHelper
     {}
 };
 } // namespace openPMD::test
+
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::Widget, std::string>() -> std::uint8_t
+{
+    return 248;
+}
+} // namespace openPMD::internal
 
 TEST_CASE("container_access_test", "[auxiliary]")
 {

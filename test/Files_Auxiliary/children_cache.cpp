@@ -22,6 +22,7 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/ChildrenCache.hpp"
+#include "openPMD/backend/ChildrenCacheImpl.tpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -29,6 +30,25 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<int, std::string>() -> std::uint8_t
+{
+    return 240;
+}
+template <>
+auto container_type_id<double, std::string>() -> std::uint8_t
+{
+    return 241;
+}
+template <>
+auto container_type_id<int, std::uint64_t>() -> std::uint8_t
+{
+    return 242;
+}
+} // namespace openPMD::internal
 
 namespace children_cache
 {

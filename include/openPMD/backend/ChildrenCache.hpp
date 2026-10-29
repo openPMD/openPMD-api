@@ -25,6 +25,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -34,12 +35,20 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <typeindex>
 #include <utility>
 
 namespace openPMD::internal
 {
 class SharedAttributableData;
+
+/** Stable identifier for a container element type.
+ *
+ * Defined in ChildrenCache.cpp for all explicitly instantiated container
+ * types. Unlike std::type_index, the returned value does not depend on RTTI
+ * identity across shared-library boundaries.
+ */
+template <typename T, typename Key>
+auto container_type_id() -> std::uint8_t;
 
 namespace children_cache_detail
 {
@@ -207,60 +216,7 @@ class ChildrenCache
     };
 
     template <typename Key, typename T>
-    struct TypedEntry : EntryI
-    {
-        using map_type = std::map<Key, T>;
-        map_type map;
-        void erase(std::string const &key) override
-        {
-            if constexpr (std::is_same_v<Key, std::string>)
-            {
-                map.erase(key);
-            }
-            else
-            {
-                auto const parsed =
-                    children_cache_detail::key_from_string<Key>(key);
-                // A key that cannot be represented by this map cannot be
-                // contained in it. assert_consistent() validates the
-                // round-trip for entries that actually exist.
-                if (parsed)
-                {
-                    map.erase(*parsed);
-                }
-            }
-        }
-        void clear() override
-        {
-            map.clear();
-        }
-        auto contains(std::string const &key) -> bool override
-        {
-            if constexpr (std::is_same_v<Key, std::string>)
-            {
-                return map.find(key) != map.end();
-            }
-            else
-            {
-                auto const parsed =
-                    children_cache_detail::key_from_string<Key>(key);
-                return parsed.has_value() && map.find(*parsed) != map.end();
-            }
-        }
-        void for_each_key(
-            std::function<void(std::string const &)> const &functor) override
-        {
-            for (auto const &[key, value] : map)
-            {
-                (void)value;
-                functor(children_cache_detail::key_to_string(key));
-            }
-        }
-        auto size() -> std::size_t override
-        {
-            return map.size();
-        }
-    };
+    struct TypedEntry;
 
     using Entry = std::shared_ptr<EntryI>;
 
@@ -278,52 +234,19 @@ public:
      *
      * Materialization is a cache operation and therefore logically const.
      *
-     * The Entry callbacks below are the only implementations; they are
-     * generic over Key and rely solely on the key conversion helpers. There
-     * are no per-type specializations. Type-specific materialization is
+     * Defined in ChildrenCacheImpl.tpp and explicitly instantiated for all
+     * container types in ChildrenCache.cpp. Type-specific materialization is
      * handled by ChildMaterializer instead.
      */
     template <typename T, typename Key>
-    auto get_or_create_cache() const -> ChildrenCacheMap<T, Key>
-    {
-        using map_type = std::map<Key, T>;
-        using entry_type = TypedEntry<Key, T>;
-        auto const type = std::type_index(typeid(map_type));
-        auto it = m_entries.find(type);
-        if (it == m_entries.end())
-        {
-            auto typed_entry = std::make_shared<entry_type>();
-            it = m_entries.emplace(type, std::move(typed_entry)).first;
-            assert_consistent();
-        }
-
-        auto *typed_entry = static_cast<entry_type *>(it->second.get());
-        assert(typed_entry != nullptr);
-        return ChildrenCacheMap<T, Key>(typed_entry->map);
-    }
+    auto get_or_create_cache() const -> ChildrenCacheMap<T, Key>;
 
     template <typename T, typename Key>
     [[nodiscard]] auto find_cache() const
-        -> std::optional<ChildrenCacheMap<T, Key>>
-    {
-        using map_type = std::map<Key, T>;
-        using entry_type = TypedEntry<Key, T>;
-        auto const it = m_entries.find(std::type_index(typeid(map_type)));
-        if (it == m_entries.end())
-        {
-            return std::nullopt;
-        }
-        auto *typed_entry = static_cast<entry_type *>(it->second.get());
-        assert(typed_entry != nullptr);
-        return ChildrenCacheMap<T, Key>(typed_entry->map);
-    }
+        -> std::optional<ChildrenCacheMap<T, Key>>;
 
     template <typename T, typename Key>
-    [[nodiscard]] auto contains_cache() const noexcept -> bool
-    {
-        return m_entries.find(std::type_index(typeid(std::map<Key, T>))) !=
-            m_entries.end();
-    }
+    [[nodiscard]] auto contains_cache() const noexcept -> bool;
 
     children_map_t &children();
     children_map_t const &children() const;
@@ -348,8 +271,9 @@ private:
      * Type-erased typed caches, stored once per ChildrenCache instance (i.e.
      * once per group node) and shared by all views of that node. The
      * ChildrenCacheMap instances handed out by get_or_create_cache() are
-     * non-owning views and store no state.
+     * non-owning views and store no state. Keys are container_type_id<T>()
+     * values, not RTTI-dependent type indices.
      */
-    mutable std::map<std::type_index, Entry> m_entries;
+    mutable std::map<std::uint8_t, Entry> m_entries;
 };
 } // namespace openPMD::internal

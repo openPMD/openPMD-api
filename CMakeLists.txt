@@ -431,6 +431,7 @@ set(CORE_SOURCE
         src/backend/BaseRecord.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/ChildrenCache.cpp
+        src/backend/ChildView.cpp
         src/backend/Container.cpp
         src/backend/HierarchyVisitor.cpp
         src/backend/MeshRecordComponent.cpp
