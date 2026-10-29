@@ -34,7 +34,6 @@ ChildrenCache::children_map_t const &ChildrenCache::children() const
 
 void ChildrenCache::erase(std::string const &canonicalKey)
 {
-    m_children.erase(canonicalKey);
     for (auto &[type, entry] : m_entries)
     {
         (void)type;
@@ -46,11 +45,11 @@ void ChildrenCache::erase(std::string const &canonicalKey)
         (void)type;
         assert(!entry->contains(canonicalKey));
     }
+    m_children.erase(canonicalKey);
 }
 
 void ChildrenCache::clear()
 {
-    m_children.clear();
     for (auto &[type, entry] : m_entries)
     {
         (void)type;
@@ -62,6 +61,7 @@ void ChildrenCache::clear()
         (void)type;
         assert(entry->size() == 0);
     }
+    m_children.clear();
 
     assert_consistent();
 }
@@ -87,9 +87,9 @@ std::size_t ChildrenCache::num_maps() const noexcept
 void ChildrenCache::assert_consistent() const
 {
 #ifndef NDEBUG
-    for (auto const &[type, entry] : m_entries)
+    for (auto const &pair : m_entries)
     {
-        (void)type;
+        auto &entry = pair.second;
 
         std::size_t const registered_size = entry->size();
         std::size_t counted_size = 0;
