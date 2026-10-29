@@ -277,9 +277,8 @@ std::shared_ptr<void> RecordComponent::loadChunkAllocate_impl(
     }
     size_t numBytes = checkedMultiply(numPoints, dtype_size);
 
-    auto newData = std::shared_ptr<void>(new char[numBytes], [](void *p) {
-        delete[] (static_cast<char *>(p));
-    });
+    auto newData = std::shared_ptr<void>(
+        new char[numBytes], [](void *p) { delete[] (static_cast<char *>(p)); });
     prepareLoadStore()
         .offset(std::move(o))
         .extent(std::move(e))
