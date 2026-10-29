@@ -2,7 +2,7 @@ environment:
   matrix:
     - TARGET_ARCH: x64
       CONDA_PY: 3.10
-      CONDA_INSTALL_LOCN: C:\\Miniconda37-x64
+      CONDA_INSTALL_LOCN: C:\\openpmd-conda
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       platform: x64
       SHARED: OFF
@@ -75,27 +75,21 @@ install:
   # Cywin's git breaks conda-build. (see https://github.com/conda-forge/conda-smithy-feedstock/pull/2)
   - cmd: rmdir C:\cygwin /s /q
 
-  # Add path, activate `conda` and update conda.
-  - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+  # x86: defaults required for Win32 Python 3.10.
+  - cmd: if "%TARGET_ARCH%"=="x86" call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
 
   - cmd: set PYTHONUNBUFFERED=1
 
-  # Add our channels.
-  # x64: use conda-forge only, drop the defaults channel.
-  # x86: `defaults` must stay, as conda-forge is unmaintained for Win32.
-  - cmd: conda config --set show_channel_urls true
+  # x64: conda-forge only via micromamba.
+  - cmd: if "%TARGET_ARCH%"=="x64" curl -L -o C:\micromamba.exe https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-win-64
+  - cmd: if "%TARGET_ARCH%"=="x64" C:\micromamba.exe create -y -p "%CONDA_INSTALL_LOCN%" -c conda-forge python=%CONDA_PY% cython numpy "cmake>=3.22" hdf5 adios2
+  - cmd: if "%TARGET_ARCH%"=="x64" set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Library\bin;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
+  - cmd: if "%TARGET_ARCH%"=="x64" set CMAKE_PREFIX_PATH=%CONDA_INSTALL_LOCN%
+
+  # x86: install with defaults.
+  - cmd: if "%TARGET_ARCH%"=="x86" conda config --set show_channel_urls true
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
   - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
-
-  # Bootstrap a current conda plus the libmamba solver,
-  # then install CMake with the fast libmamba solver.
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge conda conda-libmamba-solver cython numpy hdf5 adios2 python=%CONDA_PY%
-  # conda < 22.11 spells the option "experimental_solver", newer releases use
-  # "solver"; set whichever this conda understands.
-  - cmd: if "%TARGET_ARCH%"=="x64" (conda config --set solver libmamba 2>nul || conda config --set experimental_solver libmamba)
-  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes --override-channels -c conda-forge "cmake>=3.22"
-
-  # Plain install with default solver on Win32 and defaults channel.
   - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
