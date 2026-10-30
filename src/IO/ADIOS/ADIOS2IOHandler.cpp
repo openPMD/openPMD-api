@@ -254,9 +254,23 @@ void ADIOS2IOHandlerImpl::init(
             groupTableViaEnv == 0 ? UseGroupTable::No : UseGroupTable::Yes;
     }
 
+    if (auto arrayOrderingViaEnv =
+            auxiliary::getEnvString("OPENPMD_ADIOS2_ARRAY_ORDERING", "");
+        !arrayOrderingViaEnv.empty())
+    {
+        m_arrayOrdering = parseArrayOrdering(
+            arrayOrderingViaEnv, {"adios2", "dataset", "array_ordering"});
+    }
+
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
+
+        if (auto arrayOrdering = getArrayOrdering(m_config);
+            arrayOrdering.has_value())
+        {
+            m_arrayOrdering = *arrayOrdering;
+        }
 
         if (m_config.json().contains("use_group_table"))
         {
@@ -428,12 +442,64 @@ ADIOS2IOHandlerImpl::getOperators()
     return getOperators(m_config);
 }
 
+ADIOS2IOHandlerImpl::ArrayOrdering ADIOS2IOHandlerImpl::parseArrayOrdering(
+    std::string const &value, std::vector<std::string> const &configPath)
+{
+    std::string ordering = value;
+    auxiliary::lowerCase(ordering);
+    if (ordering == "adios2_default")
+    {
+        return ArrayOrdering::Adios2Default;
+    }
+    else if (ordering == "row_major")
+    {
+        return ArrayOrdering::RowMajor;
+    }
+    else if (ordering == "column_major")
+    {
+        return ArrayOrdering::ColumnMajor;
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            configPath,
+            "Must be one of 'adios2_default', 'row_major' or "
+            "'column_major', but was '" +
+                ordering + "'.");
+    }
+}
+
+std::optional<ADIOS2IOHandlerImpl::ArrayOrdering>
+ADIOS2IOHandlerImpl::getArrayOrdering(json::TracingJSON cfg)
+{
+    if (!cfg.json().contains("dataset"))
+    {
+        return std::nullopt;
+    }
+    auto datasetConfig = cfg["dataset"];
+    if (!datasetConfig.json().contains("array_ordering"))
+    {
+        return std::nullopt;
+    }
+    auto arrayOrdering = datasetConfig["array_ordering"];
+    auto maybeOrdering = json::asStringDynamic(arrayOrdering.json());
+    if (!maybeOrdering.has_value())
+    {
+        throw error::BackendConfigSchema(
+            {"adios2", "dataset", "array_ordering"},
+            "Must be convertible to string type.");
+    }
+    return parseArrayOrdering(
+        *maybeOrdering, {"adios2", "dataset", "array_ordering"});
+}
+
 template <typename Parameter>
-auto ADIOS2IOHandlerImpl::getDatasetOperators(
+auto ADIOS2IOHandlerImpl::getDatasetConfiguration(
     Parameter const &parameters, Writable *writable, std::string const &varName)
-    -> std::vector<ParameterizedOperator>
+    -> DatasetConfiguration
 {
     std::vector<ParameterizedOperator> operators;
+    ArrayOrdering arrayOrdering = m_arrayOrdering;
     json::TracingJSON options =
         parameters.template compileJSONConfig<json::ParsedConfig>(
             writable, *m_handler->jsonMatcher, "adios2");
@@ -441,9 +507,14 @@ auto ADIOS2IOHandlerImpl::getDatasetOperators(
     {
         json::TracingJSON datasetConfig(options["adios2"]);
         auto datasetOperators = getOperators(datasetConfig);
-
         operators = datasetOperators ? std::move(datasetOperators.value())
                                      : defaultOperators;
+
+        if (auto datasetArrayOrdering = getArrayOrdering(datasetConfig);
+            datasetArrayOrdering.has_value())
+        {
+            arrayOrdering = *datasetArrayOrdering;
+        }
     }
     else
     {
@@ -454,7 +525,7 @@ auto ADIOS2IOHandlerImpl::getDatasetOperators(
         "adios2",
         "Warning: parts of the backend configuration for ADIOS2 dataset '" +
             varName + "' remain unused:\n");
-    return operators;
+    return {std::move(operators), arrayOrdering};
 }
 
 using AcceptedEndingsForEngine = std::map<std::string, std::string>;
@@ -918,8 +989,8 @@ void ADIOS2IOHandlerImpl::createDataset(
         filePos->gd = GroupOrDataset::DATASET;
         auto const varName = nameOfVariable(writable);
 
-        std::vector<ParameterizedOperator> operators =
-            getDatasetOperators(parameters, writable, varName);
+        auto [operators, arrayOrdering] =
+            getDatasetConfiguration(parameters, writable, varName);
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims shape(parameters.extent.begin(), parameters.extent.end());
@@ -966,7 +1037,15 @@ https://github.com/ornladios/ADIOS2/issues/3504.
 #undef HAS_BP5_BLOSC2_BUG
 
         switchAdios2VariableType<detail::VariableDefiner>(
-            parameters.dtype, fileData.m_IO, varName, operators, shape);
+            parameters.dtype,
+            fileData.m_IO,
+            varName,
+            operators,
+            shape,
+            adios2::Dims(),
+            adios2::Dims(),
+            false,
+            arrayOrdering);
         writable->written = true;
         m_dirty.emplace(writable->fileState);
     }
@@ -1228,8 +1307,8 @@ void ADIOS2IOHandlerImpl::openDataset(
      * reading, so the dataset-specific configuration should still be explored
      * here.
      */
-    std::vector<ParameterizedOperator> operators =
-        getDatasetOperators(parameters, writable, varName);
+    auto [operators, arrayOrdering] =
+        getDatasetConfiguration(parameters, writable, varName);
     switchAdios2VariableType<detail::DatasetOpener>(
         *parameters.dtype,
         this,
@@ -1238,6 +1317,7 @@ void ADIOS2IOHandlerImpl::openDataset(
         parameters,
         fileData.stepSelection(),
         operators,
+        arrayOrdering,
         fileData.variables());
     writable->written = true;
 }
@@ -2556,6 +2636,7 @@ namespace detail
         std::optional<size_t> stepSelection,
         std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
             &operators,
+        ADIOS2IOHandlerImpl::ArrayOrdering arrayOrdering,
         detail::AdiosVariables const &av)
     {
         auto &fileData = impl->getFileData(
@@ -2575,6 +2656,8 @@ namespace detail
             ADIOS2IOHandlerImpl::setStepSelectionForVariable(
                 var, varName, *stepSelection, file_steps, av);
         }
+
+        ADIOS2IOHandlerImpl::applyArrayOrdering(var, arrayOrdering);
 
         // Operators in reading needed e.g. for setting decompression threads
         for (auto const &operation : operators)
@@ -2604,7 +2687,8 @@ namespace detail
         adios2::Dims const &shape,
         adios2::Dims const &start,
         adios2::Dims const &count,
-        bool const constantDims)
+        bool const constantDims,
+        ADIOS2IOHandlerImpl::ArrayOrdering arrayOrdering)
     {
         /*
          * Step/Variable-based iteration layout:
@@ -2633,6 +2717,9 @@ namespace detail
                 "[ADIOS2] Internal error: Could not create Variable '" + name +
                 "'.");
         }
+
+        ADIOS2IOHandlerImpl::applyArrayOrdering(var, arrayOrdering);
+
         for (auto const &compression : compressions)
         {
             if (compression.op)
