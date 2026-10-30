@@ -1330,6 +1330,7 @@ namespace detail
             adios2::Variable<T> variable = impl->verifyDataset<T>(
                 params.offset,
                 params.extent,
+                std::nullopt,
                 IO,
                 engine,
                 varName,
@@ -2147,6 +2148,11 @@ void ADIOS2IOHandlerImpl::touch(
     {
         this->m_dirty.emplace(writable->fileState);
     }
+    else if (!writable->fileState->backendSpecificState.has_value())
+    {
+        throw error::Internal(
+            "ADIOS2: Tried activating a file that is not open.");
+    }
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(
@@ -2734,7 +2740,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {}
 
 std::future<void>
-ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
+ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &flushParams)
 {
     return m_impl.flush(flushParams);
 }
@@ -2775,7 +2781,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
           std::move(initialize_from), std::move(path), at, std::move(config))
 {}
 
-std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> ADIOS2IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

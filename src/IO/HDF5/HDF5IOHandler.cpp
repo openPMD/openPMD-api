@@ -1922,6 +1922,12 @@ void HDF5IOHandlerImpl::writeDataset(
             "[HDF5] Writing into a dataset in a file opened as read only is "
             "not possible.");
 
+    if (parameters.memorySelection.has_value())
+    {
+        throw error::OperationUnsupportedInBackend(
+            "HDF5",
+            "Non-contiguous memory selections not supported in HDF5 backend.");
+    }
     File file = requireFile("writeDataset", writable, /* checkParent = */ true);
 
     herr_t status;
@@ -3612,7 +3618,7 @@ HDF5IOHandler::HDF5IOHandler(
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &params)
+std::future<void> HDF5IOHandler::flush_impl(internal::ParsedFlushParams &params)
 {
     return m_impl->flush(params);
 }
@@ -3631,7 +3637,7 @@ HDF5IOHandler::HDF5IOHandler(
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 
-std::future<void> HDF5IOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> HDF5IOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }
