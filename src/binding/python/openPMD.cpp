@@ -28,29 +28,29 @@
 #include <string>
 
 // forward declarations of exposed classes
-void init_Access(py::module &);
-void init_Attributable(py::module &);
-void init_BaseRecord(py::module &);
-void init_BaseRecordComponent(py::module &);
-void init_Chunk(py::module &m);
-void init_Dataset(py::module &);
-void init_Datatype(py::module &);
-void init_Error(py::module &);
-void init_Helper(py::module &);
-void init_Iteration(py::module &);
-void init_IterationEncoding(py::module &);
-void init_Mesh(py::module &);
-void init_MeshRecordComponent(py::module &);
-void init_ParticlePatches(py::module &);
-void init_ParticleSpecies(py::module &);
-void init_PatchRecord(py::module &);
-void init_PatchRecordComponent(py::module &);
-void init_Record(py::module &);
-void init_RecordComponent(py::module &);
-void init_Series(py::module &);
-void init_UnitDimension(py::module &);
+void init_Access(nb::module_ &);
+void init_Attributable(nb::module_ &);
+void init_BaseRecord(nb::module_ &);
+void init_BaseRecordComponent(nb::module_ &);
+void init_Chunk(nb::module_ &m);
+void init_Dataset(nb::module_ &);
+void init_Datatype(nb::module_ &);
+void init_Error(nb::module_ &);
+void init_Helper(nb::module_ &);
+void init_Iteration(nb::module_ &);
+void init_IterationEncoding(nb::module_ &);
+void init_Mesh(nb::module_ &);
+void init_MeshRecordComponent(nb::module_ &);
+void init_ParticlePatches(nb::module_ &);
+void init_ParticleSpecies(nb::module_ &);
+void init_PatchRecord(nb::module_ &);
+void init_PatchRecordComponent(nb::module_ &);
+void init_Record(nb::module_ &);
+void init_RecordComponent(nb::module_ &);
+void init_Series(nb::module_ &);
+void init_UnitDimension(nb::module_ &);
 
-PYBIND11_MODULE(openpmd_api_cxx, m)
+NB_MODULE(openpmd_api_cxx, m)
 {
     m.doc() = R"pbdoc(
             openPMD-api
@@ -120,9 +120,9 @@ PYBIND11_MODULE(openpmd_api_cxx, m)
     m.attr("__license__") = "LGPL-3.0-or-later";
 
     // TODO broken numpy if not at least v1.15.0: raise warning
-    // auto numpy = py::module::import("numpy");
+    // auto numpy = nb::module_::import_("numpy");
     // auto npversion = numpy.attr("__version__");
-    // std::cout << "numpy version: " << py::str(npversion) << std::endl;
+    // std::cout << "numpy version: " << nb::str(npversion) << std::endl;
 
     // TODO allow to query runtime versions of all dependencies
     //      (also needed in C++ frontend)

@@ -23,11 +23,14 @@
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
-void init_Datatype(py::module &m)
+void init_Datatype(nb::module_ &m)
 {
-    py::enum_<Datatype>(m, "Datatype", py::arithmetic())
+    // nanobind enums only accept registered values, so all values must be
+    // listed
+    nb::enum_<Datatype>(m, "Datatype", nb::is_arithmetic())
         .value("CHAR", Datatype::CHAR)
         .value("UCHAR", Datatype::UCHAR)
+        .value("SCHAR", Datatype::SCHAR)
         .value("SHORT", Datatype::SHORT)
         .value("INT", Datatype::INT)
         .value("LONG", Datatype::LONG)
@@ -39,6 +42,9 @@ void init_Datatype(py::module &m)
         .value("FLOAT", Datatype::FLOAT)
         .value("DOUBLE", Datatype::DOUBLE)
         .value("LONG_DOUBLE", Datatype::LONG_DOUBLE)
+        .value("CFLOAT", Datatype::CFLOAT)
+        .value("CDOUBLE", Datatype::CDOUBLE)
+        .value("CLONG_DOUBLE", Datatype::CLONG_DOUBLE)
         .value("STRING", Datatype::STRING)
         .value("VEC_CHAR", Datatype::VEC_CHAR)
         .value("VEC_SHORT", Datatype::VEC_SHORT)
@@ -53,15 +59,19 @@ void init_Datatype(py::module &m)
         .value("VEC_FLOAT", Datatype::VEC_FLOAT)
         .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
         .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
+        .value("VEC_CFLOAT", Datatype::VEC_CFLOAT)
+        .value("VEC_CDOUBLE", Datatype::VEC_CDOUBLE)
+        .value("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE)
+        .value("VEC_SCHAR", Datatype::VEC_SCHAR)
         .value("VEC_STRING", Datatype::VEC_STRING)
         .value("ARR_DBL_7", Datatype::ARR_DBL_7)
         .value("BOOL", Datatype::BOOL)
         .value("UNDEFINED", Datatype::UNDEFINED);
 
-    m.def("determine_datatype", [](py::dtype const &dt) {
+    m.def("determine_datatype", [](python::dtype const &dt) {
         return dtype_from_numpy(dt);
     });
-    m.def("determine_datatype", [](py::array const &a) {
+    m.def("determine_datatype", [](python::array const &a) {
         return dtype_from_numpy(a.dtype());
     });
 }

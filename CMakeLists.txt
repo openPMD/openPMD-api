@@ -145,7 +145,7 @@ option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 # superbuild control
 option(openPMD_SUPERBUILD            "Download & build extra dependencies"  ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ${openPMD_SUPERBUILD})
-option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ${openPMD_SUPERBUILD})
+option(openPMD_USE_INTERNAL_NANOBIND "Use internally shipped nanobind"      ${openPMD_SUPERBUILD})
 option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ${openPMD_SUPERBUILD})
 option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ${openPMD_SUPERBUILD})
 
@@ -393,8 +393,8 @@ else()
 endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
-# external library: pybind11 (optional)
-include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
+# external library: nanobind (optional)
+include(${openPMD_SOURCE_DIR}/cmake/dependencies/nanobind.cmake)
 
 
 # Targets #####################################################################
@@ -493,7 +493,7 @@ set_target_properties(openPMD PROPERTIES
 )
 # note: same as above, but for Multi-Config generators
 if(isMultiConfig)
-    # this is a tweak for setup.py to pick up our libs & pybind module properly
+    # this is a tweak for setup.py to pick up our libs & Python module properly
     # this assumes there will only be one config built
     option(openPMD_BUILD_NO_CFG_SUBPATH
            "For multi-config builds, do not appends the config to build dir" OFF)
@@ -587,7 +587,10 @@ endif()
 
 # python bindings
 if(openPMD_HAVE_PYTHON)
-    add_library(openPMD.py MODULE
+    # NOMINSIZE: keep the optimization flags of the build type
+    # NOSTRIP: stripping is controlled below
+    # NB_SUPPRESS_WARNINGS: no warnings from nanobind sources and headers
+    nanobind_add_module(openPMD.py NB_STATIC NOMINSIZE NOSTRIP NB_SUPPRESS_WARNINGS
         src/binding/python/openPMD.cpp
         src/binding/python/auxiliary.cpp
         src/binding/python/Access.cpp
@@ -613,7 +616,15 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/UnitDimension.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
-    target_link_libraries(openPMD.py PRIVATE pybind11::module pybind11::windows_extras)
+    # third-party code: do not apply our warning flags (and -Werror) to the
+    # sources of the nanobind library
+    if(TARGET nanobind-static)
+        if(MSVC)
+            target_compile_options(nanobind-static PRIVATE /w)
+        else()
+            target_compile_options(nanobind-static PRIVATE -w)
+        endif()
+    endif()
 
     # LTO/IPO: CMake target properties work well for 3.18+ and are buggy before
     set(_USE_PY_LTO ON)  # default shall be ON
@@ -627,14 +638,8 @@ if(openPMD_HAVE_PYTHON)
         INTERPROCEDURAL_OPTIMIZATION ${_USE_PY_LTO})
     unset(_USE_PY_LTO)
 
-    if(EMSCRIPTEN)
-        set_target_properties(openPMD.py PROPERTIES
-            PREFIX "")
-    else()
-        pybind11_extension(openPMD.py)
-    endif()
     if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
-        pybind11_strip(openPMD.py)
+        nanobind_strip(openPMD.py)
     endif()
 
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
@@ -1018,7 +1023,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         # or on Debian 9 with Clang 6.0
         #   export LD_PRELOAD=/usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.asan-x86_64.so:
         #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
-        # at runtime when used with symbol-hidden code (e.g. pybind11 module)
+        # at runtime when used with symbol-hidden code (e.g. nanobind module)
 
         set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code -Wsign-compare ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")

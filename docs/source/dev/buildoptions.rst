@@ -72,7 +72,7 @@ CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 ``openPMD_SUPERBUILD``            **ON**/OFF
 ``openPMD_USE_INTERNAL_CATCH``    ON/OFF      No       Catch2        2.13.10+
-``openPMD_USE_INTERNAL_PYBIND11`` ON/OFF      No       pybind11       2.13.0+
+``openPMD_USE_INTERNAL_NANOBIND`` ON/OFF      No       nanobind        3.0.0+
 ``openPMD_USE_INTERNAL_JSON``     ON/OFF      No       NLohmann-JSON   3.9.1+
 ``openPMD_USE_INTERNAL_TOML11``   ON/OFF      No       toml11          3.7.1+
 ================================= =========== ======== ============= ========
@@ -87,11 +87,11 @@ CMake Option                  Default & Values                               Des
 ``openPMD_catch_tar_hash``    *we set and maintain a compatible version*     Hash checksum of the tarball of Catch2
 ``openPMD_catch_repo``        ``https://github.com/catchorg/Catch2.git``     Repository URI to pull and build Catch2 from
 ``openPMD_catch_branch``      *we set and maintain a compatible commit*      Repository branch for ``openPMD_catch_repo``
-``openPMD_pybind11_src``      *None*                                         Path to pybind11 source directory (preferred if set)
-``openPMD_pybind11_tar``      *we set and maintain a compatible version*     Remote tarball link to pull and build pybind11 from
-``openPMD_pybind11_tar_hash`` *we set and maintain a compatible version*     Hash checksum of the tarball of pybind11
-``openPMD_pybind11_repo``     ``https://github.com/pybind/pybind11.git``     Repository URI to pull and build pybind11 from
-``openPMD_pybind11_branch``   *we set and maintain a compatible commit*      Repository branch for ``openPMD_pybind11_repo``
+``openPMD_nanobind_src``      *None*                                         Path to nanobind source directory (preferred if set)
+``openPMD_nanobind_tar``      *we set and maintain a compatible version*     Remote tarball link to pull and build nanobind from
+``openPMD_nanobind_tar_hash`` *we set and maintain a compatible version*     Hash checksum of the tarball of nanobind
+``openPMD_nanobind_repo``     ``https://github.com/wjakob/nanobind.git``     Repository URI to pull and build nanobind from
+``openPMD_nanobind_branch``   *we set and maintain a compatible commit*      Repository branch for ``openPMD_nanobind_repo``
 ``openPMD_json_src``          *None*                                         Path to NLohmann JSON source directory (preferred if set)
 ``openPMD_json_tar``          *we set and maintain a compatible version*     Remote tarball link to pull and build NLohmann JSON from
 ``openPMD_json_tar_hash``     *we set and maintain a compatible version*     Hash checksum of the tarball of NLohmann JSON

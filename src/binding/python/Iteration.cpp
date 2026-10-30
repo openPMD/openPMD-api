@@ -29,13 +29,13 @@
 #include <sstream>
 #include <string>
 
-void init_Iteration(py::module &m)
+void init_Iteration(nb::module_ &m)
 {
     auto py_it_cont = declare_container<PyIterationContainer, Attributable>(
         m, "Iteration_Container");
 
-    py::class_<Meshes, Container<Mesh>, Attributable> meshes(m, "Meshes");
-    py::class_<Particles, Container<ParticleSpecies>, Attributable> particles(
+    auto meshes = python::bind_class<Meshes, Container<Mesh>>(m, "Meshes");
+    auto particles = python::bind_class<Particles, Container<ParticleSpecies>>(
         m, "Particles");
     (void)meshes;
     (void)particles;
@@ -47,8 +47,8 @@ void init_Iteration(py::module &m)
     OPENPMD_AVOID_CLANG_FORMAT
 #undef OPENPMD_AVOID_CLANG_FORMAT
 
-    py::class_<Iteration, Attributable>(m, "Iteration")
-        .def(py::init<Iteration const &>())
+    python::bind_class<Iteration, Attributable>(m, "Iteration")
+        .def(nb::init<Iteration const &>())
 
         .def(
             "__repr__",
@@ -64,57 +64,55 @@ void init_Iteration(py::module &m)
         /*
          * Purposefully only using setTime<double> and setDt<double> here.
          * Python does not let you select the overload anyway and uses the one
-         * that was last defined in Pybind.
+         * that was last defined in the bindings.
          * So, set a sensible default: double, since long double is not
          * cross-platform compatible.
          */
-        .def_property(
+        .def_prop_rw(
             "time", &Iteration::time<float>, &Iteration::setTime<double>)
-        .def_property(
+        .def_prop_rw(
             "time", &Iteration::time<double>, &Iteration::setTime<double>)
-        .def_property(
+        .def_prop_rw(
             "time", &Iteration::time<long double>, &Iteration::setTime<double>)
-        .def_property("dt", &Iteration::dt<float>, &Iteration::setDt<double>)
-        .def_property("dt", &Iteration::dt<double>, &Iteration::setDt<double>)
-        .def_property(
+        .def_prop_rw("dt", &Iteration::dt<float>, &Iteration::setDt<double>)
+        .def_prop_rw("dt", &Iteration::dt<double>, &Iteration::setDt<double>)
+        .def_prop_rw(
             "dt", &Iteration::dt<long double>, &Iteration::setDt<double>)
-        .def_property(
+        .def_prop_rw(
             "time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
         .def(
             "open",
             [](Iteration &it) {
-                py::gil_scoped_release release;
+                nb::gil_scoped_release release;
                 return it.open();
             })
         .def(
             "close",
             [](Iteration &iteration, bool flush) {
-                py::gil_scoped_release release_gil;
+                nb::gil_scoped_release release_gil;
                 iteration.close(flush);
             },
-            py::arg("flush") = true)
+            nb::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)
         .def("set_time", &Iteration::setTime<double>)
         .def("set_dt", &Iteration::setDt<double>)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
 
-        .def_property_readonly(
+        .def_prop_ro(
             "meshes",
-            py::cpp_function(
-                [](Iteration &i) { return i.meshes; },
-                py::return_value_policy::copy,
-                // garbage collection: return value must be freed before
-                // Iteration
-                py::keep_alive<0, 1>()))
-        .def_property_readonly(
+            [](Iteration &i) { return i.meshes; },
+            nb::rv_policy::copy,
+            // garbage collection: return value must be freed before
+            // Iteration
+            nb::keep_alive<0, 1>())
+        .def_prop_ro(
             "particles",
-            py::cpp_function(
-                [](Iteration &i) { return i.particles; },
-                py::return_value_policy::copy,
-                // garbage collection: return value must be freed before
-                // Iteration
-                py::keep_alive<0, 1>()));
+            [](Iteration &i) { return i.particles; },
+            nb::rv_policy::copy,
+            // garbage collection: return value must be freed before
+            // Iteration
+            nb::keep_alive<0, 1>());
 
     add_pickle(
         cl,
