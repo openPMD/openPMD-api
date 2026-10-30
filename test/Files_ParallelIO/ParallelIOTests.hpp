@@ -100,4 +100,9 @@ namespace bug_1655_bp5_writer_hangup
 auto bug_1655_bp5_writer_hangup() -> void;
 }
 
+namespace read_linear_try_next_sst
+{
+auto read_linear_try_next_sst() -> void;
+}
+
 #endif

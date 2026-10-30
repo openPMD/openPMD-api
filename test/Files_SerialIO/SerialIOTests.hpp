@@ -44,3 +44,7 @@ namespace file_state_lifetime
 {
 auto file_state_lifetime() -> void;
 }
+namespace read_linear_try_next
+{
+auto read_linear_try_next() -> void;
+}

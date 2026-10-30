@@ -84,6 +84,12 @@ public:
     auto currentIteration() const -> std::optional<value_type const *>;
 
     auto begin() -> iterator;
+    /**
+     * Like begin(), but does not open the first IO step yet. The first call to
+     * the returned iterator's tryNext() method performs that step, possibly
+     * with a timeout. For workflows without IO steps this is equal to begin().
+     */
+    auto beginLazy() -> iterator;
     auto end() -> iterator;
     /** Not implemented for synchronous workflow: Const iteration not possible.
      */

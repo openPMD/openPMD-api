@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/Streaming.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/Memory_internal.hpp"
@@ -246,20 +247,27 @@ void ADIOS2File::finalize()
             entry.run(*this);
         }
     }
-    if (m_engine)
-    {
-        auto &engine = m_engine.value();
+    auto closeEngine = [&](std::optional<adios2::Engine> &engineOpt,
+                           bool endStep) {
+        if (!engineOpt)
+        {
+            return;
+        }
+        auto &engine = engineOpt.value();
         // might have been closed previously
         if (engine)
         {
-            if (streamStatus == StreamStatus::DuringStep)
+            if (endStep && streamStatus == StreamStatus::DuringStep)
             {
                 engine.EndStep();
             }
             engine.Close();
             m_ADIOS.RemoveIO(m_IOName);
         }
-    }
+    };
+    closeEngine(m_engine, /* endStep = */ true);
+    // A timed-out first step leaves an opened, but not yet stepped engine.
+    closeEngine(m_uninitializedEngine, /* endStep = */ false);
     m_uniquePtrPuts.clear();
     finalized = true;
 }
@@ -760,9 +768,17 @@ void ADIOS2File::configure_IO()
         m_IO.SetParameter("QueueLimit", "2");
     }
 
-    // We need to open the engine now already to inquire configuration
-    // options stored in there
-    getEngine();
+    /*
+     * We need to open the engine now already to inquire configuration
+     * options stored in there. In linear read mode, defer the opening until
+     * the first tryNext() call, so that the first step may be opened with a
+     * timeout. This includes on-disk engines: their first BeginStep() does not
+     * block, but it must still run through the timeout-aware code path.
+     */
+    if (m_impl->m_handler->m_backendAccess != Access::READ_LINEAR)
+    {
+        getEngine();
+    }
 }
 
 auto ADIOS2File::detectGroupTable() -> UseGroupTable
@@ -784,8 +800,54 @@ auto ADIOS2File::detectGroupTable() -> UseGroupTable
         });
 }
 
-adios2::Engine &ADIOS2File::getEngine()
+adios2::Engine &
+ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
 {
+    if (status)
+    {
+        *status = AdvanceStatus::OK;
+    }
+    auto make_engine = [&](auto &&...args) {
+        if (m_uninitializedEngine)
+        {
+            m_engine.swap(m_uninitializedEngine);
+            m_uninitializedEngine.reset();
+            return *m_engine;
+        }
+        else
+        {
+            return m_engine.emplace(
+                m_IO.Open(static_cast<decltype(args)>(args)...));
+        }
+    };
+    auto make_step = [&]() {
+        auto res = stepTimeout.has_value()
+            ? m_engine->BeginStep(adios2::StepMode::Read, *stepTimeout)
+            : m_engine->BeginStep();
+        AdvanceStatus opmd_res{};
+        switch (res)
+        {
+        case adios2::StepStatus::OK:
+            opmd_res = AdvanceStatus::OK;
+            break;
+        case adios2::StepStatus::NotReady:
+            opmd_res = AdvanceStatus::TRY_AGAIN;
+            m_engine.swap(m_uninitializedEngine);
+            m_engine.reset();
+            break;
+        case adios2::StepStatus::EndOfStream:
+            opmd_res = AdvanceStatus::OVER;
+            break;
+        case adios2::StepStatus::OtherError:
+            throw std::runtime_error(
+                "[ADIOS2] Unexcpected step status when opening file/stream.");
+        }
+        if (status)
+        {
+            *status = opmd_res;
+        }
+        return opmd_res;
+    };
     if (!m_engine)
     {
         auto tempMode = m_mode;
@@ -808,16 +870,14 @@ adios2::Engine &ADIOS2File::getEngine()
             // usesSteps attribute only written upon ::advance()
             // this makes sure that the attribute is only put in case
             // the streaming API was used.
-            m_engine =
-                std::make_optional(adios2::Engine(m_IO.Open(m_file, tempMode)));
+            make_engine(m_file, tempMode);
             m_engine->BeginStep();
             streamStatus = StreamStatus::DuringStep;
             break;
         }
         case adios2::Mode::ReadRandomAccess:
         case adios2::Mode::Read: {
-            m_engine =
-                std::make_optional(adios2::Engine(m_IO.Open(m_file, m_mode)));
+            make_engine(m_file, m_mode);
             /*
              * First round: detect use of group table
              */
@@ -833,8 +893,14 @@ adios2::Engine &ADIOS2File::getEngine()
                      * Otherwise we don't see the group table attributes.
                      * This branch is also taken by Streaming engines.
                      */
-                    if (m_engine->BeginStep() != adios2::StepStatus::OK)
+                    switch (make_step())
                     {
+                    case AdvanceStatus::OK:
+                        break;
+                    case AdvanceStatus::TRY_AGAIN:
+                        return m_uninitializedEngine.value();
+                    case AdvanceStatus::OVER:
+                    case AdvanceStatus::RANDOMACCESS:
                         throw std::runtime_error(
                             "[ADIOS2] Unexpected step status when "
                             "opening file/stream.");
@@ -928,13 +994,19 @@ adios2::Engine &ADIOS2File::getEngine()
                                 "very buggy, so please use "
                                 "READ_ONLY/READ_RANDOM_ACCESS instead.");
                         }
-                        if (!openedANewStep &&
-                            m_engine.value().BeginStep() !=
-                                adios2::StepStatus::OK)
+                        if (!openedANewStep)
                         {
-                            throw std::runtime_error(
-                                "[ADIOS2] Unexpected step status when "
-                                "opening file/stream.");
+                            auto step_status = make_step();
+                            if (step_status == AdvanceStatus::TRY_AGAIN)
+                            {
+                                return m_uninitializedEngine.value();
+                            }
+                            if (step_status != AdvanceStatus::OK)
+                            {
+                                throw std::runtime_error(
+                                    "[ADIOS2] Unexpected step status when "
+                                    "opening file/stream.");
+                            }
                         }
                         streamStatus = StreamStatus::DuringStep;
                     }
@@ -999,6 +1071,20 @@ void ADIOS2File::flush_impl(
             throw std::runtime_error(
                 "[ADIOS2] Cannot access engine since stream is over.");
         }
+        return;
+    }
+    /*
+     * In a linear read, the engine is opened lazily by the first BEGINSTEP.
+     * Do not open it for flushes that have no work to do, e.g. the flush
+     * following OPEN_FILE, since that would bypass the timeout-aware first
+     * BeginStep().
+     */
+    if (readOnly(m_mode) &&
+        (streamStatus == StreamStatus::OutsideOfStep ||
+         streamStatus == StreamStatus::Undecided) &&
+        m_buffer.empty() && (!writeLatePuts || m_uniquePtrPuts.empty()) &&
+        !flushUnconditionally)
+    {
         return;
     }
     auto &eng = getEngine();
@@ -1180,13 +1266,28 @@ void ADIOS2File::flush_impl(ADIOS2FlushParams flushParams, bool writeLatePuts)
         /* flushUnconditionally = */ false);
 }
 
-AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
+AdvanceStatus
+ADIOS2File::advance(AdvanceMode mode, std::optional<float> stepTimeout)
 {
     if (streamStatus == StreamStatus::Undecided)
     {
-        throw error::Internal(
-            "[ADIOS2File::advance()] StreamStatus Undecided before "
-            "beginning/ending a step?");
+        if (mode != AdvanceMode::BEGINSTEP)
+        {
+            throw error::Internal(
+                "[ADIOS2File::advance()] StreamStatus Undecided before "
+                "beginning/ending a step?");
+        }
+        /*
+         * In linear read mode, the engine is opened lazily by the first
+         * BEGINSTEP. Resolve Undecided here so that the first step can be
+         * opened with a timeout.
+         */
+        AdvanceStatus engineStatus = AdvanceStatus::OK;
+        (void)getEngine(stepTimeout, &engineStatus);
+        if (engineStatus != AdvanceStatus::OK)
+        {
+            return engineStatus;
+        }
     }
     // sic! no else
     if (streamStatus == StreamStatus::ReadWithoutStream)
@@ -1239,7 +1340,12 @@ AdvanceStatus ADIOS2File::advance(AdvanceMode mode)
     }
     case AdvanceMode::BEGINSTEP: {
         adios2::StepStatus adiosStatus{};
-        auto &engine = getEngine();
+        AdvanceStatus engineStatus = AdvanceStatus::OK;
+        auto &engine = getEngine(stepTimeout, &engineStatus);
+        if (engineStatus != AdvanceStatus::OK)
+        {
+            return engineStatus;
+        }
 
         auto check_bp5 = [&]() -> bool {
             std::string engineType = engine.Type();
@@ -1303,9 +1409,16 @@ number of allowed steps. Set the value as 0 to disable this check.
 Be aware of the performance implications described above.)");
         }
 
+        /*
+         * A timeout only makes sense for reading. For writing, ADIOS2's
+         * BeginStep() must not be called with StepMode::Read.
+         */
+        bool const useTimeout = readOnly(m_mode) && stepTimeout.has_value();
         if (streamStatus != StreamStatus::DuringStep)
         {
-            adiosStatus = engine.BeginStep();
+            adiosStatus = useTimeout
+                ? engine.BeginStep(adios2::StepMode::Read, *stepTimeout)
+                : engine.BeginStep();
         }
         else
         {
@@ -1323,6 +1436,17 @@ Be aware of the performance implications described above.)");
             res = AdvanceStatus::OK;
             break;
         case adios2::StepStatus::NotReady:
+            if (useTimeout)
+            {
+                /*
+                 * No further step arrived within the configured timeout.
+                 * This is not the end of the stream: the iterator stays
+                 * usable and may try again later.
+                 */
+                res = AdvanceStatus::TRY_AGAIN;
+                break;
+            }
+            [[fallthrough]];
         case adios2::StepStatus::OtherError:
             throw std::runtime_error("[ADIOS2] Unexpected step status.");
         }

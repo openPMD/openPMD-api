@@ -802,6 +802,11 @@ TEST_CASE("components_without_extent", "[serial]")
     components_without_extent::components_without_extent();
 }
 
+TEST_CASE("read_linear_try_next", "[serial][adios2]")
+{
+    read_linear_try_next::read_linear_try_next();
+}
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE("close_and_reopen_test", "[serial]")
 {

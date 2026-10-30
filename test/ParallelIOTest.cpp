@@ -1403,6 +1403,11 @@ PARALLEL_TEST_CASE(adios2_streaming, "[pseudoserial][adios2]")
     adios2_streaming(false);
 }
 
+PARALLEL_TEST_CASE(read_linear_try_next_sst, "[pseudoserial][adios2]")
+{
+    read_linear_try_next_sst::read_linear_try_next_sst();
+}
+
 PARALLEL_TEST_CASE(parallel_adios2_json_config, "[parallel][adios2]")
 {
     int size{-1};
