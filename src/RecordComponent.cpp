@@ -39,9 +39,6 @@
 // comment so clang-format does not move this
 #include "openPMD/DatatypeMacros.hpp"
 
-// comment
-#include "openPMD/DatatypeMacros.hpp"
-
 #include <algorithm>
 #include <climits>
 #include <complex>
@@ -523,12 +520,12 @@ void RecordComponent::flush(
     increaseFlushCounter.flush_counter = rc.m_flushCounter;
     if (access::readOnly(ioHandler->m_frontendAccess))
     {
-        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
         while (!rc.m_chunks.empty())
         {
             ioHandler->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
+        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
     }
     else
     {
@@ -561,8 +558,6 @@ void RecordComponent::flush(
                     return val == Dataset::JOINED_DIMENSION;
                 });
         };
-        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
-
         if (!written())
         {
             if (constant())
@@ -644,6 +639,7 @@ void RecordComponent::flush(
             ioHandler->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
+        ioHandler->enqueue(IOTask(this, increaseFlushCounter));
 
         flushAttributes(flushParams);
     }
@@ -1069,7 +1065,6 @@ void RecordComponent::loadChunk_impl(
 template <typename T>
 void RecordComponent::loadChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    // static_assert(!std::is_same_v<T_with_extent, std::string>, "EVIL");
     auto operation = prepareLoadStore();
 
     // default arguments

@@ -1,5 +1,3 @@
-
-
 #include "openPMD/LoadStoreChunk.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Error.hpp"
