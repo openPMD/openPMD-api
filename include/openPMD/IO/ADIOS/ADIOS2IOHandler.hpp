@@ -295,11 +295,7 @@ private:
         ColumnMajor
     };
 
-#if defined(ADIOS2_HAVE_GPU_SUPPORT) || defined(ADIOS2_HAVE_KOKKOS)
-    ArrayOrdering m_arrayOrdering = ArrayOrdering::RowMajor;
-#else
     ArrayOrdering m_arrayOrdering = ArrayOrdering::Adios2Default;
-#endif
 
     enum class ModifiableAttributes : char
     {
