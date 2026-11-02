@@ -807,7 +807,8 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
     {
         *status = AdvanceStatus::OK;
     }
-    auto make_engine = [&](auto &&...args) {
+    auto make_engine =
+        [&](auto &&...args) -> std::reference_wrapper<adios2::Engine> {
         if (m_uninitializedEngine)
         {
             m_engine.swap(m_uninitializedEngine);
@@ -820,33 +821,35 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
                 m_IO.Open(static_cast<decltype(args)>(args)...));
         }
     };
-    auto make_step = [&]() {
+    auto make_step_impl = [&]()
+        -> std::pair<AdvanceStatus, std::reference_wrapper<adios2::Engine>> {
         auto res = stepTimeout.has_value()
             ? m_engine->BeginStep(adios2::StepMode::Read, *stepTimeout)
             : m_engine->BeginStep();
-        AdvanceStatus opmd_res{};
         switch (res)
         {
         case adios2::StepStatus::OK:
-            opmd_res = AdvanceStatus::OK;
-            break;
+            return {AdvanceStatus::OK, *m_engine};
         case adios2::StepStatus::NotReady:
-            opmd_res = AdvanceStatus::TRY_AGAIN;
             m_engine.swap(m_uninitializedEngine);
             m_engine.reset();
-            break;
+            return {AdvanceStatus::TRY_AGAIN, *m_uninitializedEngine};
         case adios2::StepStatus::EndOfStream:
-            opmd_res = AdvanceStatus::OVER;
-            break;
+            return {AdvanceStatus::OVER, *m_engine};
         case adios2::StepStatus::OtherError:
             throw std::runtime_error(
                 "[ADIOS2] Unexcpected step status when opening file/stream.");
         }
+        throw error::Internal("Control flow error.");
+    };
+    auto make_step = [&]()
+        -> std::pair<AdvanceStatus, std::reference_wrapper<adios2::Engine>> {
+        auto res = make_step_impl();
         if (status)
         {
-            *status = opmd_res;
+            *status = res.first;
         }
-        return opmd_res;
+        return res;
     };
     if (!m_engine)
     {
@@ -870,8 +873,7 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
             // usesSteps attribute only written upon ::advance()
             // this makes sure that the attribute is only put in case
             // the streaming API was used.
-            make_engine(m_file, tempMode);
-            m_engine->BeginStep();
+            make_engine(m_file, tempMode).get().BeginStep();
             streamStatus = StreamStatus::DuringStep;
             break;
         }
@@ -893,12 +895,13 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
                      * Otherwise we don't see the group table attributes.
                      * This branch is also taken by Streaming engines.
                      */
-                    switch (make_step())
+                    auto step = make_step();
+                    switch (step.first)
                     {
                     case AdvanceStatus::OK:
                         break;
                     case AdvanceStatus::TRY_AGAIN:
-                        return m_uninitializedEngine.value();
+                        return step.second;
                     case AdvanceStatus::OVER:
                     case AdvanceStatus::RANDOMACCESS:
                         throw std::runtime_error(
@@ -996,12 +999,12 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
                         }
                         if (!openedANewStep)
                         {
-                            auto step_status = make_step();
-                            if (step_status == AdvanceStatus::TRY_AGAIN)
+                            auto step = make_step();
+                            if (step.first == AdvanceStatus::TRY_AGAIN)
                             {
-                                return m_uninitializedEngine.value();
+                                return step.second;
                             }
-                            if (step_status != AdvanceStatus::OK)
+                            if (step.first != AdvanceStatus::OK)
                             {
                                 throw std::runtime_error(
                                     "[ADIOS2] Unexpected step status when "
@@ -1049,7 +1052,7 @@ ADIOS2File::getEngine(std::optional<float> stepTimeout, AdvanceStatus *status)
             throw std::runtime_error("[ADIOS2] Invalid ADIOS access mode");
         }
 
-        if (!m_engine.value())
+        if (!m_engine.has_value() || !m_engine.value())
         {
             throw std::runtime_error("[ADIOS2] Failed opening Engine.");
         }

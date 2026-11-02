@@ -69,7 +69,7 @@ auto read_linear_try_next_sst() -> void
     constexpr int tag_reader_consumed = 7342;
 
     std::string const file = "../samples/read_linear_try_next_sst.sst";
-    int dummy = 0;
+    char dummy = 0;
 
     if (rank == 0)
     {
