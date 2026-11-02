@@ -295,7 +295,11 @@ private:
         ColumnMajor
     };
 
+#if defined(ADIOS2_HAVE_GPU_SUPPORT) || defined(ADIOS2_HAVE_KOKKOS)
     ArrayOrdering m_arrayOrdering = ArrayOrdering::RowMajor;
+#else
+    ArrayOrdering m_arrayOrdering = ArrayOrdering::Adios2Default;
+#endif
 
     enum class ModifiableAttributes : char
     {
@@ -530,7 +534,15 @@ private:
         }
 #else
         (void)var;
-        (void)arrayOrdering;
+        if (arrayOrdering != ArrayOrdering::Adios2Default)
+        {
+            std::cerr
+                << "[ADIOS2] Warning: The configured array ordering will be "
+                   "ignored because ADIOS2 was built without GPU support. "
+                   "The 'adios2.dataset.array_ordering' option is only "
+                   "effective in GPU-enabled ADIOS2 builds."
+                << std::endl;
+        }
 #endif
     }
 
