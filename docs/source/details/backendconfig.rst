@@ -220,7 +220,7 @@ Explanation of the single keys:
   This is useful when applying the asynchronous IO capabilities of the BP5 engine.
 * ``adios2.dataset.array_ordering``: Forwards the array ordering to ``adios2::Variable::SetArrayLayout``.
   Possible values are ``"adios2_default"`` (default, let ADIOS2 decide), ``"row_major"`` and ``"column_major"``.
-  This option is only effective if ADIOS2 was built with GPU support (CUDA or Kokkos), where it controls how ADIOS2 interprets buffers.
+  This option is only effective with ADIOS2 2.10 or newer built with GPU support (CUDA or Kokkos), where it controls how ADIOS2 interprets buffers.
   It does not change the row-major semantics of datasets in the openPMD-api itself.
   In GPU-enabled ADIOS2 builds, specifying ``"row_major"`` prevents ADIOS2 from automatically switching GPU buffers to column-major ordering.
   In other builds, configuring anything other than ``"adios2_default"`` emits a warning since it cannot take effect.
