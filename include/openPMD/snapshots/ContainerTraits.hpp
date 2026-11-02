@@ -85,6 +85,18 @@ public:
 
     // increment/decrement
     OpaqueSeriesIterator &operator++();
+    /** Synonym for operator++(), matching tryNext() returning only a status. */
+    void next();
+    /**
+     * Advance to the next Iteration, waiting at most `stepTimeout` seconds for
+     * the next IO step.
+     *
+     * Returns OK when a new Iteration is available, TRY_AGAIN when no step
+     * became available in time (the stream is still open and the iterator is
+     * unchanged), OVER at the end of the data, and RANDOMACCESS for workflows
+     * without IO steps. This call never throws for a timeout.
+     */
+    AdvanceStatus tryNext(float stepTimeout);
     /** Not implemented for synchronous workflow:
      *  Reverse iteration not possible.
      */
@@ -135,6 +147,12 @@ public:
         -> std::optional<value_type const *> = 0;
 
     virtual auto begin() -> iterator = 0;
+    /**
+     * Create an iterator that has not opened the first IO step yet. The first
+     * call to its tryNext() method performs that step, possibly with a timeout.
+     * For workflows without IO steps, this is equivalent to begin().
+     */
+    virtual auto beginLazy() -> iterator = 0;
     virtual auto begin() const -> const_iterator = 0;
     virtual auto end() -> iterator = 0;
     virtual auto end() const -> const_iterator = 0;

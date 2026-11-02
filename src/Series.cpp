@@ -2656,7 +2656,8 @@ Series::iterations_iterator Series::indexOf(Iteration const &iteration)
 AdvanceStatus Series::advance(
     AdvanceMode mode,
     internal::AttributableData &file,
-    iterations_iterator begin)
+    iterations_iterator begin,
+    std::optional<float> stepTimeout)
 {
     internal::FlushParams const flushParams = {FlushLevel::UserFlush};
     auto &series = get();
@@ -2740,6 +2741,10 @@ AdvanceStatus Series::advance(
     else
     {
         param.mode = mode;
+        if (mode == AdvanceMode::BEGINSTEP)
+        {
+            param.stepTimeout = stepTimeout;
+        }
         if (iterationEncoding() == IterationEncoding::variableBased &&
             access::write(IOHandler()->m_frontendAccess) &&
             mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
@@ -2786,7 +2791,8 @@ AdvanceStatus Series::advance(
     return *param.status;
 }
 
-AdvanceStatus Series::advance(AdvanceMode mode)
+AdvanceStatus
+Series::advance(AdvanceMode mode, std::optional<float> stepTimeout)
 {
     auto &series = get();
     if (series.m_iterationEncoding == IterationEncoding::fileBased)
@@ -2834,6 +2840,10 @@ AdvanceStatus Series::advance(AdvanceMode mode)
 
     Parameter<Operation::ADVANCE> param;
     param.mode = mode;
+    if (mode == AdvanceMode::BEGINSTEP)
+    {
+        param.stepTimeout = stepTimeout;
+    }
     if (iterationEncoding() == IterationEncoding::variableBased &&
         access::write(IOHandler()->m_frontendAccess) &&
         mode == AdvanceMode::BEGINSTEP && series.m_wroteAtLeastOneIOStep)
@@ -3432,14 +3442,14 @@ namespace
         return series.m_sharedStatefulIterator.get();
     }
     auto make_reading_stateful_iterator(
-        Series copied_series, internal::SeriesData &series)
-        -> std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
+        Series copied_series, internal::SeriesData &series) -> std::
+        variant<std::function<StatefulIterator *(bool)>, StatefulIterator *>
     {
         if (series.m_sharedStatefulIterator)
         {
             return series.m_sharedStatefulIterator.get();
         }
-        return [s = std::move(copied_series), &series]() mutable {
+        return [s = std::move(copied_series), &series](bool lazy) mutable {
             if (!series.m_sharedStatefulIterator)
             {
                 auto parse_preference = series.m_parsePreference;
@@ -3447,7 +3457,8 @@ namespace
                     std::make_unique<StatefulIterator>(
                         StatefulIterator::tag_read,
                         std::move(s),
-                        parse_preference);
+                        parse_preference,
+                        lazy);
             }
             return series.m_sharedStatefulIterator.get();
         };
@@ -3548,7 +3559,8 @@ Snapshots Series::makeSynchronousSnapshots()
             internal::default_or_explicit::default_);
     }
 
-    std::variant<std::function<StatefulIterator *()>, StatefulIterator *> begin;
+    std::variant<std::function<StatefulIterator *(bool)>, StatefulIterator *>
+        begin;
 
     if (access::write(IOHandler()->m_frontendAccess))
     {
