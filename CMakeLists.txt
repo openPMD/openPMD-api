@@ -393,6 +393,11 @@ else()
 endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
 
+# external library: CUDA runtime for GPU-aware tests (optional)
+if(openPMD_BUILD_TESTING AND openPMD_HAVE_ADIOS2 AND NOT CUDAToolkit_FOUND)
+    find_package(CUDAToolkit QUIET)
+endif()
+
 # external library: pybind11 (optional)
 include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
 
@@ -911,6 +916,11 @@ if(openPMD_BUILD_TESTING)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
+        if(${testname} STREQUAL SerialIO AND openPMD_HAVE_ADIOS2
+            AND CUDAToolkit_FOUND)
+            target_link_libraries(${testname}Tests PRIVATE CUDA::cudart)
+            target_compile_definitions(${testname}Tests PRIVATE openPMD_TEST_CUDA=1)
+        endif()
         if(${testname} MATCHES "Parallel.+$")
             # Parallel tests use CatchRunner (custom main with MPI)
             target_link_libraries(${testname}Tests PRIVATE CatchRunner)

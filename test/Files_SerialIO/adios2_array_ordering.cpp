@@ -30,7 +30,36 @@
 
 #if openPMD_HAVE_ADIOS2
 
+#include <adios2/common/ADIOSConfig.h>
+
+#if defined(openPMD_TEST_CUDA) && defined(ADIOS2_HAVE_GPU_SUPPORT) &&          \
+    ADIOS2_VERSION >= 21000
+#define openPMD_TEST_CUDA_ARRAY_ORDERING 1
+#include <cuda_runtime.h>
+#else
+#define openPMD_TEST_CUDA_ARRAY_ORDERING 0
+#endif
+
 using namespace openPMD;
+
+namespace
+{
+std::vector<int> testData{0, 1, 2, 3, 4, 5};
+Extent const testExtent{2, 3};
+
+void readAndCheck(std::string const &filename)
+{
+    Series series(filename, Access::READ_ONLY);
+    auto E_x = series.iterations[0].meshes["E"]["x"];
+    REQUIRE(E_x.getExtent() == testExtent);
+    auto chunk = E_x.loadChunk<int>({0, 0}, testExtent);
+    series.flush();
+    for (size_t i = 0; i < testData.size(); ++i)
+    {
+        REQUIRE(chunk.get()[i] == testData[i]);
+    }
+}
+} // namespace
 
 TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
 {
@@ -38,9 +67,8 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
                            std::string const &config,
                            bool twoDimensional,
                            std::string const &datasetOptions = "") {
-        std::vector<int> data{0, 1, 2, 3, 4, 5};
         Extent extent =
-            twoDimensional ? Extent{2, 3} : Extent{static_cast<size_t>(6)};
+            twoDimensional ? testExtent : Extent{static_cast<size_t>(6)};
         Offset offset =
             twoDimensional ? Offset{0, 0} : Offset{static_cast<size_t>(0)};
 
@@ -52,8 +80,10 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
             E_x.resetDataset(dataset);
             if (twoDimensional)
             {
-                std::vector<int> firstRow{data.begin(), data.begin() + 3};
-                std::vector<int> secondRow{data.begin() + 3, data.end()};
+                std::vector<int> firstRow(
+                    testData.begin(), testData.begin() + 3);
+                std::vector<int> secondRow(
+                    testData.begin() + 3, testData.end());
                 E_x.storeChunk(firstRow, {0, 0}, {1, 3});
                 series.flush();
                 E_x.storeChunk(secondRow, {1, 0}, {1, 3});
@@ -61,7 +91,7 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
             }
             else
             {
-                E_x.storeChunk(data, offset, extent);
+                E_x.storeChunk(testData, offset, extent);
                 series.flush();
             }
         }
@@ -71,9 +101,9 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
             REQUIRE(E_x.getExtent() == extent);
             auto chunk = E_x.loadChunk<int>(offset, extent);
             series.flush();
-            for (size_t i = 0; i < data.size(); ++i)
+            for (size_t i = 0; i < testData.size(); ++i)
             {
-                REQUIRE(chunk.get()[i] == data[i]);
+                REQUIRE(chunk.get()[i] == testData[i]);
             }
         }
     };
@@ -110,5 +140,62 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
     unsetenv("OPENPMD_ADIOS2_ARRAY_ORDERING");
 #endif
 }
+
+#if openPMD_TEST_CUDA_ARRAY_ORDERING
+TEST_CASE("serial_adios2_array_ordering_gpu", "[serial][adios2][cuda]")
+{
+    int deviceCount = 0;
+    cudaError_t error = cudaGetDeviceCount(&deviceCount);
+    if (error != cudaSuccess || deviceCount == 0)
+    {
+        SKIP(
+            "No usable CUDA device: " + std::string(cudaGetErrorString(error)));
+    }
+
+    auto write = [](std::string const &filename,
+                    std::string const &config,
+                    std::string const &datasetOptions) {
+        int *deviceBuffer = nullptr;
+        REQUIRE(
+            cudaMalloc(&deviceBuffer, testData.size() * sizeof(int)) ==
+            cudaSuccess);
+        REQUIRE(
+            cudaMemcpy(
+                deviceBuffer,
+                testData.data(),
+                testData.size() * sizeof(int),
+                cudaMemcpyHostToDevice) == cudaSuccess);
+        {
+            Series series(filename, Access::CREATE, config);
+            auto E_x = series.iterations[0].meshes["E"]["x"];
+            Dataset dataset(Datatype::INT, testExtent);
+            dataset.options = datasetOptions;
+            E_x.resetDataset(dataset);
+            E_x.storeChunkRaw(deviceBuffer, {0, 0}, testExtent);
+            series.flush();
+        }
+        REQUIRE(cudaFree(deviceBuffer) == cudaSuccess);
+    };
+
+    write(
+        "../samples/array_ordering.gpu_row_major.bp",
+        R"({"adios2":{"dataset":{"array_ordering":"row_major"}}})",
+        "");
+    readAndCheck("../samples/array_ordering.gpu_row_major.bp");
+
+    write(
+        "../samples/array_ordering.gpu_dataset_override.bp",
+        R"({"adios2":{"dataset":{"array_ordering":"adios2_default"}}})",
+        R"({"adios2":{"dataset":{"array_ordering":"row_major"}}})");
+    readAndCheck("../samples/array_ordering.gpu_dataset_override.bp");
+
+#ifdef __unix__
+    setenv("OPENPMD_ADIOS2_ARRAY_ORDERING", "row_major", 1);
+    write("../samples/array_ordering.gpu_env.bp", "{}", "");
+    unsetenv("OPENPMD_ADIOS2_ARRAY_ORDERING");
+    readAndCheck("../samples/array_ordering.gpu_env.bp");
+#endif
+}
+#endif // openPMD_TEST_CUDA_ARRAY_ORDERING
 
 #endif // openPMD_HAVE_ADIOS2
