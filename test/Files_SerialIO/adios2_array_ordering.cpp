@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Error.hpp"
+#include "openPMD/config.hpp"
 #include "openPMD/openPMD.hpp"
 
 #include <catch2/catch_test_macros.hpp>
@@ -26,6 +27,8 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+
+#if openPMD_HAVE_ADIOS2
 
 using namespace openPMD;
 
@@ -107,3 +110,5 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
     unsetenv("OPENPMD_ADIOS2_ARRAY_ORDERING");
 #endif
 }
+
+#endif // openPMD_HAVE_ADIOS2
