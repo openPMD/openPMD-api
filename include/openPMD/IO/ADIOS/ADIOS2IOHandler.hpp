@@ -296,6 +296,7 @@ private:
     };
 
     ArrayOrdering m_arrayOrdering = ArrayOrdering::Adios2Default;
+    bool m_warnedArrayOrderingUnsupported = false;
 
     enum class ModifiableAttributes : char
     {
@@ -512,10 +513,11 @@ private:
     }
 
     template <typename T>
-    static void
+    void
     applyArrayOrdering(adios2::Variable<T> &var, ArrayOrdering arrayOrdering)
     {
-#if defined(ADIOS2_HAVE_GPU_SUPPORT) || defined(ADIOS2_HAVE_KOKKOS)
+#if openPMD_HAS_ADIOS_2_10 &&                                                  \
+    (defined(ADIOS2_HAVE_GPU_SUPPORT) || defined(ADIOS2_HAVE_KOKKOS))
         switch (arrayOrdering)
         {
         case ArrayOrdering::Adios2Default:
@@ -530,14 +532,16 @@ private:
         }
 #else
         (void)var;
-        if (arrayOrdering != ArrayOrdering::Adios2Default)
+        if (arrayOrdering != ArrayOrdering::Adios2Default &&
+            !m_warnedArrayOrderingUnsupported)
         {
             std::cerr
                 << "[ADIOS2] Warning: The configured array ordering will be "
-                   "ignored because ADIOS2 was built without GPU support. "
-                   "The 'adios2.dataset.array_ordering' option is only "
-                   "effective in GPU-enabled ADIOS2 builds."
+                   "ignored because this ADIOS2 build does not support it. "
+                   "The 'adios2.dataset.array_ordering' option requires "
+                   "ADIOS2 >= 2.10 built with GPU support."
                 << std::endl;
+            m_warnedArrayOrderingUnsupported = true;
         }
 #endif
     }
@@ -761,6 +765,7 @@ namespace detail
          */
         template <typename T>
         static void call(
+            ADIOS2IOHandlerImpl *impl,
             adios2::IO &IO,
             std::string const &name,
             std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
@@ -770,7 +775,7 @@ namespace detail
             adios2::Dims const &count = adios2::Dims(),
             bool const constantDims = false,
             ADIOS2IOHandlerImpl::ArrayOrdering arrayOrdering =
-                ADIOS2IOHandlerImpl::ArrayOrdering::RowMajor);
+                ADIOS2IOHandlerImpl::ArrayOrdering::Adios2Default);
 
         static constexpr char const *errorMsg = "ADIOS2: defineVariable()";
     };

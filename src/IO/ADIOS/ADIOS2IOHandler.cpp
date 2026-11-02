@@ -1038,6 +1038,7 @@ https://github.com/ornladios/ADIOS2/issues/3504.
 
         switchAdios2VariableType<detail::VariableDefiner>(
             parameters.dtype,
+            this,
             fileData.m_IO,
             varName,
             operators,
@@ -2657,7 +2658,7 @@ namespace detail
                 var, varName, *stepSelection, file_steps, av);
         }
 
-        ADIOS2IOHandlerImpl::applyArrayOrdering(var, arrayOrdering);
+        impl->applyArrayOrdering(var, arrayOrdering);
 
         // Operators in reading needed e.g. for setting decompression threads
         for (auto const &operation : operators)
@@ -2680,6 +2681,7 @@ namespace detail
 
     template <typename T>
     void VariableDefiner::call(
+        ADIOS2IOHandlerImpl *impl,
         adios2::IO &IO,
         std::string const &name,
         std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
@@ -2718,7 +2720,7 @@ namespace detail
                 "'.");
         }
 
-        ADIOS2IOHandlerImpl::applyArrayOrdering(var, arrayOrdering);
+        impl->applyArrayOrdering(var, arrayOrdering);
 
         for (auto const &compression : compressions)
         {
