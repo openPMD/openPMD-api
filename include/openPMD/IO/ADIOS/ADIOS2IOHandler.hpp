@@ -751,6 +751,7 @@ namespace detail
         /**
          * @brief Define a Variable of type T within the passed IO.
          *
+         * @param impl The ADIOS2 backend implementation.
          * @param IO The adios2::IO object within which to define the
          *           variable. The variable can later be retrieved from
          *           the IO using the passed name.
@@ -762,6 +763,7 @@ namespace detail
          * @param start As in adios2::IO::DefineVariable
          * @param count As in adios2::IO::DefineVariable
          * @param constantDims As in adios2::IO::DefineVariable
+         * @param arrayOrdering The array ordering to apply to the variable.
          */
         template <typename T>
         static void call(
