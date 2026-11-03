@@ -1,3 +1,14 @@
+# Configures whether a target uses the <filesystem> header.
+#
+# Shared between the C++ core library and the Python bindings.
+function(set_filesystem_header_for_target target)
+    if(openPMD_USE_FILESYSTEM_HEADER)
+        target_compile_definitions(${target} PRIVATE openPMD_USE_FILESYSTEM_HEADER=1)
+    else()
+        target_compile_definitions(${target} PRIVATE openPMD_USE_FILESYSTEM_HEADER=0)
+    endif()
+endfunction()
+
 # Prints a summary of openPMD-api options at the end of the CMake configuration
 #
 function(openpmd_print_summary)

@@ -1,0 +1,151 @@
+name: 📦 Install
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-install
+  cancel-in-progress: true
+
+jobs:
+  # Build the Python bindings standalone against an already installed C++
+  # core library, i.e. without rebuilding the C++ sources.
+  # See https://github.com/openPMD/openPMD-api/issues/1455
+  python_standalone_from_cxx_install:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install
+      run: |
+        sudo apt-get update
+        sudo apt-get install libhdf5-dev python3-dev python3-venv
+        python3 -m venv venv
+        source venv/bin/activate
+        python -m pip install -U pip numpy
+        # an external pybind11 to exercise the "not internal" lookup path
+        python -m pip install pybind11
+    - name: Build & install C++ core (no Python)
+      run: |
+        source venv/bin/activate
+        cmake -S . -B build-cxx                      \
+          -DCMAKE_BUILD_TYPE=Release                 \
+          -DCMAKE_INSTALL_PREFIX="$PWD/install-cxx"  \
+          -DopenPMD_USE_PYTHON=OFF                   \
+          -DopenPMD_USE_MPI=OFF                      \
+          -DopenPMD_USE_HDF5=ON                      \
+          -DopenPMD_USE_ADIOS2=OFF                   \
+          -DopenPMD_BUILD_TESTING=OFF                \
+          -DopenPMD_BUILD_EXAMPLES=OFF               \
+          -DopenPMD_BUILD_CLI_TOOLS=OFF
+        cmake --build build-cxx --parallel 4
+        cmake --install build-cxx
+
+        # the installed C++ package must not drag in a Python dependency
+        test -f "$(find "$PWD/install-cxx" -name openPMDConfig.cmake)"
+    - name: Build & install Python bindings standalone
+      run: |
+        source venv/bin/activate
+        OPENPMD_DIR="$(dirname "$(find "$PWD/install-cxx" -name openPMDConfig.cmake)")"
+        PYBIND11_DIR="$(python -c 'import pybind11; print(pybind11.get_cmake_dir())')"
+
+        cmake -S src/binding/python -B build-py      \
+          -DCMAKE_BUILD_TYPE=Release                 \
+          -DCMAKE_INSTALL_PREFIX="$PWD/install-py"   \
+          -DopenPMD_DIR="$OPENPMD_DIR"               \
+          -DopenPMD_USE_INTERNAL_PYBIND11=OFF        \
+          -Dpybind11_DIR="$PYBIND11_DIR"
+        cmake --build build-py --parallel 4
+        cmake --install build-py
+    - name: Smoke test standalone install
+      run: |
+        source venv/bin/activate
+        SITE_PACKAGES="$(find "$PWD/install-py" -type d -name site-packages)"
+        export PYTHONPATH="$SITE_PACKAGES:$PYTHONPATH"
+        # the extension links the shared C++ core from the install prefix
+        OPENPMD_LIB="$(dirname "$(find "$PWD/install-cxx" -name 'libopenPMD.so*' | head -1)")"
+        export LD_LIBRARY_PATH="$OPENPMD_LIB:$LD_LIBRARY_PATH"
+        # drop the source tree from the import path to prove the bindings are
+        # really loaded from the standalone installation
+        cd "$RUNNER_TEMP"
+
+        python - <<'PY'
+        import openpmd_api as io
+        import numpy as np
+        import tempfile, os
+
+        path = os.path.join(tempfile.mkdtemp(), "data.h5")
+        series = io.Series(path, io.Access.create)
+        series.set_attribute("standalone", 1)
+        it = series.iterations[0]
+        it.meshes["E"]["x"].reset_dataset(io.Dataset(io.Datatype.DOUBLE, [4]))
+        it.meshes["E"]["x"].store_chunk(np.arange(4, dtype=float))
+        series.close()
+
+        series = io.Series(path, io.Access.read_only)
+        assert series.get_attribute("standalone") == 1
+        assert np.array_equal(
+            series.iterations[0].meshes["E"]["x"][:], np.arange(4)
+        )
+        series.close()
+        print("standalone Python bindings OK:", io.__version__)
+        PY
+
+  # Build C++ core and Python bindings together in one tree and install.
+  full_build_and_install:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install
+      run: |
+        sudo apt-get update
+        sudo apt-get install libhdf5-dev python3-dev python3-venv
+        python3 -m venv venv
+        source venv/bin/activate
+        python -m pip install -U pip numpy
+    - name: Build & install
+      run: |
+        source venv/bin/activate
+        cmake -S . -B build                            \
+          -DCMAKE_BUILD_TYPE=Release                   \
+          -DCMAKE_INSTALL_PREFIX="$PWD/install-full"   \
+          -DopenPMD_USE_PYTHON=ON                      \
+          -DopenPMD_USE_MPI=OFF                        \
+          -DopenPMD_USE_HDF5=ON                        \
+          -DopenPMD_USE_ADIOS2=OFF                     \
+          -DopenPMD_BUILD_TESTING=OFF                  \
+          -DopenPMD_BUILD_EXAMPLES=OFF                 \
+          -DopenPMD_BUILD_CLI_TOOLS=ON
+        cmake --build build --parallel 4
+        cmake --install build
+
+        # both the C++ package and the Python bindings must be installed
+        test -f "$(find "$PWD/install-full" -name openPMDConfig.cmake)"
+        test -d "$(find "$PWD/install-full" -type d -name site-packages)"
+    - name: Smoke test install
+      run: |
+        source venv/bin/activate
+        SITE_PACKAGES="$(find "$PWD/install-full" -type d -name site-packages)"
+        export PYTHONPATH="$SITE_PACKAGES:$PYTHONPATH"
+        # the extension links the shared C++ core from the install prefix
+        OPENPMD_LIB="$(dirname "$(find "$PWD/install-full" -name 'libopenPMD.so*' | head -1)")"
+        export LD_LIBRARY_PATH="$OPENPMD_LIB:$LD_LIBRARY_PATH"
+        cd "$RUNNER_TEMP"
+        python - <<'PY'
+        import openpmd_api as io
+        import numpy as np
+        import tempfile, os
+
+        path = os.path.join(tempfile.mkdtemp(), "data.h5")
+        series = io.Series(path, io.Access.create)
+        it = series.iterations[0]
+        it.meshes["E"]["x"].reset_dataset(io.Dataset(io.Datatype.DOUBLE, [4]))
+        it.meshes["E"]["x"].store_chunk(np.arange(4, dtype=float))
+        series.close()
+        series = io.Series(path, io.Access.read_only)
+        assert np.array_equal(
+            series.iterations[0].meshes["E"]["x"][:], np.arange(4)
+        )
+        series.close()
+        print("full build Python bindings OK:", io.__version__)
+        PY

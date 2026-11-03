@@ -176,6 +176,34 @@ Replace the last three commands with
    # administrative privileges might be required for system paths
    cmake --build . --config Release --target install
 
+Building the Python Bindings against an Installed C++ Library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the C++ core library is already installed, the Python bindings can be built
+separately, without rebuilding the C++ sources.
+This is useful to build the bindings for several Python versions at once and
+lets pure C++ dependents avoid a dependency on Python.
+
+Point CMake at the ``src/binding/python`` subdirectory and tell it where to find
+the installed C++ library:
+
+.. code-block:: bash
+
+   mkdir openPMD-python-build
+   cd openPMD-python-build
+
+   cmake \
+       -DopenPMD_DIR=$HOME/somepath/lib/cmake/openPMD \
+       ../openPMD-api/src/binding/python
+
+   cmake --build .
+
+   # sudo might be required for system paths
+   cmake --build . --target install
+
+See `issue #1455 <https://github.com/openPMD/openPMD-api/issues/1455>`_ for
+background.
+
 Post "From Source" Install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
