@@ -129,6 +129,22 @@ TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
 }
 
 #if openPMD_TEST_CUDA_ARRAY_ORDERING
+namespace
+{
+void readAndCheck(std::string const &filename)
+{
+    Series series(filename, Access::READ_ONLY);
+    auto E_x = series.iterations[0].meshes["E"]["x"];
+    REQUIRE(E_x.getExtent() == testExtent);
+    auto chunk = E_x.loadChunk<int>({0, 0}, testExtent);
+    series.flush();
+    for (size_t i = 0; i < testData.size(); ++i)
+    {
+        REQUIRE(chunk.get()[i] == testData[i]);
+    }
+}
+} // namespace
+
 TEST_CASE("serial_adios2_array_ordering_gpu", "[serial][adios2][cuda]")
 {
     int deviceCount = 0;
