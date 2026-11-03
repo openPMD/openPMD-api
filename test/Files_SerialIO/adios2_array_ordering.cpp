@@ -46,19 +46,6 @@ namespace
 {
 std::vector<int> testData{0, 1, 2, 3, 4, 5};
 Extent const testExtent{2, 3};
-
-void readAndCheck(std::string const &filename)
-{
-    Series series(filename, Access::READ_ONLY);
-    auto E_x = series.iterations[0].meshes["E"]["x"];
-    REQUIRE(E_x.getExtent() == testExtent);
-    auto chunk = E_x.loadChunk<int>({0, 0}, testExtent);
-    series.flush();
-    for (size_t i = 0; i < testData.size(); ++i)
-    {
-        REQUIRE(chunk.get()[i] == testData[i]);
-    }
-}
 } // namespace
 
 TEST_CASE("serial_adios2_array_ordering", "[serial][adios2]")
