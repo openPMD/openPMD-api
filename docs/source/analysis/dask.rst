@@ -45,6 +45,26 @@ The ``to_dask_array`` method will automatically set Dask array chunking based on
 The default behavior can be overridden by passing an additional keyword argument ``chunks``, see the `dask.array.from_array documentation <https://docs.dask.org/en/stable/generated/dask.array.from_array.html>`__ for more details.
 For example, to chunk only along the outermost axis in a 3D dataset using the default Dask array chunk size, call ``to_dask_array(chunks={0: 'auto', 1: -1,  2:  -1})``.
 
+As for :ref:`Pandas <analysis-pandas-floating>`, ``to_dask`` can change the type of floating-point columns.
+The conversion is part of the delayed read of each chunk:
+
+.. code-block:: python
+
+   import numpy as np
+
+   df = electrons.to_dask(floating=np.float64)
+
+``to_dask`` does not provide the ``index`` option of :ref:`to_df <analysis-pandas-compare>`.
+To compare particles between iterations, explicitly use the particle ``id`` as the index of the Dask dataframe:
+
+.. code-block:: python
+
+   # example with a particle species that has an "id" record
+   df = electrons.to_dask().set_index("id")
+
+This shuffles particles between partitions and reads all chunks.
+An ``id`` index that is only set within each partition would not be sufficient: particles can be in a different partition in each iteration and would then not align.
+
 Example
 -------
 
