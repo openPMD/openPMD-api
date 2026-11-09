@@ -44,4 +44,4 @@ enum class WriteOrRead : std::uint8_t
     Write,
     Read
 };
-}
+} // namespace openPMD::internal
