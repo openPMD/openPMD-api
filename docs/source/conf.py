@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -16,8 +15,8 @@
 import os
 import subprocess
 
-from recommonmark.parser import CommonMarkParser
 import sphinx_rtd_theme
+from recommonmark.parser import CommonMarkParser
 
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))

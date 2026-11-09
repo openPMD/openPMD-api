@@ -16,6 +16,7 @@
 #
 # isort: skip_file  -- the openpmd_api-before-h5py import order is deliberate.
 import numpy as np
+
 import openpmd_api as io
 
 print(
@@ -42,7 +43,7 @@ del series
 assert np.array_equal(back, data), back
 
 # load the SECOND, independently bundled HDF5 only now (openpmd_api is primary)
-import h5py  # noqa: E402
+import h5py
 
 print(
     f"[versions] h5py {h5py.__version__}  HDF5 {h5py.version.hdf5_version}", flush=True

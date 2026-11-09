@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+
 import openpmd_api as io
 
 # This example demonstrates how to use JSON/TOML-based dynamic
