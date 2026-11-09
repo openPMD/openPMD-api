@@ -132,7 +132,7 @@ auto ChildrenCache::try_emplace(
         assert(child_it->second == child);
     }
 
-    auto inserted = typed_entry.map.try_emplace(key, std::move(value));
+    auto inserted = typed_entry.map.try_emplace(key, std::forward<T>(value));
     assert(inserted.second);
     assert_consistent();
     return inserted;
@@ -144,13 +144,15 @@ auto ChildrenCache::try_emplace(
     std::shared_ptr<SharedAttributableData> const &child,
     T &&value) const -> std::pair<typename std::map<Key, T>::iterator, bool>
 {
+#ifndef NDEBUG
     auto const &canonicalKey = children_cache_detail::key_to_string(key);
-    auto const child_it = m_children.find(canonicalKey);
+    [[maybe_unused]] auto const child_it = m_children.find(canonicalKey);
     assert(child_it != m_children.end());
     assert(child_it->second == child);
+#endif
 
     auto &typed_entry = get_or_create_typed_entry<T, Key>();
-    auto inserted = typed_entry.map.try_emplace(key, std::move(value));
+    auto inserted = typed_entry.map.try_emplace(key, std::forward<T>(value));
     assert_consistent();
     return inserted;
 }
