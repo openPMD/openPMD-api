@@ -6,7 +6,10 @@
 #
 spack:
   specs:
-  - adios2@2.10 +mpi
+  # Pin the oldest ADIOS2 release that still lacks resetting of memory
+  # selections (added upstream in 2.11.0, backported to 2.10.1). This exercises
+  # the code path that rejects memory selections for such versions.
+  - adios2@2.10.0 +mpi
   - hdf5 +mpi
   - mpich
 

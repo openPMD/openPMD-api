@@ -62,6 +62,11 @@ public:
     auto operator->() -> FileState *;
     auto operator*() const -> FileState const &;
     auto operator->() const -> FileState const *;
+
+    /*
+     * Enables using InvalidatableFile in ordered containers like std::set
+     * for consistent ordering across parallel processes.
+     */
     auto operator<(SharedFileState const &) const -> bool;
 
     void reset_optional();

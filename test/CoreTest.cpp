@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 // expose private and protected members for invasive testing
+#include <stdexcept>
 #if openPMD_USE_INVASIVE_TESTS
 #define OPENPMD_private public:
 #define OPENPMD_protected public:
@@ -1333,7 +1334,7 @@ TEST_CASE("use_count_test", "[core]")
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast<uint64_t>(1));
     REQUIRE(
-        std::get<std::shared_ptr<void const>>(
+        std::get<std::shared_ptr<void>>(
             static_cast<Parameter<Operation::WRITE_DATASET> *>(
                 pprc.get().m_chunks.front().parameter.get())
                 ->data.as_variant<auxiliary::WriteBufferTypes>())
@@ -1857,6 +1858,23 @@ TEST_CASE("unique_ptr", "[core]")
     UniquePtrWithLambda<int[]> arrptrFilled{new int[5]{}};
     UniquePtrWithLambda<int[]> arrptrFilledCustom{
         new int[5]{}, [](int const *p) { delete[] p; }};
+
+    auto ptr3 = UniquePtrWithLambda<int>(new int{5}).static_cast_<void>();
+    auto ptr4 = UniquePtrWithLambda<int>(new int{6}).static_cast_<void>();
+    auto ptr5 = new int{7};
+    ptr3.swap(ptr4);
+    REQUIRE(*reinterpret_cast<int *>(ptr3.get()) == 6);
+    REQUIRE(*reinterpret_cast<int *>(ptr4.get()) == 5);
+    // cannot hand a new pointer to a casted UniquePtrWithLambda since the
+    // deleter is bound to the original allocation. Replacing the pointer is a
+    // precondition violation that is reported on stderr (deleting a
+    // unique_ptr is noexcept), so install a deleter matching the new pointer
+    // before releasing it.
+    ptr3.reset(ptr5);
+    ptr3.get_deleter() =
+        auxiliary::CustomDelete<void>([](void const *ptr_in_lambda) {
+            delete reinterpret_cast<int const *>(ptr_in_lambda);
+        });
 }
 
 TEST_CASE("scalar_and_vector", "[core]")

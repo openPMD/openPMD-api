@@ -26,6 +26,8 @@
 
 #include <adios2.h>
 
+#include <type_traits>
+
 #define openPMD_HAS_ADIOS_2_10                                                 \
     (ADIOS2_VERSION_MAJOR * 100 + ADIOS2_VERSION_MINOR >= 210)
 
@@ -45,6 +47,40 @@
 #else
 #define openPMD_HAVE_ADIOS2_BP5 0
 #endif
+
+namespace openPMD
+{
+namespace detail
+{
+    /** Trait to check if SetMemorySelection can be called without arguments to
+     * clear a previously set memory selection.
+     *
+     * ADIOS2 gained this capability in v2.11.0; it was backported to v2.10.1.
+     * Before that, an empty box would fail the dimensionality and rank checks
+     * inside ADIOS2, so a memory selection could never be reset.
+     *
+     * @tparam Variable ADIOS2 variable type
+     */
+    template <typename Variable, typename SFINAE = void>
+    struct CanTheMemorySelectionBeReset
+    {
+        static constexpr bool value = false;
+    };
+
+    template <typename Variable>
+    struct CanTheMemorySelectionBeReset<
+        Variable,
+        std::void_t<decltype(std::declval<Variable>().SetMemorySelection())>>
+    {
+        static constexpr bool value = true;
+    };
+} // namespace detail
+
+/** Whether ADIOS2 Variable supports resetting a memory selection via
+ * SetMemorySelection() without arguments (ADIOS2 >= 2.10.1) */
+constexpr bool CanTheMemorySelectionBeReset =
+    detail::CanTheMemorySelectionBeReset<adios2::Variable<int>>::value;
+} // namespace openPMD
 
 #else
 

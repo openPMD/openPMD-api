@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadVariables.hpp"
@@ -107,11 +108,14 @@ struct WriteDataset
     static void call(Params &&...);
 };
 
+/** Buffered put operation with unique pointer */
 struct BufferedUniquePtrPut
 {
     std::string name;
     Offset offset;
     Extent extent;
+    /** Optional memory selection for non-contiguous memory regions */
+    std::optional<MemorySelection> memorySelection;
     UniquePtrWithLambda<void> data;
     Datatype dtype = Datatype::UNDEFINED;
 

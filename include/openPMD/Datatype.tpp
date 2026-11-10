@@ -223,36 +223,52 @@ namespace detail
     template <typename T>
     constexpr bool is_char_v = is_char<T>::value;
 
-    template <typename T_Char1, typename T_Char2>
-    inline bool isSameChar()
+    struct IsChar
     {
-        return
-            // both must be char types
-            is_char_v<T_Char1> && is_char_v<T_Char2> &&
-            // both must have equivalent sign
-            std::is_signed_v<T_Char1> == std::is_signed_v<T_Char2> &&
-            // both must have equivalent size
-            sizeof(T_Char1) == sizeof(T_Char2);
-    }
-
-    template <typename T1>
-    struct IsSameChar
-    {
-        template <typename T2>
-        static bool call()
+        template <typename T>
+        static constexpr bool call()
         {
-            return isSameChar<T1, T2>();
+            return is_char_v<T>;
         }
-
-        static constexpr char const *errorMsg = "IsSameChar";
+        template <size_t N>
+        static constexpr bool call()
+        {
+            return false;
+        }
     };
 
+    constexpr inline bool isChar(Datatype dtype)
+    {
+        return switchType<IsChar>(dtype);
+    }
+
+    struct DtypeSize
+    {
+        template <typename T>
+        static constexpr size_t call()
+        {
+            return sizeof(T);
+        }
+        static constexpr char const *errorMsg = "DtypeSize";
+    };
+
+    constexpr inline size_t dtypeSize(Datatype dtype)
+    {
+        return switchType<DtypeSize>(dtype);
+    }
 } // namespace detail
 
 template <typename T_Char>
 constexpr inline bool isSameChar(Datatype d)
 {
-    return switchType<detail::IsSameChar<T_Char>>(d);
+    return isSameChar(d, determineDatatype<T_Char>());
+}
+
+constexpr bool isSameChar(Datatype d1, Datatype d2)
+{
+    return detail::isChar(d1) && detail::isChar(d2) &&
+        isSigned(d1) == isSigned(d2) &&
+        detail::dtypeSize(d1) == detail::dtypeSize(d2);
 }
 
 namespace detail
@@ -283,11 +299,6 @@ namespace detail
 constexpr inline bool isSigned(Datatype d)
 {
     return switchType<detail::IsSigned>(d);
-}
-
-constexpr inline bool isSameChar(Datatype d, Datatype e)
-{
-    return isChar(d) && isChar(e) && isSigned(d) == isSigned(e);
 }
 
 constexpr bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)

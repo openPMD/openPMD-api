@@ -333,11 +333,20 @@ public:
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush(internal::ParsedFlushParams &) = 0;
+    std::future<void> flush(internal::ParsedFlushParams &);
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
     virtual bool fullSupportForVariableBasedEncoding() const;
+
+    /**
+     * Whether the backend supports storing chunks with a non-contiguous
+     * memory selection. Backends that do not support this must reject such
+     * chunks in the frontend (RecordComponent::storeChunk_impl()) instead of
+     * letting the backend throw at flush time, which would clear the whole IO
+     * queue and corrupt the output.
+     */
+    virtual bool supportsMemorySelection() const;
 
     std::string directory;
     /*
@@ -377,6 +386,17 @@ public:
     IterationEncoding m_encoding = IterationEncoding::groupBased;
     OpenpmdStandard m_standard = auxiliary::parseStandard(getStandardDefault());
     bool m_verify_homogeneous_extents = true;
+
+protected:
+    /** Implementation of flush operation for subclasses
+     *
+     * Do not call directly, use flush() wrapper instead.
+     *
+     * @param params Parsed flush parameters
+     * @return Future indicating completion state
+     */
+    virtual std::future<void>
+    flush_impl(internal::ParsedFlushParams &params) = 0;
 }; // AbstractIOHandler
 
 } // namespace openPMD

@@ -24,6 +24,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 
 namespace openPMD
@@ -141,6 +142,13 @@ public:
      * The dynamic destructor type makes this possible to implement in this
      * case.
      *
+     * The casted pointer retains the deleter of the original pointer. The
+     * pointer must therefore not be replaced (e.g. via reset()) by a pointer
+     * that does not originate from the same allocation, since the deleter
+     * cannot be applied to it. Deleting a std::unique_ptr is noexcept, so such
+     * a misuse cannot be reported by throwing; it is logged to standard error
+     * and the disassociated pointer is not deleted.
+     *
      * @tparam U Convert to unique pointer of this type.
      */
     template <typename U>
@@ -176,10 +184,32 @@ template <typename U>
 UniquePtrWithLambda<U> UniquePtrWithLambda<T>::static_cast_() &&
 {
     using other_type = std::remove_extent_t<U>;
+    auto original_ptr = this->release();
+    auto original_ptr_casted = static_cast<other_type *>(original_ptr);
     return UniquePtrWithLambda<U>{
-        static_cast<other_type *>(this->release()),
-        [deleter = std::move(this->get_deleter())](other_type *ptr) {
-            deleter(static_cast<T_decayed *>(ptr));
+        original_ptr_casted,
+        [deleter = std::move(this->get_deleter()),
+         original_ptr,
+         original_ptr_casted](other_type *casted_ptr) {
+            /*
+             * Deleting a std::unique_ptr is noexcept, so this deleter must not
+             * throw. A mismatch means the pointer was disassociated from this
+             * deleter by external code. Since it is unknown how to delete the
+             * replaced pointer (and the original may already have been freed),
+             * do not invoke the deleter to avoid a double free. Report the
+             * misuse on standard error instead.
+             */
+            if (original_ptr_casted == casted_ptr)
+            {
+                deleter(original_ptr);
+            }
+            else
+            {
+                std::cerr
+                    << "[UniquePtrWithLambda] Pointer was disassociated from "
+                       "its deleter. Will not delete it."
+                    << std::endl;
+            }
         }};
 }
 } // namespace openPMD
