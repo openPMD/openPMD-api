@@ -352,10 +352,22 @@ jobs:
         channels: conda-forge
         channel-priority: true
         conda-remove-defaults: true
+    - name: RDMA devices
+      # Some Azure-hosted runners expose a MANA RDMA NIC (mana_0).
+      # Log it, so we know which kind of runner a job landed on.
+      run: ls -l /sys/class/infiniband/ || echo "No RDMA devices found."
     - name: Build
       shell: bash -eo pipefail -l {0}
       env:
         CXXFLAGS: -Werror
+        # On runners with a MANA RDMA NIC (mana_0), conda-forge's rdma-core
+        # exposes it via verbs. Open MPI then selects pml/ucx (ud_verbs) or
+        # pml/cm + mtl/ofi (libfabric), both of which fail to open the device
+        # and abort in MPI_Init. Pin the single-node components that Open MPI
+        # selects on all other runners.
+        OMPI_MCA_pml: ob1
+        OMPI_MCA_btl: self,sm,tcp
+        OMPI_MCA_osc: sm,rdma
         OPENPMD_ADIOS2_SST_DATA_TRANSPORT: WAN
         OPENPMD_ADIOS2_SST_WAN_TRANSPORT: sockets
         OPENPMD_ADIOS2_SST_CONTROL_TRANSPORT: tcp
