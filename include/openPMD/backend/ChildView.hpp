@@ -165,7 +165,9 @@ public:
     template <bool OtherConst>
     ProjectedChildIterator(
         ProjectedChildIterator<T, Key, OtherConst> const &other,
-        std::enable_if_t<Const && !OtherConst, int> = 0)
+        // Use enable_if instead of enable_if_t: older MSVC versions fail to
+        // specialize the alias template during SFINAE (C2938).
+        typename std::enable_if<Const && !OtherConst, int>::type = 0)
         : m_members(other.m_members)
     {}
 

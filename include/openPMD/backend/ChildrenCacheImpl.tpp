@@ -22,10 +22,40 @@
 
 #define OPENPMD_GUARD_HEADER_AGAINST_PUBLIC_INCLUSION
 
+#include "openPMD/Error.hpp"
 #include "openPMD/backend/ChildrenCache.hpp"
+
+#include <cstdio>
+#include <cstdlib>
 
 namespace openPMD::internal
 {
+namespace children_cache_detail
+{
+    [[noreturn]] inline void
+    assert_failed(char const *condition, char const *file, int line)
+    {
+        std::stringstream error;
+        error << "openPMD ChildrenCache assertion failed: " << condition << " ("
+              << file << ":" << line << ")";
+        throw error::Internal(error.str());
+    }
+} // namespace children_cache_detail
+
+/*
+ * The ChildrenCache invariants must be validated in release builds as well:
+ * a silently broken cache can leave stale owning handles behind. Use an
+ * assertion that is not compiled out when NDEBUG is defined.
+ */
+#ifndef NDEBUG
+#define OPENPMD_CHILDREN_CACHE_ASSERT(condition) assert(condition)
+#else
+#define OPENPMD_CHILDREN_CACHE_ASSERT(condition)                               \
+    ((condition) ? static_cast<void>(0)                                        \
+                 : ::openPMD::internal::children_cache_detail::assert_failed(  \
+                       #condition, __FILE__, __LINE__))
+#endif
+
 template <typename Key, typename T>
 struct ChildrenCache::TypedEntry : ChildrenCache::EntryI
 {
@@ -96,7 +126,7 @@ auto ChildrenCache::get_or_create_typed_entry() const -> TypedEntry<Key, T> &
     }
 
     auto *typed_entry = static_cast<entry_type *>(it->second.get());
-    assert(typed_entry != nullptr);
+    OPENPMD_CHILDREN_CACHE_ASSERT(typed_entry != nullptr);
     return *typed_entry;
 }
 
@@ -118,7 +148,8 @@ auto ChildrenCache::try_emplace(
     auto typed_it = typed_entry.map.find(key);
     if (typed_it != typed_entry.map.end())
     {
-        assert(m_children.find(canonicalKey) != m_children.end());
+        OPENPMD_CHILDREN_CACHE_ASSERT(
+            m_children.find(canonicalKey) != m_children.end());
         return {typed_it, false};
     }
 
@@ -129,11 +160,11 @@ auto ChildrenCache::try_emplace(
     }
     else
     {
-        assert(child_it->second == child);
+        OPENPMD_CHILDREN_CACHE_ASSERT(child_it->second == child);
     }
 
     auto inserted = typed_entry.map.try_emplace(key, std::forward<T>(value));
-    assert(inserted.second);
+    OPENPMD_CHILDREN_CACHE_ASSERT(inserted.second);
     assert_consistent();
     return inserted;
 }
@@ -144,12 +175,10 @@ auto ChildrenCache::try_emplace(
     std::shared_ptr<SharedAttributableData> const &child,
     T &&value) const -> std::pair<typename std::map<Key, T>::iterator, bool>
 {
-#ifndef NDEBUG
     auto const &canonicalKey = children_cache_detail::key_to_string(key);
     [[maybe_unused]] auto const child_it = m_children.find(canonicalKey);
-    assert(child_it != m_children.end());
-    assert(child_it->second == child);
-#endif
+    OPENPMD_CHILDREN_CACHE_ASSERT(child_it != m_children.end());
+    OPENPMD_CHILDREN_CACHE_ASSERT(child_it->second == child);
 
     auto &typed_entry = get_or_create_typed_entry<T, Key>();
     auto inserted = typed_entry.map.try_emplace(key, std::forward<T>(value));
@@ -168,7 +197,7 @@ auto ChildrenCache::find_cache() const
         return std::nullopt;
     }
     auto *typed_entry = static_cast<entry_type *>(it->second.get());
-    assert(typed_entry != nullptr);
+    OPENPMD_CHILDREN_CACHE_ASSERT(typed_entry != nullptr);
     return ChildrenCacheMap<T, Key>(typed_entry->map);
 }
 

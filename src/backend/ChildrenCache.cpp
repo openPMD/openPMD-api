@@ -57,6 +57,8 @@ namespace
 OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_DEFINE_CONTAINER_TYPE_ID)
 #undef OPENPMD_DEFINE_CONTAINER_TYPE_ID
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define OPENPMD_INSTANTIATE_CONTAINER_CACHE(type, key)                         \
     template ChildrenCacheMap<type, key>                                       \
     ChildrenCache::get_or_create_cache<type, key>() const;                     \
@@ -75,6 +77,8 @@ OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_DEFINE_CONTAINER_TYPE_ID)
 
 OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE_CONTAINER_CACHE)
 #undef OPENPMD_INSTANTIATE_CONTAINER_CACHE
+// NOLINTEND(bugprone-macro-parentheses)
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 ChildrenCache::children_map_t &ChildrenCache::children()
 {

@@ -36,6 +36,7 @@
 
 namespace openPMD::internal
 {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define OPENPMD_INSTANTIATE_CONTAINER_VIEW(type, key)                          \
     template class ChildView<type, key, false>;                                \
     template class ProjectedChildIterator<type, key, false>;                   \
@@ -96,4 +97,5 @@ OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE_CONTAINER_VIEW)
 
 OPENPMD_FOREACH_CONTAINER_TYPE(OPENPMD_INSTANTIATE_CONST_CONTAINER_VIEW)
 #undef OPENPMD_INSTANTIATE_CONST_CONTAINER_VIEW
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 } // namespace openPMD::internal

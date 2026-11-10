@@ -284,6 +284,7 @@ TEST_CASE("dataset_initialization", "[core]")
     Series s("../samples/f.json", Access::CREATE);
     auto rc = s.iterations[0].meshes["E"]["x"];
     rc.getDatatype();
+    rc.resetDataset(Dataset{Datatype::INT, {5}});
     auto scalar_rc = s.iterations[0].meshes["theta"];
     REQUIRE_THROWS_AS(scalar_rc.getDatatype(), error::WrongAPIUsage);
     scalar_rc.resetDataset(Dataset{Datatype::INT, {5}});

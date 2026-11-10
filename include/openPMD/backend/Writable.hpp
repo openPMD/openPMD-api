@@ -28,6 +28,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -164,7 +165,14 @@ namespace internal
     {
         using variant_t = std::
             variant<object_type::DatasetMetaData, object_type::GroupMetaData>;
-        using variant_t::variant;
+
+        ObjectType() = default;
+        ObjectType(object_type::DatasetMetaData metadata)
+            : variant_t(std::move(metadata))
+        {}
+        ObjectType(object_type::GroupMetaData metadata)
+            : variant_t(std::move(metadata))
+        {}
 
         [[nodiscard]] auto as_base() const -> variant_t const &
         {
