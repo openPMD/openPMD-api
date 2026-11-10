@@ -296,7 +296,6 @@ private:
     };
 
     ArrayOrdering m_arrayOrdering = ArrayOrdering::Adios2Default;
-    bool m_warnedArrayOrderingUnsupported = false;
 
     enum class ModifiableAttributes : char
     {
@@ -533,7 +532,7 @@ private:
 #else
         (void)var;
         if (arrayOrdering != ArrayOrdering::Adios2Default &&
-            !m_warnedArrayOrderingUnsupported)
+            !printedWarningsAlready.arrayOrderingUnsupported)
         {
             std::cerr
                 << "[ADIOS2] Warning: The configured array ordering will be "
@@ -541,7 +540,7 @@ private:
                    "The 'adios2.dataset.array_ordering' option requires "
                    "ADIOS2 >= 2.10 built with GPU support."
                 << std::endl;
-            m_warnedArrayOrderingUnsupported = true;
+            printedWarningsAlready.arrayOrderingUnsupported = true;
         }
 #endif
     }
@@ -678,6 +677,7 @@ private:
     {
         bool noGroupBased = false;
         bool blosc2bp5 = false;
+        bool arrayOrderingUnsupported = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
