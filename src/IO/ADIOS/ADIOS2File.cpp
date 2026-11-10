@@ -190,13 +190,15 @@ void BufferedUniquePtrPut::run(ADIOS2File &ba)
 ADIOS2File::ADIOS2File(
     ADIOS2IOHandlerImpl &impl,
     internal::FileState const &file,
-    adios_defs::OpenFileAs openFileAs)
+    adios_defs::OpenFileAs openFileAs,
+    std::optional<size_t> stepsToKeep)
     : m_file(impl.fullPath(file)), m_ADIOS(impl.m_ADIOS), m_impl(&impl)
 {
     // Declaring these members in the constructor body to avoid
     // initialization order hazards. Need the IO_ prefix since in some
     // situation there seems to be trouble with number-only IO names
     m_mode = impl.adios2AccessMode(m_file, openFileAs);
+    m_stepsToKeep = stepsToKeep;
     create_IO();
     if (!m_IO)
     {
@@ -788,6 +790,14 @@ adios2::Engine &ADIOS2File::getEngine()
 {
     if (!m_engine)
     {
+        if (m_stepsToKeep.has_value() && m_stepsToKeep.value() > 0 &&
+            m_mode == adios2::Mode::Write)
+        {
+            throw error::BackendConfigSchema(
+                {"adios2", "engine", "access_mode"},
+                "Cannot be combined with the option 'append.after_snapshot', "
+                "which must append to the existing file.");
+        }
         auto tempMode = m_mode;
         switch (m_mode)
         {
@@ -802,8 +812,50 @@ adios2::Engine &ADIOS2File::getEngine()
              */
             tempMode = m_impl->checkFile(m_file) ? adios2::Mode::Append
                                                  : adios2::Mode::Write;
-            [[fallthrough]];
 #endif
+            if (m_stepsToKeep.has_value())
+            {
+                if (m_stepsToKeep.value() == 0)
+                {
+                    tempMode = adios2::Mode::Write;
+                }
+                else if (
+                    m_IO.EngineType() != "bp5" && m_IO.EngineType() != "bp" &&
+                    m_IO.EngineType() != "file" &&
+                    m_IO.EngineType() != "filestream")
+                {
+                    std::cerr
+                        << "[ADIOS2 backend] Cannot remove existing IO steps "
+                           "with the engine '"
+                        << m_impl->realEngineType()
+                        << "'. The snapshots written after the selected one "
+                           "will be kept."
+                        << std::endl;
+                }
+                else
+                {
+                    for (auto const &parameter : m_IO.Parameters())
+                    {
+                        if (auxiliary::lowerCase(
+                                std::string(parameter.first)) ==
+                            "appendaftersteps")
+                        {
+                            throw error::BackendConfigSchema(
+                                {"adios2",
+                                 "engine",
+                                 "parameters",
+                                 parameter.first},
+                                "Cannot be combined with the option "
+                                "'append.after_snapshot', which sets this "
+                                "parameter.");
+                        }
+                    }
+                    m_IO.SetParameter(
+                        "AppendAfterSteps",
+                        std::to_string(m_stepsToKeep.value()));
+                }
+            }
+            [[fallthrough]];
         case adios2::Mode::Write: {
             // usesSteps attribute only written upon ::advance()
             // this makes sure that the attribute is only put in case

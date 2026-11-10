@@ -202,6 +202,11 @@ public:
     std::vector<std::unique_ptr<BufferedAction>> m_alreadyEnqueued;
     adios2::Mode m_mode;
     /**
+     * Keep only the first N IO steps of an existing file when opening in
+     * append mode. Zero means that the file is recreated.
+     */
+    std::optional<size_t> m_stepsToKeep;
+    /**
      * The base pointer of an ADIOS2 span might change after reallocations.
      * The frontend will ask the backend for those updated base pointers.
      * Spans given out by the ADIOS2 backend to the frontend are hence
@@ -238,7 +243,8 @@ public:
     ADIOS2File(
         ADIOS2IOHandlerImpl &impl,
         internal::FileState const &file,
-        adios_defs::OpenFileAs);
+        adios_defs::OpenFileAs,
+        std::optional<size_t> stepsToKeep = std::nullopt);
 
     ~ADIOS2File();
 

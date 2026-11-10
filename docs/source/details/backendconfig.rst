@@ -127,6 +127,27 @@ This is used for filling in the shape for constant components that do not define
 In order to skip this check in the error case, the key ``{"verify_homogeneous_extents": false}`` may be set (alternatively ``export OPENPMD_VERIFY_HOMOGENEOUS_EXTENTS=0`` will do the same).
 This will help read datasets with inconsistent metadata definitions.
 
+.. _backendconfig-append-after-snapshot:
+
+When appending to an existing Series (``Access::APPEND``), the key ``append.after_snapshot`` selects the snapshot (iteration) after which the Series is continued.
+By default (``"last"``), all existing snapshots are kept and new snapshots are appended after the last one.
+If set to the index of a snapshot, this snapshot and all earlier snapshots are kept.
+Removing later snapshots is requested from the backend, but is not guaranteed.
+The index does not need to exist.
+This is meant for simulations that restart from a checkpoint:
+
+.. code-block:: json
+
+  {
+    "append": {
+      "after_snapshot": 400
+    }
+  }
+
+The :ref:`ADIOS2 backend <backends-adios2>` can remove later IO steps if the engine supports it.
+If later snapshots share an IO step with a kept snapshot, that step cannot be removed and a warning is emitted.
+Other backends and file-based iteration encoding accept the key but may keep later snapshots; what happens when an existing snapshot is written again is backend-dependent.
+
 The key ``resizable`` can be passed to ``Dataset`` options.
 It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
 For HDF5, resizable Datasets come with a performance penalty.

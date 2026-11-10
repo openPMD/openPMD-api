@@ -5421,6 +5421,11 @@ TEST_CASE("read_while_writing", "[serial][adios2]")
     read_while_writing::read_while_writing();
 }
 
+TEST_CASE("append_after_snapshot", "[serial]")
+{
+    append_after_snapshot::append_after_snapshot();
+}
+
 namespace epsilon
 {
 template <typename T>
@@ -7763,7 +7768,8 @@ TEST_CASE("append_mode_filebased", "[serial]")
         append_mode_filebased(t);
     }
 }
-#endif // openPMD_HAS_ADIOS_2_8
+
+#endif // openPMD_HAVE_ADIOS2
 
 void groupbased_read_write(std::string const &ext)
 {
