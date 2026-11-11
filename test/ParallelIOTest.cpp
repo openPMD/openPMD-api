@@ -75,6 +75,7 @@ PARALLEL_TEST_CASE(none, "[parallel]")
 #include <iostream>
 #include <list>
 #include <memory>
+#include <numbers>
 #include <numeric>
 #include <stdexcept>
 #include <string>
@@ -391,7 +392,7 @@ PARALLEL_TEST_CASE(hdf5_write_test, "[parallel][hdf5]")
     // a failure in case the chunking is erroneously carried over.
     e["positionOffset"]["y"].resetDataset({Datatype::FLOAT, {1}});
     e["positionOffset"]["y"].storeChunk(
-        std::make_unique<float>(3.141592654), {0}, {1});
+        std::make_unique<float>(std::numbers::pi), {0}, {1});
 
     o.flush("hdf5.independent_stores = false");
 }
@@ -939,7 +940,7 @@ void file_based_write_read(std::string const &file_ending)
         E_x_data.end(),
         E_x_data.begin(),
         [](precision d) -> precision {
-            return std::sin(d * 2.0 * 3.1415 / 20.);
+            return std::sin(d * 2.0 * std::numbers::pi / 20.);
         });
 
     {
@@ -989,7 +990,7 @@ void file_based_write_read(std::string const &file_ending)
                 E_x_data.end(),
                 E_x_data.begin(),
                 [&step](precision d) -> precision {
-                    return std::sin(d * 2.0 * 3.1415 / 100. + step);
+                    return std::sin(d * 2.0 * std::numbers::pi / 100. + step);
                 });
 
             auto dataset = io::Dataset(
@@ -1077,7 +1078,7 @@ void hipace_like_write(std::string const &file_ending)
         E_x_data.end(),
         E_x_data.begin(),
         [](precision d) -> precision {
-            return std::sin(d * 2.0 * 3.1415 / 20.);
+            return std::sin(d * 2.0 * std::numbers::pi / 20.);
         });
 
     // open a parallel series
@@ -1176,7 +1177,7 @@ void hipace_like_write(std::string const &file_ending)
             E_x_data.end(),
             E_x_data.begin(),
             [&step](precision d) -> precision {
-                return std::sin(d * 2.0 * 3.1415 / 100. + step);
+                return std::sin(d * 2.0 * std::numbers::pi / 100. + step);
             });
 
         auto dataset = io::Dataset(

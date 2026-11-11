@@ -93,11 +93,11 @@ public:
         {
             for (std::string line; getline(input, line);)
             {
-                if (line.find("VmRSS") == 0)
+                if (line.starts_with("VmRSS"))
                     std::cout << line << " ";
-                if (line.find("VmSize") == 0)
+                if (line.starts_with("VmSize"))
                     std::cout << line << " ";
-                if (line.find("VmSwap") == 0)
+                if (line.starts_with("VmSwap"))
                     std::cout << line;
             }
             std::cout << std::endl;
