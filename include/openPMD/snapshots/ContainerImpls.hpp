@@ -59,7 +59,8 @@ private:
         // gcc14 compiler bug
         // warning: '*(std::_Function_base*)((char*)this +
         // 8).std::_Function_base::_M_manager' may be used uninitialized
-        using Deferred_t = std::shared_ptr<std::function<StatefulIterator *()>>;
+        using Deferred_t =
+            std::shared_ptr<std::function<StatefulIterator *(bool)>>;
         using Evaluated_t = StatefulIterator *;
         using BufferedIterator_t = std::variant<Deferred_t, Evaluated_t>;
         BufferedIterator_t m_bufferedIterator = nullptr;
@@ -67,10 +68,11 @@ private:
     Members members;
 
     StatefulSnapshotsContainer(
-        std::variant<std::function<StatefulIterator *()>, StatefulIterator *>
-            begin);
+        std::variant<
+            std::function<StatefulIterator *(bool)>,
+            StatefulIterator *> begin);
 
-    auto get() -> StatefulIterator *;
+    auto get(bool lazy = false) -> StatefulIterator *;
     auto get() const -> StatefulIterator const *;
 
     using value_type =
@@ -96,6 +98,7 @@ public:
     auto currentIteration() -> std::optional<value_type *> override;
 
     auto begin() -> iterator override;
+    auto beginLazy() -> iterator override;
     auto end() -> iterator override;
     auto begin() const -> const_iterator override;
     auto end() const -> const_iterator override;
@@ -159,6 +162,7 @@ public:
     auto currentIteration() const -> std::optional<value_type const *> override;
 
     auto begin() -> iterator override;
+    auto beginLazy() -> iterator override;
     auto end() -> iterator override;
     auto begin() const -> const_iterator override;
     auto end() const -> const_iterator override;

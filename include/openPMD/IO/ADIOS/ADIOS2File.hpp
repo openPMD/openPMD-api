@@ -250,7 +250,19 @@ public:
 
     UseGroupTable detectGroupTable();
 
-    adios2::Engine &getEngine();
+    /**
+     * Retrieve the ADIOS2 engine, opening it if necessary.
+     *
+     * @param stepTimeout Optional timeout (in seconds) for opening the first
+     *      IO step in a linear read. If the step does not become available in
+     *      time, the opened engine is parked in m_uninitializedEngine and
+     *      AdvanceStatus::TRY_AGAIN is reported through @p status.
+     * @param status Optional output parameter for the initialization status.
+     *      Must be non-null when @p stepTimeout is used.
+     */
+    adios2::Engine &getEngine(
+        std::optional<float> stepTimeout = std::nullopt,
+        AdvanceStatus *status = nullptr);
 
     template <typename BA>
     void enqueue(BA &&ba)
@@ -320,9 +332,13 @@ public:
      * @brief Begin or end an ADIOS step.
      *
      * @param mode Whether to begin or end a step.
+     * @param stepTimeout Optional timeout (in seconds) for waiting on the next
+     *      IO step when beginning a step in a linear read workflow. Only
+     *      applied if the file is opened for reading.
      * @return AdvanceStatus
      */
-    AdvanceStatus advance(AdvanceMode mode);
+    AdvanceStatus
+    advance(AdvanceMode mode, std::optional<float> stepTimeout = std::nullopt);
 
     std::vector<std::string>
     availableAttributesPrefixed(std::string const &prefix);
@@ -424,6 +440,12 @@ public:
 private:
     ADIOS2IOHandlerImpl *m_impl;
     std::optional<adios2::Engine> m_engine; //! ADIOS engine
+    /*
+     * An engine that has been opened successfully, but whose first IO step
+     * could not be opened within a given timeout. It is kept here so that a
+     * later getEngine() call resumes it instead of reopening the engine.
+     */
+    std::optional<adios2::Engine> m_uninitializedEngine;
 
     /*
      * Used for selecting steps in adios2::Mode::ReadRandomAccesss.

@@ -729,7 +729,7 @@ if(openPMD_HAVE_PYTHON)
         endforeach()
     endfunction()
     copy_aux_py(
-        __init__.py DaskArray.py DaskDataFrame.py DataFrame.py
+        __init__.py AsyncIterator.py DaskArray.py DaskDataFrame.py DataFrame.py
         ls/__init__.py   ls/__main__.py
         pipe/__init__.py pipe/__main__.py
     )
@@ -858,12 +858,14 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/components_without_extent.cpp
                 test/Files_SerialIO/read_while_writing.cpp
                 test/Files_SerialIO/file_state_lifetime.cpp
+                test/Files_SerialIO/read_linear_try_next.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}
                 test/Files_ParallelIO/read_variablebased_randomaccess.cpp
                 test/Files_ParallelIO/iterate_nonstreaming_series.cpp
                 test/Files_ParallelIO/bug_1655_bp5_writer_hangup.cpp
+                test/Files_ParallelIO/read_linear_try_next_sst.cpp
             )
         elseif(${test_name} STREQUAL "Core")
             list(APPEND ${out_list}

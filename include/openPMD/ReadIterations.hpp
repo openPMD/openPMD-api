@@ -40,7 +40,7 @@ class LegacyIteratorAdaptor
     using value_type = IndexedIteration;
     using parent_t = Snapshots::iterator;
 
-private:
+protected:
     friend class ReadIterations;
     Snapshots::iterator m_iterator;
     LegacyIteratorAdaptor(Snapshots::iterator iterator);
