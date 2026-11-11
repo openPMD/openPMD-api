@@ -10,6 +10,35 @@ set(openPMD_STANDARD_VERSION 1.1.0)
 include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
 
 
+# Minimum compiler versions for C++20 #########################################
+#
+# Emit a clear error instead of a cryptic failure from target_compile_features
+# for the compilers we officially support. Other compiler IDs (e.g. nvcc, nvc++)
+# rely on CMake's own feature checks via cxx_std_20 / cuda_std_20.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+   CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10)
+    message(FATAL_ERROR "openPMD-api requires GCC 10 or newer for C++20 "
+            "support (found ${CMAKE_CXX_COMPILER_VERSION}).")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+       CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+    message(FATAL_ERROR "openPMD-api requires Clang 14 or newer for C++20 "
+            "support (found ${CMAKE_CXX_COMPILER_VERSION}).")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND
+       CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13)
+    message(FATAL_ERROR "openPMD-api requires AppleClang 13 (Xcode 13) or newer "
+            "for C++20 support (found ${CMAKE_CXX_COMPILER_VERSION}).")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND
+       CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.29)
+    message(FATAL_ERROR "openPMD-api requires MSVC 19.29 (Visual Studio 2019 "
+            "16.10) or newer for C++20 support "
+            "(found ${CMAKE_CXX_COMPILER_VERSION}).")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND
+       CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2022.0)
+    message(FATAL_ERROR "openPMD-api requires ICX 2022.0 or newer for C++20 "
+            "support (found ${CMAKE_CXX_COMPILER_VERSION}).")
+endif()
+
+
 # CMake policies ##############################################################
 #
 # CMake 3.24+ tarball download robustness
