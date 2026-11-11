@@ -153,14 +153,14 @@ namespace internal
 
 class Meshes : public Container<Mesh>
 {
-public:
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
+protected:
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 
 class Particles : public Container<ParticleSpecies>
 {
-public:
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
+protected:
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
@@ -300,8 +300,6 @@ public:
      */
     [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
-
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
 
     Meshes meshes{};
     Particles particles{};
@@ -478,6 +476,8 @@ private:
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Iteration
 
 namespace traits
@@ -486,8 +486,8 @@ namespace traits
     struct GenerationPolicy<Iteration>
     {
         constexpr static bool is_noop = false;
-        template <typename Iterator>
-        void operator()(Iterator &it)
+        template <typename Container, typename Iterator>
+        void operator()(Container &, Iterator &it)
         {
             it->second.get().m_iterationIndex = it->first;
         }
@@ -544,7 +544,7 @@ private:
 
 class Iterations : public Container<Iteration, Iteration::IterationIndex_t>
 {
-public:
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
+protected:
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 };
 } // namespace openPMD

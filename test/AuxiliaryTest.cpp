@@ -31,6 +31,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/ChildViewImpl.tpp"
+#include "openPMD/backend/ChildrenCacheImpl.tpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/ContainerImpl.tpp"
 #include "openPMD/backend/Variant_internal.hpp"
@@ -169,6 +171,15 @@ struct S : public TestHelper
 };
 } // namespace openPMD::test
 
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::S, std::string>() -> std::uint8_t
+{
+    return 246;
+}
+} // namespace openPMD::internal
+
 TEST_CASE("container_default_test", "[auxiliary]")
 {
 #if openPMD_USE_INVASIVE_TESTS
@@ -208,6 +219,15 @@ struct structure : public TestHelper
     }
 };
 } // namespace openPMD::test
+
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::structure, std::string>() -> std::uint8_t
+{
+    return 247;
+}
+} // namespace openPMD::internal
 
 TEST_CASE("container_retrieve_test", "[auxiliary]")
 {
@@ -284,6 +304,15 @@ struct Widget : public TestHelper
 };
 } // namespace openPMD::test
 
+namespace openPMD::internal
+{
+template <>
+auto container_type_id<openPMD::test::Widget, std::string>() -> std::uint8_t
+{
+    return 248;
+}
+} // namespace openPMD::internal
+
 TEST_CASE("container_access_test", "[auxiliary]")
 {
 #if openPMD_USE_INVASIVE_TESTS
@@ -319,6 +348,32 @@ TEST_CASE("container_access_test", "[auxiliary]")
     REQUIRE(c.erase(c.find("4fourthWidget")) == c.end());
     REQUIRE(c.size() == 0);
     REQUIRE(c.empty());
+
+    // Range insert, both the iterator-pair and the initializer_list overloads.
+    std::vector<Container<Widget>::value_type> widgets;
+    widgets.emplace_back("6sixthWidget", Widget(6));
+    widgets.emplace_back("7seventhWidget", Widget(7));
+    c.insert(widgets.begin(), widgets.end());
+    REQUIRE(c.size() == 2);
+    REQUIRE(c.contains("6sixthWidget"));
+    REQUIRE(c.contains("7seventhWidget"));
+    c.insert(
+        {Container<Widget>::value_type{"8eighthWidget", Widget(8)},
+         Container<Widget>::value_type{"9ninthWidget", Widget(9)}});
+    REQUIRE(c.size() == 4);
+    REQUIRE(c.contains("8eighthWidget"));
+    REQUIRE(c.contains("9ninthWidget"));
+
+    // Post-increment/decrement must yield the *previous* iterator position.
+    {
+        auto it = c.begin();
+        auto old = it++;
+        REQUIRE(old->first == "6sixthWidget");
+        REQUIRE(it != c.begin());
+        auto back = it--;
+        REQUIRE(it == c.begin());
+        REQUIRE(back->first != "6sixthWidget");
+    }
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
 #endif
@@ -544,4 +599,9 @@ TEST_CASE("filesystem_test", "[auxiliary]")
 TEST_CASE("drain_set_test", "[auxiliary]")
 {
     drain_set::drain_set();
+}
+
+TEST_CASE("children_cache_test", "[auxiliary]")
+{
+    children_cache::children_cache();
 }

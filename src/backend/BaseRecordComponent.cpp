@@ -32,19 +32,20 @@ double BaseRecordComponent::unitSI() const
 
 BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
 {
+    auto &rc = get();
+    auto &dataset = rc.dataset();
     if (written())
         throw std::runtime_error(
             "A Records Datatype can not (yet) be changed after it has been "
             "written.");
 
-    auto &rc = get();
-    if (rc.m_dataset.has_value())
+    if (dataset.has_value())
     {
-        rc.m_dataset.value().dtype = d;
+        dataset.value().dtype = d;
     }
     else
     {
-        rc.m_dataset = Dataset{d, {1}};
+        dataset = Dataset{d, {1}};
     }
     setDirty(true);
     return *this;
@@ -53,9 +54,10 @@ BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
 Datatype BaseRecordComponent::getDatatype() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.m_dataset.value().dtype;
+        return dataset.value().dtype;
     }
     else
     {
@@ -65,15 +67,17 @@ Datatype BaseRecordComponent::getDatatype() const
 
 bool BaseRecordComponent::constant() const
 {
-    return get().m_isConstant;
+    auto &data = get();
+    return data.datasetDefined() && data.isConstant();
 }
 
 std::optional<size_t> BaseRecordComponent::joinedDimension() const
 {
     auto &rc = get();
-    if (rc.m_dataset.has_value())
+    auto &dataset = rc.dataset();
+    if (dataset.has_value())
     {
-        return rc.m_dataset.value().joinedDimension();
+        return dataset.value().joinedDimension();
     }
     else
     {
@@ -84,14 +88,15 @@ std::optional<size_t> BaseRecordComponent::joinedDimension() const
 ChunkTable BaseRecordComponent::availableChunks()
 {
     auto &rc = get();
-    if (rc.m_isConstant)
+    auto &dataset = rc.dataset();
+    if (rc.isConstant())
     {
-        if (!rc.m_dataset.has_value())
+        if (!dataset.has_value())
         {
             return ChunkTable{};
         }
-        Offset offset(rc.m_dataset.value().extent.size(), 0);
-        return ChunkTable{{std::move(offset), rc.m_dataset.value().extent}};
+        Offset offset(dataset.value().extent.size(), 0);
+        return ChunkTable{{std::move(offset), dataset.value().extent}};
     }
     if (auto iteration_data = containingIteration().first;
         iteration_data.has_value())
@@ -122,12 +127,12 @@ BaseRecordComponent::BaseRecordComponent(NoInit) : Attributable(NoInit())
 void BaseRecordComponent::setDatasetDefined(
     internal::BaseRecordComponentData &data)
 {
-    data.m_datasetDefined = true;
+    data.setDatasetDefined();
 }
 
 bool BaseRecordComponent::datasetDefined() const
 {
     auto &data = get();
-    return data.m_datasetDefined;
+    return data.datasetDefined();
 }
 } // namespace openPMD

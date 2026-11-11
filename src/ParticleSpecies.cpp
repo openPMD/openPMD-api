@@ -27,18 +27,21 @@
 
 namespace openPMD
 {
-void ParticleSpecies::visitHierarchy(HierarchyVisitor &v, bool recursive)
+void ParticleSpecies::visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
 {
     if (recursive)
     {
         particlePatches.visitHierarchy(v, recursive);
     }
-    visitHierarchyImpl<ParticleSpecies>(v, recursive);
+    visitHierarchyContainer<ParticleSpecies>(v, recursive);
 }
 
 ParticleSpecies::ParticleSpecies()
 {
+    m_child_filter.excludedKey = "particlePatches";
     particlePatches.writable().ownKeyWithinParent = "particlePatches";
+    writable().objectType.requireGroup()->children()["particlePatches"] =
+        *particlePatches.m_attri;
 }
 
 void ParticleSpecies::read()
@@ -91,7 +94,7 @@ void ParticleSpecies::read()
                 RecordComponent &rc = r;
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush(internal::defaultFlushParams);
-                rc.get().m_isConstant = true;
+                rc.get().isConstant() = true;
             }
             internal::HomogenizeExtents recordExtents;
             try
@@ -113,9 +116,8 @@ void ParticleSpecies::read()
 
     if (!hasParticlePatches)
     {
-        auto &container = particlePatches.container();
-        container.erase("numParticles");
-        container.erase("numParticlesOffset");
+        particlePatches.erase_unchecked("numParticles");
+        particlePatches.erase_unchecked("numParticlesOffset");
         particlePatches.setDirty(false);
     }
 
@@ -178,6 +180,8 @@ void ParticleSpecies::flush(
     }
     if (access::readOnly(IOHandler()->m_frontendAccess))
     {
+        customHierarchyFlush(
+            flushParams, /* managed_as_custom_object = */ false);
         for (auto &record : *this)
             record.second.flush(record.first, flushParams);
         for (auto &patch : particlePatches)
