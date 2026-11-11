@@ -118,19 +118,16 @@ namespace
 {
     std::string get_parent(std::string const &path)
     {
-        std::string parent = path;
-        size_t pos = parent.find_last_of(directory_separator);
-        if (pos != std::string::npos)
+        size_t pos = path.find_last_of(directory_separator);
+        if (pos == std::string::npos)
         {
-            parent = parent.substr(0, pos);
-            if (parent.empty())
-                parent = "/";
+            return {};
         }
-        else
+        if (pos == 0)
         {
-            parent.clear();
+            return std::string(1, directory_separator);
         }
-        return parent;
+        return path.substr(0, pos);
     }
 
     mode_t get_permissions(std::string const &path)
