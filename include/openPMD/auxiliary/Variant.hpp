@@ -112,7 +112,5 @@ namespace auxiliary
     {
         using Ts::operator()...;
     };
-    template <class... Ts>
-    overloaded(Ts...) -> overloaded<Ts...>;
 } // namespace auxiliary
 } // namespace openPMD
