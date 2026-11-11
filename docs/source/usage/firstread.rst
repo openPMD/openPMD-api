@@ -22,7 +22,7 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
            clear: both;
        }
        /* only show first C++20 and Python Headline */
-       #first-read > section > section:not(#c-17):not(#python) > h3 {
+       #first-read > section > section:not(#c-20):not(#python) > h3 {
            display: none;
        }
    }
