@@ -30,8 +30,8 @@ namespace openPMD
 /**
  * @brief Non-owning view into a contiguous buffer.
  *
- * Alias for C++20 std::span, see
- * https://en.cppreference.com/w/cpp/container/span
+ * Compatibility alias retained so that downstream code referring to
+ * openPMD::Span keeps compiling. Use std::span in new code.
  */
 template <typename T>
 using Span = std::span<T>;
@@ -73,7 +73,7 @@ public:
     /**
      * @brief Acquire the underlying buffer at its current position in memory.
      */
-    Span<T> currentBuffer()
+    std::span<T> currentBuffer()
     {
         if (m_param.out->backendManagedBuffer)
         {
@@ -82,7 +82,7 @@ public:
                 IOTask(&m_recordComponent, m_param));
             m_recordComponent.IOHandler()->flush(internal::defaultFlushParams);
         }
-        return Span<T>{static_cast<T *>(m_param.out->ptr), m_size};
+        return std::span<T>{static_cast<T *>(m_param.out->ptr), m_size};
     }
 };
 } // namespace openPMD
