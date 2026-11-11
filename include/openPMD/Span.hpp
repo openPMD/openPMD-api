@@ -23,66 +23,18 @@
 
 #include "openPMD/RecordComponent.hpp"
 
-#include <iterator>
+#include <span>
 
 namespace openPMD
 {
 /**
- * @brief Subset of C++20 std::span class template.
+ * @brief Non-owning view into a contiguous buffer.
  *
- * Any existing member behaves equivalently to those documented here:
+ * Alias for C++20 std::span, see
  * https://en.cppreference.com/w/cpp/container/span
  */
 template <typename T>
-class Span
-{
-    template <typename>
-    friend class DynamicMemoryView;
-
-private:
-    T *m_ptr;
-    size_t m_size;
-
-    Span(T *ptr, size_t size) : m_ptr(ptr), m_size(size)
-    {}
-
-public:
-    using iterator = T *;
-    using reverse_iterator = std::reverse_iterator<iterator>;
-
-    size_t size() const
-    {
-        return m_size;
-    }
-
-    inline T *data() const
-    {
-        return m_ptr;
-    }
-
-    inline T &operator[](size_t i) const
-    {
-        return data()[i];
-    }
-
-    inline iterator begin() const
-    {
-        return data();
-    }
-    inline iterator end() const
-    {
-        return data() + size();
-    }
-    inline reverse_iterator rbegin() const
-    {
-        // std::reverse_iterator does the -1 thing automatically
-        return reverse_iterator{data() + size()};
-    }
-    inline reverse_iterator rend() const
-    {
-        return reverse_iterator{data()};
-    }
-};
+using Span = std::span<T>;
 
 /**
  * @brief A view into a buffer that might be reallocated at some points and

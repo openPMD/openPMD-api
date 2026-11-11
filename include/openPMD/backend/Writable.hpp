@@ -43,8 +43,6 @@ class AbstractIOHandler;
 struct ADIOS2FilePosition;
 template <typename, typename>
 class AbstractIOHandlerImplCommon;
-template <typename>
-class Span;
 class Series;
 
 namespace internal
@@ -105,8 +103,6 @@ class Writable final
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable *);
     friend std::string concrete_bp1_file_position(Writable *);
-    template <typename>
-    friend class Span;
     friend void debug::printDirty(Series const &);
     friend struct Parameter<Operation::CREATE_DATASET>;
     friend struct Parameter<Operation::OPEN_DATASET>;
