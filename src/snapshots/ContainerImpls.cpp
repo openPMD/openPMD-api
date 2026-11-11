@@ -244,8 +244,7 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
         throw std::runtime_error("Stateful iteration on a read-write Series.");
     }
     else if (
-        access::read(access) ||
-        s.series.iterations.find(key) != s.series.iterations.end())
+        access::read(access) || s.series.iterations.contains(key))
     {
         return at(key);
     }

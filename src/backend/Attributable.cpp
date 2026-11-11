@@ -153,7 +153,7 @@ size_t Attributable::numAttributes() const
 bool Attributable::containsAttribute(std::string const &key) const
 {
     auto &attri = get();
-    return attri.m_attributes.find(key) != attri.m_attributes.end();
+    return attri.m_attributes.contains(key);
 }
 
 std::string Attributable::comment() const

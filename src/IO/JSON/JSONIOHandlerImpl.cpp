@@ -1863,7 +1863,7 @@ std::string JSONIOHandlerImpl::removeSlashes(std::string s)
 template <typename KeyT>
 bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
 {
-    return j.find(std::forward<KeyT>(key)) != j.end();
+    return j.contains(std::forward<KeyT>(key));
 }
 
 void JSONIOHandlerImpl::ensurePath(
