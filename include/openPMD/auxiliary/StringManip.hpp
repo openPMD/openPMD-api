@@ -44,24 +44,22 @@ namespace auxiliary
 
     inline bool starts_with(std::string const &s, std::string const &prefix)
     {
-        return (s.size() >= prefix.size()) &&
-            (0 == s.compare(0, prefix.size(), prefix));
+        return s.starts_with(prefix);
     }
 
     inline bool starts_with(std::string const &s, char const prefix)
     {
-        return !s.empty() && s[0] == prefix;
+        return s.starts_with(prefix);
     }
 
     inline bool ends_with(std::string const &s, std::string const &suffix)
     {
-        return (s.size() >= suffix.size()) &&
-            (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
+        return s.ends_with(suffix);
     }
 
     inline bool ends_with(std::string const &s, char const suffix)
     {
-        return !s.empty() && s.back() == suffix;
+        return s.ends_with(suffix);
     }
 
     inline std::string replace_first(
