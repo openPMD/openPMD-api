@@ -124,5 +124,14 @@ CMake Option                    Values          Description
 ``openPMD_BUILD_TESTING``       **ON**/OFF      Build tests
 ``openPMD_BUILD_EXAMPLES``      **ON**/OFF      Build examples
 ``openPMD_BUILD_CLI_TOOLS``     **ON**/OFF      Build command-line tools
-``openPMD_USE_CUDA_EXAMPLES``   ON/**OFF**      Use CUDA in examples
+``openPMD_USE_CUDA``            ON/AUTO/**OFF** Use CUDA in tests and examples
 =============================== =============== ==================================================
+
+CUDA is never used unless requested. The deprecated
+``openPMD_USE_CUDA_EXAMPLES`` option is kept as an advanced alias for
+``openPMD_USE_CUDA``.
+
+To run the GPU-aware tests, configure with ``-DopenPMD_USE_CUDA=ON`` and an
+ADIOS2 build with GPU support (ADIOS2 2.10 or newer). The CUDA-specific tests
+are tagged with ``[cuda]`` and can be run with
+``./build/bin/SerialIOTests "[cuda]"``.

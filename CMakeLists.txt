@@ -195,7 +195,28 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
-openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
+# Remember whether the new option was set explicitly (e.g. on the command line)
+# before creating the cache entry, so that the deprecated alias below does not
+# override an explicit user choice.
+if(DEFINED openPMD_USE_CUDA)
+    set(openPMD_USE_CUDA_explicit TRUE)
+else()
+    set(openPMD_USE_CUDA_explicit FALSE)
+endif()
+openpmd_option(CUDA            "Use CUDA in tests and examples" OFF)
+
+# deprecated: backwards compatibility to the CUDA_EXAMPLES option
+openpmd_option(CUDA_EXAMPLES   "Deprecated: use openPMD_USE_CUDA" OFF)
+mark_as_advanced(openPMD_USE_CUDA_EXAMPLES)
+if(NOT openPMD_USE_CUDA_EXAMPLES STREQUAL "OFF")
+    message(DEPRECATION
+        "openPMD_USE_CUDA_EXAMPLES is deprecated; use openPMD_USE_CUDA")
+    if(NOT openPMD_USE_CUDA_explicit)
+        set(openPMD_USE_CUDA "${openPMD_USE_CUDA_EXAMPLES}" CACHE STRING
+            "Use CUDA in tests and examples" FORCE)
+    endif()
+endif()
+unset(openPMD_USE_CUDA_explicit)
 
 
 # Helper Functions ############################################################
@@ -272,14 +293,19 @@ target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
 
 # external: CUDA (optional)
-if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
-    if(openPMD_USE_CUDA_EXAMPLES STREQUAL AUTO)
-       find_package(CUDAToolkit)
-    elseif(openPMD_USE_CUDA_EXAMPLES)
-       find_package(CUDAToolkit REQUIRED)
-    endif()
+if(openPMD_USE_CUDA STREQUAL AUTO)
+    find_package(CUDAToolkit QUIET)
+    set(openPMD_HAVE_CUDA ${CUDAToolkit_FOUND})
+elseif(openPMD_USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    set(openPMD_HAVE_CUDA TRUE)
+else()
+    set(openPMD_HAVE_CUDA FALSE)
 endif()
-if(CUDAToolkit_FOUND)
+
+# The CUDA language is only needed to compile the examples. Tests only use the
+# CUDA runtime, which is linked via the CUDA::cudart imported target.
+if(openPMD_HAVE_CUDA AND openPMD_BUILD_EXAMPLES)
     enable_language(CUDA)
     set(openPMD_HAVE_CUDA_EXAMPLES TRUE)
 else()
@@ -392,11 +418,6 @@ else()
     set(openPMD_HAVE_ADIOS2 FALSE)
 endif()
 unset(openPMD_REQUIRED_ADIOS2_COMPONENTS)
-
-# external library: CUDA runtime for GPU-aware tests (optional)
-if(openPMD_BUILD_TESTING AND openPMD_HAVE_ADIOS2 AND NOT CUDAToolkit_FOUND)
-    find_package(CUDAToolkit QUIET)
-endif()
 
 # external library: pybind11 (optional)
 include(${openPMD_SOURCE_DIR}/cmake/dependencies/pybind11.cmake)
@@ -916,8 +937,7 @@ if(openPMD_BUILD_TESTING)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
-        if(${testname} STREQUAL SerialIO AND openPMD_HAVE_ADIOS2
-            AND CUDAToolkit_FOUND)
+        if(${testname} STREQUAL SerialIO AND openPMD_HAVE_CUDA)
             target_link_libraries(${testname}Tests PRIVATE CUDA::cudart)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_TEST_CUDA=1)
         endif()
