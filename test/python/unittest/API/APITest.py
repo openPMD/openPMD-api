@@ -12,6 +12,7 @@ import os
 import shutil
 import sys
 import unittest
+import warnings
 
 import openpmd_api as io
 
@@ -23,6 +24,21 @@ try:
 except ImportError:
     print("numpy NOT found. Skipping most N-dim data and load tests.")
     found_numpy = False
+
+try:
+    import pandas as pd
+
+    found_pandas = True
+except ImportError:
+    found_pandas = False
+
+try:
+    import dask
+    import dask.dataframe  # noqa: F401
+
+    found_dask = True
+except ImportError:
+    found_dask = False
 
 from TestUtilities.TestUtilities import generateTestFilePath
 
@@ -2796,6 +2812,255 @@ class APITest(unittest.TestCase):
 
     def testPickleCleanupWithGC(self):
         self.workerTestPickleCleanup(do_close=False)
+
+    def dataFrameSeries(self):
+        """Write and reopen a small Series for tests of dataframe conversions.
+
+        Particles change their order between iterations and the particle with
+        id 20 is lost.
+
+        Returns the Series, the stored position_x per iteration and its unit_SI.
+        """
+        scalar = io.Record_Component.SCALAR
+        path = "../samples/dataframe_%T.json"
+        self.__files_to_remove += [
+            "../samples/dataframe_0.json",
+            "../samples/dataframe_100.json",
+        ]
+
+        ids = {
+            0: np.array([30, 10, 20], dtype=np.uint64),
+            100: np.array([10, 30], dtype=np.uint64),
+        }
+        position_x = {
+            0: np.array([1.1, 2.2, 3.3], dtype=np.float32),
+            100: np.array([2.7, 1.9], dtype=np.float32),
+        }
+        unit_x = 5.34e-22
+
+        def store(record_component, data, unit_SI=1.0):
+            record_component.reset_dataset(io.Dataset(data.dtype, data.shape))
+            record_component.store_chunk(data)
+            record_component.unit_SI = unit_SI
+
+        series = io.Series(path, io.Access.create)
+        for i in ids:
+            num = len(ids[i])
+            iteration = series.snapshots()[i]
+
+            e = iteration.particles["e"]
+            e.set_attribute("s_ref", 1.5)
+            store(e["id"][scalar], ids[i])
+            store(e["position"]["x"], position_x[i], unit_x)
+            store(e["charge_state"][scalar], np.arange(num, dtype=np.int32), 2.0)
+            # only representable in single precision after scaling
+            store(e["large"][scalar], np.full(num, 1.0e300), 1.0e-280)
+            weighting = e["weighting"][scalar]
+            weighting.reset_dataset(io.Dataset(np.dtype("f4"), [num]))
+            weighting.make_constant(np.float32(2.5))
+
+            duplicates = iteration.particles["duplicates"]
+            duplicate_id = duplicates["id"][scalar]
+            duplicate_id.reset_dataset(io.Dataset(np.dtype("u8"), [num]))
+            duplicate_id.make_constant(np.uint64(7))
+            store(duplicates["position"]["x"], np.arange(num, dtype=np.float64))
+        series.close()
+        del series
+
+        return io.Series(path, io.Access.read_only), position_x, unit_x
+
+    @unittest.skipUnless(found_numpy and found_pandas, "numpy or pandas NOT found")
+    def testDataFrameDefaultsUnchanged(self):
+        series, position_x, unit_x = self.dataFrameSeries()
+        species = series.snapshots()[0].particles["e"]
+
+        df = species.to_df()
+        self.assertEqual(df.index.name, "row")
+        self.assertEqual(df.index.tolist(), [0, 1, 2])
+        self.assertEqual(df["id"].tolist(), [30, 10, 20])
+        self.assertEqual(df["id"].dtype, np.uint64)
+        self.assertEqual(df["position_x"].dtype, np.float32)
+        self.assertEqual(df["charge_state"].dtype, np.float64)
+        np.testing.assert_array_equal(
+            df["position_x"], np.multiply(position_x[0], unit_x)
+        )
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(len(species.to_df(np.s_[:2])), 2)
+
+        df = series.to_df("e")
+        self.assertEqual(df.index.tolist(), list(range(5)))
+        self.assertEqual(df["iteration"].tolist(), [0, 0, 0, 100, 100])
+        self.assertEqual(df["id"].tolist(), [30, 10, 20, 10, 30])
+
+    @unittest.skipUnless(found_numpy and found_pandas, "numpy or pandas NOT found")
+    def testDataFrameFloating(self):
+        series, position_x, unit_x = self.dataFrameSeries()
+        species = series.snapshots()[0].particles["e"]
+
+        # widen: unit_SI is applied in double precision
+        df = species.to_df(attributes=["s_ref"], floating=np.float64)
+        expected = position_x[0].astype(np.float64) * unit_x
+        self.assertEqual(df["position_x"].dtype, np.float64)
+        np.testing.assert_array_equal(df["position_x"], expected)
+        # ... which differs from converting after scaling in single precision
+        self.assertFalse(
+            np.array_equal(
+                np.multiply(position_x[0], unit_x).astype(np.float64), expected
+            )
+        )
+        self.assertEqual(df["weighting"].dtype, np.float64)
+        self.assertEqual(df["weighting"].tolist(), [2.5, 2.5, 2.5])
+        self.assertEqual(df["s_ref"].dtype, np.float64)
+
+        # other columns are kept, with their type
+        self.assertEqual(df["id"].dtype, np.uint64)
+        self.assertEqual(df["id"].tolist(), [30, 10, 20])
+        self.assertEqual(df["charge_state"].tolist(), [0.0, 2.0, 4.0])
+
+        # narrow: unit_SI is applied before leaving double precision
+        df = species.to_df(attributes=["s_ref"], floating=np.float32)
+        self.assertEqual(df["large"].dtype, np.float32)
+        np.testing.assert_array_equal(df["large"], np.float32(1.0e20))
+        self.assertEqual(df["position_x"].dtype, np.float32)
+        self.assertEqual(df["s_ref"].dtype, np.float32)
+        # integers that became floating-point numbers through scaling
+        self.assertEqual(df["charge_state"].dtype, np.float32)
+        self.assertEqual(df["id"].dtype, np.uint64)
+
+        # combination with slices
+        df = species.to_df(slice=np.s_[1:3], floating=np.float64)
+        np.testing.assert_array_equal(df["position_x"], expected[1:3])
+
+        # ways to spell the type
+        for floating in ("float64", "f8", float, np.dtype("f8")):
+            df = species.to_df(floating=floating)
+            self.assertEqual(df["position_x"].dtype, np.float64)
+
+        # not a floating-point type
+        for floating in (np.int32, "complex128", "not a type"):
+            with self.assertRaises(TypeError):
+                species.to_df(floating=floating)
+
+        # Series
+        df = series.to_df("e", floating=np.float64)
+        self.assertEqual(df["position_x"].dtype, np.float64)
+        np.testing.assert_array_equal(
+            df["position_x"],
+            np.concatenate([position_x[0], position_x[100]]).astype(np.float64)
+            * unit_x,
+        )
+        self.assertEqual(df["id"].dtype, np.uint64)
+
+    @unittest.skipUnless(found_numpy and found_pandas, "numpy or pandas NOT found")
+    def testDataFrameIndex(self):
+        series, position_x, unit_x = self.dataFrameSeries()
+        species = series.snapshots()[0].particles["e"]
+
+        # the replacement for .to_df().set_index("id")
+        initial = species.to_df(index="id", floating=np.float64)
+        pd.testing.assert_frame_equal(
+            initial, species.to_df(floating=np.float64).set_index("id")
+        )
+        self.assertEqual(initial.index.name, "id")
+        self.assertEqual(initial.index.dtype, np.uint64)
+        self.assertEqual(initial.index.tolist(), [30, 10, 20])
+        self.assertNotIn("id", initial.columns)
+
+        # operations align by particle and not by row
+        final = series.snapshots()[100].particles["e"]
+        final = final.to_df(index="id", floating=np.float64)
+        delta_x = final["position_x"] - initial["position_x"]
+        x_0 = position_x[0].astype(np.float64) * unit_x
+        x_100 = position_x[100].astype(np.float64) * unit_x
+        self.assertEqual(delta_x.index.tolist(), [10, 20, 30])
+        self.assertEqual(delta_x.loc[10], x_100[0] - x_0[1])
+        self.assertEqual(delta_x.loc[30], x_100[1] - x_0[0])
+        self.assertTrue(np.isnan(delta_x.loc[20]))
+
+        # combination with slices
+        df = species.to_df(slice=np.s_[:2], index="id")
+        self.assertEqual(df.index.tolist(), [30, 10])
+
+        # unique ids do not warn, others do
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            species.to_df(index="id")
+        duplicates = series.snapshots()[0].particles["duplicates"]
+        with self.assertWarns(UserWarning):
+            df = duplicates.to_df(index="id")
+        self.assertEqual(df.index.tolist(), [7, 7, 7])
+
+        # id is an optional record, as in this particle species
+        electrons = self.__series.iterations[400].particles["electrons"]
+        with self.assertRaises(ValueError):
+            electrons.to_df(index="id")
+
+        # invalid values
+        for index in ("row", "position_x", True):
+            with self.assertRaises(ValueError):
+                species.to_df(index=index)
+
+    @unittest.skipUnless(found_numpy and found_pandas, "numpy or pandas NOT found")
+    def testDataFrameSeriesIndex(self):
+        series, _, _ = self.dataFrameSeries()
+
+        df = series.to_df("e", index="id", attributes=["s_ref"])
+        self.assertEqual(df.index.names, ["iteration", "id"])
+        self.assertEqual(df.index.get_level_values("id").dtype, np.uint64)
+        self.assertTrue(df.index.is_unique)
+        self.assertNotIn("iteration", df.columns)
+        self.assertNotIn("id", df.columns)
+
+        # an iteration is the same as loading it on its own
+        for i in (0, 100):
+            species = series.snapshots()[i].particles["e"]
+            pd.testing.assert_frame_equal(
+                df.loc[i], species.to_df(index="id", attributes=["s_ref"])
+            )
+
+        # comparison between iterations & all iterations of a particle
+        delta_x = df.loc[100, "position_x"] - df.loc[0, "position_x"]
+        self.assertEqual(delta_x.index.tolist(), [10, 20, 30])
+        self.assertEqual(df.xs(10, level="id").index.tolist(), [0, 100])
+        self.assertEqual(df.groupby("iteration").size().tolist(), [3, 2])
+
+        # back to the columns of the default
+        columns = df.reset_index().columns
+        self.assertIn("iteration", columns)
+        self.assertIn("id", columns)
+
+        df = series.to_df("e", index="id", floating=np.float64)
+        self.assertEqual(df["position_x"].dtype, np.float64)
+
+        with self.assertWarns(UserWarning):
+            series.to_df("duplicates", index="id")
+
+        with self.assertRaises(ValueError):
+            self.__series.to_df("electrons", index="id")
+        with self.assertRaises(ValueError):
+            series.to_df("e", index="row")
+
+    @unittest.skipUnless(found_numpy and found_pandas, "numpy or pandas NOT found")
+    @unittest.skipUnless(found_dask, "dask NOT found")
+    def testDataFrameDask(self):
+        series, _, _ = self.dataFrameSeries()
+        species = series.snapshots()[0].particles["e"]
+
+        with dask.config.set(scheduler="synchronous"):
+            self.assertEqual(species.to_dask()["position_x"].dtype, np.float32)
+
+            ddf = species.to_dask(floating=np.float64)
+            self.assertEqual(ddf["position_x"].dtype, np.float64)
+            self.assertEqual(ddf["id"].dtype, np.uint64)
+            pd.testing.assert_frame_equal(
+                ddf.compute().reset_index(drop=True),
+                species.to_df(floating=np.float64).reset_index(drop=True),
+            )
+
+            # fails before computing the delayed reads
+            with self.assertRaises(TypeError):
+                species.to_dask(floating=np.int32)
 
 
 if __name__ == "__main__":

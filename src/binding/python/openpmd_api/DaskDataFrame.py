@@ -8,13 +8,15 @@ License: LGPLv3+
 
 import numpy as np
 
+from .DataFrame import _floating_dtype
 
-def read_chunk_to_df(species, chunk, attributes=None):
+
+def read_chunk_to_df(species, chunk, attributes=None, floating=None):
     stride = np.s_[chunk.offset[0] : chunk.offset[0] + chunk.extent[0]]
-    return species.to_df(attributes=attributes, slice=stride)
+    return species.to_df(attributes=attributes, slice=stride, floating=floating)
 
 
-def particles_to_daskdataframe(particle_species, attributes=None):
+def particles_to_daskdataframe(particle_species, attributes=None, *, floating=None):
     """
     Load all records of a particle species into a Dask DataFrame.
 
@@ -25,17 +27,25 @@ def particles_to_daskdataframe(particle_species, attributes=None):
     attributes : list of strings, optional
         A list of attributes of the particle_species that should be read and
         added as extra columns.
+    floating : numpy.dtype or type or string, optional
+        The floating-point type of all floating-point columns, see
+        openpmd_api.ParticleSpecies.to_df. Conversions are part of the delayed
+        read of each chunk. By default, the stored type is kept.
 
     Returns
     -------
     dask.dataframe
-        A dask dataframe with particles as index and openPMD record
-        components of the particle_species as columns.
+        A dask dataframe with particles as rows and openPMD record
+        components of the particle_species as columns. The row index restarts
+        for each chunk. To index by particle id, use .set_index("id"), which
+        reads all chunks and shuffles particles between partitions.
 
     Raises
     ------
     ImportError
         Raises an exception if dask or pandas are not installed
+    TypeError
+        Raises an exception if floating is not a floating-point type
 
     See Also
     --------
@@ -63,6 +73,9 @@ def particles_to_daskdataframe(particle_species, attributes=None):
     if not found_pandas:  # catch this early: before delayed functions
         raise ImportError("pandas NOT found. Install pandas for DataFrame support.")
 
+    # catch invalid arguments now and not when the delayed reads are computed
+    floating = _floating_dtype(floating)
+
     # get optimal chunks: query first non-constant record component and
     #                     assume the same chunking applies for all of them
     #                     in a particle species
@@ -87,7 +100,9 @@ def particles_to_daskdataframe(particle_species, attributes=None):
 
     # merge DataFrames
     dfs = [
-        delayed(read_chunk_to_df)(particle_species, chunk=chunk, attributes=attributes)
+        delayed(read_chunk_to_df)(
+            particle_species, chunk=chunk, attributes=attributes, floating=floating
+        )
         for chunk in chunks
     ]
     df = dd.from_delayed(dfs)

@@ -56,6 +56,9 @@ One can also combine all iterations in a single dataframe like this:
    # like before but with a new column "iteration" and all particles
    print(cdf)
 
+As for :ref:`Pandas <analysis-pandas>`, ``to_cudf`` supports the options ``floating`` for the :ref:`type of floating-point columns <analysis-pandas-floating>` and ``index="id"`` for :ref:`comparing particles between iterations <analysis-pandas-compare>`.
+The latter uses ``iteration`` and ``id`` as a ``MultiIndex``.
+
 
 .. _analysis-rapids-sql:
 
