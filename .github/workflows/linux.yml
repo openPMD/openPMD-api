@@ -7,26 +7,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clang11_nopy_nompi_h5_libcpp:
+  clang14_nopy_nompi_h5_libcpp:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v7
     - name: Spack Cache
       uses: actions/cache@v6
-      with: {path: /opt/spack, key: clang11_nopy_nompi_h5_libcpp_v2}
+      with: {path: /opt/spack, key: clang14_nopy_nompi_h5_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev
+        sudo apt-get install clang-14 libc++-14-dev libc++abi-14-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_nompi_h5_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_nopy_nompi_h5_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -40,21 +40,21 @@ jobs:
         cd build
         ctest --output-on-failure
 
-  clang11_nopy_ompi_h5_ad2_libcpp:
+  clang14_nopy_ompi_h5_ad2_libcpp:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v7
     - name: Spack Cache
       uses: actions/cache@v6
-      with: {path: /opt/spack, key: clang11_nopy_ompi_h5_ad2_libcpp_v2}
+      with: {path: /opt/spack, key: clang14_nopy_ompi_h5_ad2_libcpp_v2}
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-11 libc++-11-dev libc++abi-11-dev gfortran libopenmpi-dev python3
+        sudo apt-get install clang-14 libc++-14-dev libc++abi-14-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -64,7 +64,7 @@ jobs:
         perl --version
         python --version
         sudo ln -s "$(which cmake)" /usr/bin/cmake
-        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_nopy_ompi_h5_ad2_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -84,27 +84,27 @@ jobs:
         find . -name *.bp.dir | xargs -n1 -P1 -I {} rm -rf {}
         ctest --output-on-failure
 
-  clang11_nopy_ompi_h5_ad2:
+  clang14_nopy_ompi_h5_ad2:
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v7
     - name: Spack Cache
       uses: actions/cache@v6
-      with: {path: /opt/spack, key: clang11_nopy_ompi_h5_ad2_v2 }
+      with: {path: /opt/spack, key: clang14_nopy_ompi_h5_ad2_v2 }
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-11 gfortran libopenmpi-dev python3
+        sudo apt-get install clang-14 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
 
     - name: Build
-      env: {CC: clang-11, CXX: clang++-11, CXXFLAGS: -Werror}
+      env: {CC: clang-14, CXX: clang++-14, CXXFLAGS: -Werror}
       run: |
         # Use this to make the HDF5 plugins available from the C/C++ API.
         export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
         sudo ln -s "$(which cmake)" /usr/bin/cmake
-        eval $(spack env activate --sh .github/ci/spack-envs/clang11_nopy_ompi_h5_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang14_nopy_ompi_h5_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build

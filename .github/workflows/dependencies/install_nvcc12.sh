@@ -26,4 +26,4 @@ sudo apt-get install -y \
     cuda-cupti-dev-12-8          \
     cuda-minimal-build-12-8
 
-sudo ln -s cuda-11.2 /usr/local/cuda
+sudo ln -s cuda-12.8 /usr/local/cuda
