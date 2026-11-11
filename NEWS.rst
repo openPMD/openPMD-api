@@ -9,6 +9,9 @@ Upgrade Guide
 Building openPMD-api now requires a compiler that supports C++20 or newer.
 The minimum supported compilers are GCC 10+, Clang 14+, MSVC 19.29+ and ICX 2022.0+.
 
+The ``openPMD::Span`` type is now an alias for ``std::span``.
+The obsolete ``openPMD_HAS_CXX17`` configuration macro has been removed.
+
 0.17.0
 ------
 
