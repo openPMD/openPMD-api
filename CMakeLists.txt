@@ -195,19 +195,43 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
-# Remember whether the new option was set explicitly (e.g. on the command line)
-# before creating the cache entry, so that the deprecated alias below does not
-# override an explicit user choice.
+# Remember whether the options were set explicitly (e.g. on the command line)
+# before creating the cache entries. CMake marks command-line cache entries as
+# UNINITIALIZED until the option() call assigns them a type.
 if(DEFINED openPMD_USE_CUDA)
     set(openPMD_USE_CUDA_explicit TRUE)
+    get_property(_openPMD_USE_CUDA_type CACHE openPMD_USE_CUDA PROPERTY TYPE)
+    if(_openPMD_USE_CUDA_type STREQUAL "UNINITIALIZED")
+        set(openPMD_USE_CUDA_user_specified TRUE)
+    else()
+        set(openPMD_USE_CUDA_user_specified FALSE)
+    endif()
 else()
     set(openPMD_USE_CUDA_explicit FALSE)
+    set(openPMD_USE_CUDA_user_specified FALSE)
+endif()
+if(DEFINED openPMD_USE_CUDA_EXAMPLES)
+    get_property(_openPMD_USE_CUDA_EXAMPLES_type CACHE
+        openPMD_USE_CUDA_EXAMPLES PROPERTY TYPE)
+    if(_openPMD_USE_CUDA_EXAMPLES_type STREQUAL "UNINITIALIZED")
+        set(openPMD_USE_CUDA_EXAMPLES_user_specified TRUE)
+    else()
+        set(openPMD_USE_CUDA_EXAMPLES_user_specified FALSE)
+    endif()
+else()
+    set(openPMD_USE_CUDA_EXAMPLES_user_specified FALSE)
 endif()
 openpmd_option(CUDA            "Use CUDA in tests and examples" OFF)
 
 # deprecated: backwards compatibility to the CUDA_EXAMPLES option
 openpmd_option(CUDA_EXAMPLES   "Deprecated: use openPMD_USE_CUDA" OFF)
 mark_as_advanced(openPMD_USE_CUDA_EXAMPLES)
+if(openPMD_USE_CUDA_user_specified
+   AND openPMD_USE_CUDA_EXAMPLES_user_specified)
+    message(WARNING
+        "Both openPMD_USE_CUDA and the deprecated openPMD_USE_CUDA_EXAMPLES "
+        "were specified; openPMD_USE_CUDA takes precedence.")
+endif()
 if(NOT openPMD_USE_CUDA_EXAMPLES STREQUAL "OFF")
     message(DEPRECATION
         "openPMD_USE_CUDA_EXAMPLES is deprecated; use openPMD_USE_CUDA")
@@ -217,6 +241,10 @@ if(NOT openPMD_USE_CUDA_EXAMPLES STREQUAL "OFF")
     endif()
 endif()
 unset(openPMD_USE_CUDA_explicit)
+unset(openPMD_USE_CUDA_user_specified)
+unset(openPMD_USE_CUDA_EXAMPLES_user_specified)
+unset(_openPMD_USE_CUDA_type)
+unset(_openPMD_USE_CUDA_EXAMPLES_type)
 
 
 # Helper Functions ############################################################
