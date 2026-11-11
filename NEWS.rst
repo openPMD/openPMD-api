@@ -3,6 +3,12 @@
 Upgrade Guide
 =============
 
+0.18.0
+------
+
+Building openPMD-api now requires a compiler that supports C++20 or newer.
+The minimum supported compilers are GCC 10+, Clang 14+, MSVC 19.29+ and ICX 2022.0+.
+
 0.17.0
 ------
 
