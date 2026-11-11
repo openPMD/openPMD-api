@@ -29,6 +29,7 @@
 #include <cassert>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 
 namespace openPMD
@@ -387,11 +388,11 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
 auto RandomAccessIteratorContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
-    for (auto begin = m_cont.rbegin(); begin != m_cont.rend(); ++begin)
+    for (auto &element : m_cont | std::views::reverse)
     {
-        if (!begin->second.closed())
+        if (!element.second.closed())
         {
-            return std::make_optional<value_type const *>(&*begin);
+            return std::make_optional<value_type const *>(&element);
         }
     }
     return std::nullopt;
