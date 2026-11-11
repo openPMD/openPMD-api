@@ -165,7 +165,7 @@ namespace auxiliary
     inline std::string strip(std::string s, std::vector<char> to_remove)
     {
         for (auto const &c : to_remove)
-            s.erase(std::remove(s.begin(), s.end(), c), s.end());
+            std::erase(s, c);
         s.shrink_to_fit();
 
         return s;
