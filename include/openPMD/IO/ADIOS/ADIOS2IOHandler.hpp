@@ -288,6 +288,15 @@ private:
 
     UseSpan m_useSpanBasedPutByDefault = UseSpan::Auto;
 
+    enum class ArrayOrdering : char
+    {
+        Adios2Default,
+        RowMajor,
+        ColumnMajor
+    };
+
+    ArrayOrdering m_arrayOrdering = ArrayOrdering::Adios2Default;
+
     enum class ModifiableAttributes : char
     {
         Yes,
@@ -356,8 +365,19 @@ private:
     // use m_config
     std::optional<std::vector<ParameterizedOperator>> getOperators();
 
+    static ArrayOrdering parseArrayOrdering(
+        std::string const &value, std::vector<std::string> const &configPath);
+
+    std::optional<ArrayOrdering> getArrayOrdering(json::TracingJSON config);
+
+    struct DatasetConfiguration
+    {
+        std::vector<ParameterizedOperator> operators;
+        ArrayOrdering arrayOrdering;
+    };
+
     template <typename Parameter>
-    std::vector<ParameterizedOperator> getDatasetOperators(
+    DatasetConfiguration getDatasetConfiguration(
         Parameter const &, Writable *, std::string const &varName);
 
     std::string fileSuffix(bool verbose = true) const;
@@ -489,6 +509,40 @@ private:
             step_selection = step_index - preparsed->second.begin();
         }
         var.SetStepSelection({step_selection, 1});
+    }
+
+    template <typename T>
+    void
+    applyArrayOrdering(adios2::Variable<T> &var, ArrayOrdering arrayOrdering)
+    {
+#if openPMD_HAS_ADIOS_2_10 &&                                                  \
+    (defined(ADIOS2_HAVE_GPU_SUPPORT) || defined(ADIOS2_HAVE_KOKKOS))
+        switch (arrayOrdering)
+        {
+        case ArrayOrdering::Adios2Default:
+            // leave the layout up to ADIOS2
+            break;
+        case ArrayOrdering::RowMajor:
+            var.SetArrayLayout(adios2::ArrayOrdering::RowMajor);
+            break;
+        case ArrayOrdering::ColumnMajor:
+            var.SetArrayLayout(adios2::ArrayOrdering::ColumnMajor);
+            break;
+        }
+#else
+        (void)var;
+        if (arrayOrdering != ArrayOrdering::Adios2Default &&
+            !printedWarningsAlready.arrayOrderingUnsupported)
+        {
+            std::cerr
+                << "[ADIOS2] Warning: The configured array ordering will be "
+                   "ignored because this ADIOS2 build does not support it. "
+                   "The 'adios2.dataset.array_ordering' option requires "
+                   "ADIOS2 >= 2.10 built with GPU support."
+                << std::endl;
+            printedWarningsAlready.arrayOrderingUnsupported = true;
+        }
+#endif
     }
 
     /*
@@ -623,6 +677,7 @@ private:
     {
         bool noGroupBased = false;
         bool blosc2bp5 = false;
+        bool arrayOrderingUnsupported = false;
     } printedWarningsAlready;
 }; // ADIOS2IOHandlerImpl
 
@@ -685,6 +740,7 @@ namespace detail
             std::optional<size_t> stepSelection,
             std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
                 &operators,
+            ADIOS2IOHandlerImpl::ArrayOrdering arrayOrdering,
             detail::AdiosVariables const &);
 
         static constexpr char const *errorMsg = "ADIOS2: openDataset()";
@@ -695,6 +751,7 @@ namespace detail
         /**
          * @brief Define a Variable of type T within the passed IO.
          *
+         * @param impl The ADIOS2 backend implementation.
          * @param IO The adios2::IO object within which to define the
          *           variable. The variable can later be retrieved from
          *           the IO using the passed name.
@@ -706,9 +763,11 @@ namespace detail
          * @param start As in adios2::IO::DefineVariable
          * @param count As in adios2::IO::DefineVariable
          * @param constantDims As in adios2::IO::DefineVariable
+         * @param arrayOrdering The array ordering to apply to the variable.
          */
         template <typename T>
         static void call(
+            ADIOS2IOHandlerImpl *impl,
             adios2::IO &IO,
             std::string const &name,
             std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
@@ -716,7 +775,9 @@ namespace detail
             adios2::Dims const &shape = adios2::Dims(),
             adios2::Dims const &start = adios2::Dims(),
             adios2::Dims const &count = adios2::Dims(),
-            bool const constantDims = false);
+            bool const constantDims = false,
+            ADIOS2IOHandlerImpl::ArrayOrdering arrayOrdering =
+                ADIOS2IOHandlerImpl::ArrayOrdering::Adios2Default);
 
         static constexpr char const *errorMsg = "ADIOS2: defineVariable()";
     };
