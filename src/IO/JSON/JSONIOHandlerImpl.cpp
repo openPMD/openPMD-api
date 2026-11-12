@@ -46,7 +46,6 @@
 #include <iomanip>
 #include <iostream>
 #include <optional>
-#include <ranges>
 #include <sstream>
 #include <stdexcept>
 
@@ -137,11 +136,15 @@ namespace
         nlohmann::json old;
         auto *accum_ptr = &accum;
         auto *old_ptr = &old;
-        for (auto extent_i : extent | std::views::reverse)
+        // Use reverse iterators explicitly: std::views::reverse is not
+        // available in all C++20 standard libraries that we support
+        // (e.g. libc++ 14).
+        // NOLINTNEXTLINE(modernize-loop-convert)
+        for (auto it = extent.rbegin(); it != extent.rend(); it++)
         {
             std::swap(old_ptr, accum_ptr);
             *accum_ptr = nlohmann::json::array();
-            for (Extent::value_type i = 0; i < extent_i; i++)
+            for (Extent::value_type i = 0; i < *it; i++)
             {
                 (*accum_ptr)[i] = *old_ptr; // copy boi
             }

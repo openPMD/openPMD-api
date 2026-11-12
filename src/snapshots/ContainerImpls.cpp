@@ -29,7 +29,6 @@
 #include <cassert>
 #include <memory>
 #include <optional>
-#include <ranges>
 #include <stdexcept>
 
 namespace openPMD
@@ -388,11 +387,14 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
 auto RandomAccessIteratorContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
-    for (auto &element : m_cont | std::views::reverse)
+    // Use reverse iterators explicitly: std::views::reverse is not available
+    // in all C++20 standard libraries that we support (e.g. libc++ 14).
+    // NOLINTNEXTLINE(modernize-loop-convert)
+    for (auto begin = m_cont.rbegin(); begin != m_cont.rend(); ++begin)
     {
-        if (!element.second.closed())
+        if (!begin->second.closed())
         {
-            return std::make_optional<value_type const *>(&element);
+            return std::make_optional<value_type const *>(&*begin);
         }
     }
     return std::nullopt;
