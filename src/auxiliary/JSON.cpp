@@ -754,13 +754,19 @@ std::string merge(std::string const &defaultValue, std::string const &overwrite)
 }
 
 #if openPMD_HAVE_MPI
+template <typename Communicator>
 std::string merge(
     std::string const &defaultValue,
     std::string const &overwrite,
-    MPI_Comm comm)
+    Communicator communicator)
 {
-    return merge_impl(defaultValue, overwrite, comm);
+    return merge_impl(defaultValue, overwrite, communicator);
 }
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+template std::string
+merge<MPI_Comm>(std::string const &, std::string const &, MPI_Comm);
+#endif
 #endif
 
 nlohmann::json &

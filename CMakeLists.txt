@@ -924,6 +924,23 @@ if(openPMD_BUILD_TESTING)
                 $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
+
+    # Verify that the public headers can be consumed from a library that was
+    # built with MPI support without pulling in <mpi.h>. The assertion is a
+    # compile-time #error in the source file, so building this target is the
+    # actual test.
+    add_executable(NoMpiHeadersTests test/NoMpiHeaders.cpp)
+    openpmd_cxx_required(NoMpiHeadersTests)
+    set_target_properties(NoMpiHeadersTests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
+    target_link_libraries(NoMpiHeadersTests PRIVATE openPMD)
+    add_test(
+        NAME NoMpiHeaders.compile
+        COMMAND ${CMAKE_COMMAND} --build ${openPMD_BINARY_DIR}
+                --target NoMpiHeadersTests)
+    add_test(
+        NAME NoMpiHeaders.run
+        COMMAND NoMpiHeadersTests)
 endif()
 
 if(openPMD_BUILD_CLI_TOOLS)
