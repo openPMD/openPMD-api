@@ -248,7 +248,9 @@ jobs:
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
+      # GCC 12 has -Wrestrict false positives in std::string operations
+      # (e.g. "x" + std::to_string(i)); fixed in newer GCC releases.
+      env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: "-Werror -Wno-restrict"}
       run: |
         # Use this to make the HDF5 plugins available from the C/C++ API.
         export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
