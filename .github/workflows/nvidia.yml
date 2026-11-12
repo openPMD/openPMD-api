@@ -7,8 +7,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests-cuda11:
-    name: CTK@11.2
+  tests-cuda12:
+    name: CTK@12.8
     runs-on: ubuntu-22.04
     if: github.event.pull_request.draft == false
     env: {CXX: nvcc, CXXFLAGS: "--forward-unknown-to-host-compiler -Xcompiler -Werror"}

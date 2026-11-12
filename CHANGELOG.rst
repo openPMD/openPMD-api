@@ -3,6 +3,23 @@
 Changelog
 =========
 
+0.18.0
+------
+**Date:** TBD
+
+C++20
+
+Build
+"""""
+
+- Require C++20 (GCC 10+, Clang 14+, MSVC 19.29+, ICX 2022.0+)
+
+API
+"""
+
+- ``openPMD::Span`` is now an alias for ``std::span``
+- Remove the obsolete ``openPMD_HAS_CXX17`` configuration macro
+
 0.17.0
 ------
 **Date:** 2025-01-17

@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <memory>
 #include <optional>
 
 namespace openPMD::detail
@@ -89,7 +90,7 @@ namespace
             T *dest = reinterpret_cast<T *>(buffer);
             for (size_t i = 0; i < location.len; ++i)
             {
-                new (dest + i) T();
+                std::construct_at(dest + i);
             }
             location.destroy = buffer;
             auto data = attr.Data();
@@ -128,7 +129,7 @@ namespace
             T *destroy = reinterpret_cast<T *>(ptr);
             for (size_t i = 0; i < numItems; ++i)
             {
-                destroy[i].~T();
+                std::destroy_at(destroy + i);
             }
         }
 

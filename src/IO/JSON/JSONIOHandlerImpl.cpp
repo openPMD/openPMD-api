@@ -136,6 +136,10 @@ namespace
         nlohmann::json old;
         auto *accum_ptr = &accum;
         auto *old_ptr = &old;
+        // Use reverse iterators explicitly: std::views::reverse is not
+        // available in all C++20 standard libraries that we support
+        // (e.g. libc++ 14).
+        // NOLINTNEXTLINE(modernize-loop-convert)
         for (auto it = extent.rbegin(); it != extent.rend(); it++)
         {
             std::swap(old_ptr, accum_ptr);
@@ -1863,7 +1867,7 @@ std::string JSONIOHandlerImpl::removeSlashes(std::string s)
 template <typename KeyT>
 bool JSONIOHandlerImpl::hasKey(nlohmann::json const &j, KeyT &&key)
 {
-    return j.find(std::forward<KeyT>(key)) != j.end();
+    return j.contains(std::forward<KeyT>(key));
 }
 
 void JSONIOHandlerImpl::ensurePath(

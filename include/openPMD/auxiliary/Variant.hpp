@@ -112,6 +112,11 @@ namespace auxiliary
     {
         using Ts::operator()...;
     };
+    /*
+     * Keep the explicit deduction guide: aggregate CTAD for base classes
+     * (P1816R0/P2082R1) is not implemented by all supported compilers yet
+     * (e.g. Clang 14-16).
+     */
     template <class... Ts>
     overloaded(Ts...) -> overloaded<Ts...>;
 } // namespace auxiliary

@@ -202,7 +202,7 @@ openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
 #
 # C++ standard: requirements for a target
 function(openpmd_cxx_required target)
-    target_compile_features(${target} PUBLIC cxx_std_17)
+    target_compile_features(${target} PUBLIC cxx_std_20)
     set_target_properties(${target} PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
@@ -211,7 +211,7 @@ endfunction()
 
 # CUDA C++ standard: requirements for a target
 function(openpmd_cuda_required target)
-   target_compile_features(${target} PUBLIC cuda_std_17)
+   target_compile_features(${target} PUBLIC cuda_std_20)
    set_target_properties(${target} PROPERTIES
        CUDA_SEPARABLE_COMPILATION ON
        CUDA_EXTENSIONS OFF

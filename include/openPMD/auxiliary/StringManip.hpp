@@ -44,24 +44,22 @@ namespace auxiliary
 
     inline bool starts_with(std::string const &s, std::string const &prefix)
     {
-        return (s.size() >= prefix.size()) &&
-            (0 == s.compare(0, prefix.size(), prefix));
+        return s.starts_with(prefix);
     }
 
     inline bool starts_with(std::string const &s, char const prefix)
     {
-        return !s.empty() && s[0] == prefix;
+        return s.starts_with(prefix);
     }
 
     inline bool ends_with(std::string const &s, std::string const &suffix)
     {
-        return (s.size() >= suffix.size()) &&
-            (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
+        return s.ends_with(suffix);
     }
 
     inline bool ends_with(std::string const &s, char const suffix)
     {
-        return !s.empty() && s.back() == suffix;
+        return s.ends_with(suffix);
     }
 
     inline std::string replace_first(
@@ -167,7 +165,7 @@ namespace auxiliary
     inline std::string strip(std::string s, std::vector<char> to_remove)
     {
         for (auto const &c : to_remove)
-            s.erase(std::remove(s.begin(), s.end(), c), s.end());
+            std::erase(s, c);
         s.shrink_to_fit();
 
         return s;

@@ -10,7 +10,7 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
 
    <style>
    @media screen and (min-width: 60em) {
-       /* C++17 and Python code samples side-by-side  */
+       /* C++20 and Python code samples side-by-side  */
        #first-read > section > section:nth-of-type(2n+1) {
            float: left;
            width: 48%;
@@ -21,8 +21,8 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
            display: table;
            clear: both;
        }
-       /* only show first C++17 and Python Headline */
-       #first-read > section > section:not(#c-17):not(#python) > h3 {
+       /* only show first C++20 and Python Headline */
+       #first-read > section > section:not(#c-20):not(#python) > h3 {
            display: none;
        }
    }
@@ -48,7 +48,7 @@ Include / Import
 
 After successful :ref:`installation <install>`, you can start using openPMD-api as follows:
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -80,7 +80,7 @@ Open an existing openPMD series in ``data<N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
 ``.bp`` (`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -116,7 +116,7 @@ Iteration
 Grouping by an arbitrary, positive integer number ``<N>`` in a series.
 Let's take the iteration ``100``:
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -136,7 +136,7 @@ Attributes
 openPMD defines a kernel of meta attributes and can always be extended with more.
 Let's see what we've got:
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -166,7 +166,7 @@ Record
 An openPMD record can be either structured (mesh) or unstructured (particles).
 Let's read an electric field:
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -197,7 +197,7 @@ Units
 
 Even without understanding the name "E" we can check the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record to understand its purpose.
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -239,7 +239,7 @@ We can load record components partially and in parallel or at once.
 Reading small data one by one is is a performance killer for I/O.
 Therefore, we register all data to be loaded first and then flush it in collectively.
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -264,7 +264,7 @@ Python
 
 One can also request to load a slice of data:
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -292,7 +292,7 @@ We now flush the registered data chunks and fill them with actual data from the 
 Flushing several chunks at once allows to increase I/O performance significantly.
 **Only after that**, the variables ``x_data`` and ``x_slice_data`` can be read, manipulated and/or deleted.
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -311,7 +311,7 @@ Data
 
 We can now work with the newly loaded data in ``x_data`` (or ``x_slice_data``):
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
@@ -353,7 +353,7 @@ Close
 Finally, the Series is closed when its destructor is called.
 Make sure to have ``flush()`` ed all data loads at this point, otherwise it will be called once more implicitly.
 
-C++17
+C++20
 ^^^^^
 
 .. code-block:: cpp
