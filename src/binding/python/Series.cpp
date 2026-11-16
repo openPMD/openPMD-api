@@ -619,9 +619,12 @@ Parameters:
                  otherwise as a TOML string.
         )END"[1];
 
+    // Select the two-argument overload explicitly: json::merge is an overload
+    // set that also contains a function template (the communicator overload),
+    // so py::overload_cast cannot deduce it.
     m.def(
          "merge_json",
-         py::overload_cast<std::string const &, std::string const &>(
+         static_cast<std::string (*)(std::string const &, std::string const &)>(
              &json::merge),
          py::arg("default_value") = "{}",
          py::arg("overwrite") = "{}",

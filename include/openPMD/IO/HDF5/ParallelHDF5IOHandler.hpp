@@ -24,6 +24,10 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/config.hpp"
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <future>
 #include <memory>
 #include <string>

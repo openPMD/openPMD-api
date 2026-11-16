@@ -240,7 +240,8 @@ bool remove_file(std::string const &path)
 
 #if openPMD_HAVE_MPI
 
-std::string collective_file_read(std::string const &path, MPI_Comm comm)
+template <typename Communicator>
+std::string collective_file_read(std::string const &path, Communicator comm)
 {
     int rank, size;
     MPI_Comm_rank(comm, &rank);
@@ -287,6 +288,11 @@ std::string collective_file_read(std::string const &path, MPI_Comm comm)
     }
     return res;
 }
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+template std::string
+collective_file_read<MPI_Comm>(std::string const &, MPI_Comm);
+#endif
 
 #endif
 
