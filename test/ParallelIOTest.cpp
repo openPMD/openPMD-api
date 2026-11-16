@@ -1309,6 +1309,33 @@ void adios2_streaming(bool variableBasedLayout)
 
     constexpr size_t extent = 100;
 
+    /*
+     * Remove stale contact files from previous (possibly failed) runs before
+     * any rank opens the stream. Otherwise the reader might connect to a
+     * writer that no longer exists and hang until the open timeout expires.
+     * Only synchronize explicitly in the two-rank case: with more ranks, the
+     * early return above would leave no matching barrier on the other ranks.
+     */
+    if (size == 2)
+    {
+        if (rank == 0)
+        {
+            auxiliary::remove_file("../samples/adios2_stream.sst");
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    /*
+     * Use the portable WAN transport instead of whatever data transport
+     * ADIOS2 was compiled with as default (e.g. UCX or RDMA). The default
+     * transport is system-specific and may hang on some systems, which made
+     * this test fail depending on the machine.
+     */
+    auto const sstConfig = std::string{R"(
+adios2.engine.type = "sst"
+adios2.engine.parameters.DataTransport = "WAN"
+)"};
+
     if (rank == 0)
     {
         // write
@@ -1316,9 +1343,8 @@ void adios2_streaming(bool variableBasedLayout)
             "../samples/adios2_stream.sst",
             Access::CREATE_LINEAR,
             variableBasedLayout
-                ? "adios2.engine.type = \"sst\""
-                : "adios2.engine.type = \"sst\"\niteration_encoding = "
-                  "\"group_based\"");
+                ? sstConfig
+                : sstConfig + "iteration_encoding = \"group_based\"\n");
         if (variableBasedLayout)
         {
             writeSeries.setIterationEncoding(IterationEncoding::variableBased);
@@ -1351,14 +1377,6 @@ void adios2_streaming(bool variableBasedLayout)
         // via JSON without difference
 
         /*
-         * Sleep for a second so the writer comes first.
-         * If a previous run of the parallel IO tests left a stale .sst file,
-         * this avoids that the reader sees that file.
-         */
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(1s);
-
-        /*
          * READ_LINEAR always works in Streaming, but READ_ONLY must stay
          * working at least for groupbased iteration encoding
          */
@@ -1366,7 +1384,7 @@ void adios2_streaming(bool variableBasedLayout)
             "../samples/adios2_stream.sst",
             variableBasedLayout ? Access::READ_LINEAR : Access::READ_ONLY,
             // inline TOML
-            R"(defer_iteration_parsing = true)");
+            sstConfig + "defer_iteration_parsing = true\n");
 
         size_t last_iteration_index = 0;
         for (auto iteration : readSeries.readIterations())
