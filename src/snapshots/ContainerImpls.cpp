@@ -243,9 +243,7 @@ auto StatefulSnapshotsContainer::operator[](key_type const &key)
     {
         throw std::runtime_error("Stateful iteration on a read-write Series.");
     }
-    else if (
-        access::read(access) ||
-        s.series.iterations.find(key) != s.series.iterations.end())
+    else if (access::read(access) || s.series.iterations.contains(key))
     {
         return at(key);
     }
@@ -389,6 +387,9 @@ RandomAccessIteratorContainer &RandomAccessIteratorContainer::operator=(
 auto RandomAccessIteratorContainer::currentIteration() const
     -> std::optional<value_type const *>
 {
+    // Use reverse iterators explicitly: std::views::reverse is not available
+    // in all C++20 standard libraries that we support (e.g. libc++ 14).
+    // NOLINTNEXTLINE(modernize-loop-convert)
     for (auto begin = m_cont.rbegin(); begin != m_cont.rend(); ++begin)
     {
         if (!begin->second.closed())

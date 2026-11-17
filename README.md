@@ -30,9 +30,9 @@ Writing & reading through those backends and their associated files are supporte
 
 ### C++
 
-[![C++17][api-cpp]](https://isocpp.org/) ![C++17 API: Beta][dev-beta]
+[![C++20][api-cpp]](https://isocpp.org/) ![C++20 API: Beta][dev-beta]
 
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B17-yellowgreen "C++17 API"
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B20-yellowgreen "C++20 API"
 [dev-beta]: https://img.shields.io/badge/phase-beta-yellowgreen "Status: Beta"
 
 ```cpp
@@ -97,7 +97,7 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.22.0+
-* C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
+* C++20 capable compiler, e.g., g++ 10+, clang 14+, MSVC 19.29+, icpx 2022.0+
 
 Shipped internally (downloaded by CMake unless `openPMD_SUPERBUILD=OFF` is set):
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numbers>
 
 int main()
 {
@@ -233,7 +234,7 @@ int main()
 
         mesh["y"].resetDataset(d);
         mesh["y"].setUnitSI(4);
-        double constant_value = 0.3183098861837907;
+        double constant_value = std::numbers::inv_pi;
         // for datasets that contain a single unique value, openPMD offers
         // constant records
         mesh["y"].makeConstant(constant_value);
