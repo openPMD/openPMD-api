@@ -9,6 +9,7 @@
       }
     },
     "dataset": {
+      "array_ordering": "adios2_default",
       "operators": [
         {
           "type": "blosc",
