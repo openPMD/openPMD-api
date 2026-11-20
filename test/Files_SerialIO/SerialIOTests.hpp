@@ -20,6 +20,11 @@
  */
 #include <openPMD/openPMD.hpp>
 
+#include <string>
+#include <vector>
+
+std::vector<std::string> testedFileExtensions();
+
 namespace filebased_write_test
 {
 auto close_and_reopen_iterations(std::string const &filename) -> void;
@@ -43,4 +48,8 @@ auto read_while_writing() -> void;
 namespace file_state_lifetime
 {
 auto file_state_lifetime() -> void;
+}
+namespace append_after_snapshot
+{
+auto append_after_snapshot() -> void;
 }
