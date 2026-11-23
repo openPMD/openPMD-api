@@ -8,6 +8,7 @@ License: LGPLv3+
 """
 
 import numpy as np
+
 from openpmd_api import Access, Dataset, Mesh_Record_Component, Series, Unit_Dimension
 
 SCALAR = Mesh_Record_Component.SCALAR

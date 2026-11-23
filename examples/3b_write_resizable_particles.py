@@ -8,6 +8,7 @@ License: LGPLv3+
 """
 
 import numpy as np
+
 import openpmd_api as io
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ License: LGPLv3+
 """
 
 import numpy as np
+
 import openpmd_api as io
 
 if __name__ == "__main__":
@@ -30,7 +31,7 @@ if __name__ == "__main__":
         num_fields, N_r, N_z
     )
 
-    geometry_parameters = "m={0};imag=+".format(num_modes)
+    geometry_parameters = f"m={num_modes};imag=+"
 
     E = series.snapshots()[0].meshes["E"]
     E.geometry = io.Geometry.thetaMode
