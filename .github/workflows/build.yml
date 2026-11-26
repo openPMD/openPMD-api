@@ -82,7 +82,9 @@ jobs:
           # Apple Silicon M1/arm64/aarch64 builds:
           #   https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
           #   https://github.com/pypa/cibuildwheel/pull/704
-          - os: macos-14
+          # macOS 14 runner images were retired on 2026-11-02; build on macOS 15
+          # but keep targeting macOS 14.0 (unchanged wheel compatibility).
+          - os: macos-15
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
