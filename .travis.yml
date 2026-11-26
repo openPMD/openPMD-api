@@ -10,7 +10,7 @@ env:
   global:
     - OPENPMD_GIT_REF="0.17.1"
 
-    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.10"
+    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.11"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
@@ -31,45 +31,35 @@ jobs:
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp310-manylinux_aarch64 cp311-manylinux_aarch64"
+        - CIBW_BUILD="cp311-manylinux_aarch64 cp312-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp312-manylinux_aarch64 cp313-manylinux_aarch64"
+        - CIBW_BUILD="cp313-manylinux_aarch64 cp314-manylinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp314-manylinux_aarch64"
-    - services: docker
-      arch: arm64
-      dist: focal
-      env:
-        - CIBW_BUILD="pp310-manylinux_aarch64"
+        - CIBW_BUILD="cp315-manylinux_aarch64"
     # +musllinux
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp310-musllinux_aarch64 cp311-musllinux_aarch64"
+        - CIBW_BUILD="cp311-musllinux_aarch64 cp312-musllinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp312-musllinux_aarch64 cp313-musllinux_aarch64"
+        - CIBW_BUILD="cp313-musllinux_aarch64 cp314-musllinux_aarch64"
     - services: docker
       arch: arm64
       dist: focal
       env:
-        - CIBW_BUILD="cp314-musllinux_aarch64"
+        - CIBW_BUILD="cp315-musllinux_aarch64"
 
     # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="cp310-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -94,7 +84,7 @@ jobs:
       arch: ppc64le
       dist: focal
       env:
-        - CIBW_BUILD="cp310-musllinux_ppc64le"
+        - CIBW_BUILD="cp315-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
@@ -115,6 +105,11 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="cp314-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp315-musllinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
@@ -139,7 +134,7 @@ install:
   # be co-loaded with another extension that also embeds them (ImpactX/WarpX).
   - (cd src && git apply ../python-hide-symbols.patch)
   - python -m pip install --upgrade pip setuptools wheel
-  - python -m pip install cibuildwheel==4.1.0
+  - python -m pip install cibuildwheel==4.3.5
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
