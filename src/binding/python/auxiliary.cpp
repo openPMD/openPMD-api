@@ -23,11 +23,11 @@
 
 namespace auxiliary
 {
-auto json_dumps(py::object const &obj) -> std::string
+auto json_dumps(nb::object const &obj) -> std::string
 {
-    py::module_ json = py::module_::import("json");
+    nb::module_ json = nb::module_::import_("json");
     auto dumps = json.attr("dumps");
     auto dumped = dumps(obj);
-    return py::cast<std::string>(dumped);
+    return nb::cast<std::string>(dumped);
 }
 } // namespace auxiliary

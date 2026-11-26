@@ -28,20 +28,20 @@
 #include <string>
 #include <vector>
 
-void init_Helper(py::module &m)
+void init_Helper(nb::module_ &m)
 {
     m.def(
          "list_series",
          [](Series &series, bool const longer) {
              std::stringstream s;
              helper::listSeries(series, longer, s);
-             py::print(s.str());
+             nb::print(s.str().c_str());
          },
-         py::arg("series"),
-         py::arg("longer") = false,
+         nb::arg("series"),
+         nb::arg("longer") = false,
          "List information about an openPMD data series")
         // CLI entry point
         .def(
             "_ls_run", // &cli::ls::run
-            [](std::vector<std::string> &argv) { return cli::ls::run(argv); });
+            [](std::vector<std::string> argv) { return cli::ls::run(argv); });
 }

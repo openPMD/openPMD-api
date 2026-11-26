@@ -35,9 +35,9 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
-#include <pybind11/attr.h>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 namespace openPMD
 {
@@ -47,38 +47,18 @@ namespace openPMD
  *
  * BSD-style license, see pybind11 LICENSE file.
  */
-template <typename Map, typename... Args>
-py::class_<Map, std::unique_ptr<Map>, Args...> declare_container(
-    py::handle scope,
+template <typename Map, typename... Base>
+nb::class_<Map, Base...> declare_container(
+    nb::handle scope,
     std::string const &name,
     std::optional<std::string> docstring = std::nullopt)
 {
-    using holder_type = std::unique_ptr<Map>;
-    using KeyType = typename Map::key_type;
-    using MappedType = typename Map::mapped_type;
-    using Class_ = py::class_<Map, holder_type, Args...>;
-
-    // If either type is a non-module-local bound type then make the map
-    // binding non-local as well; otherwise (e.g. both types are either
-    // module-local or converting) the map will be module-local.
-    auto tinfo = py::detail::get_type_info(typeid(MappedType));
-    bool local = !tinfo || tinfo->module_local;
-    if (local)
-    {
-        tinfo = py::detail::get_type_info(typeid(KeyType));
-        local = !tinfo || tinfo->module_local;
-    }
+    using Class_ = nb::class_<Map, Base...>;
 
     Class_ cl = docstring.has_value()
-        ? Class_(
-              scope, name.c_str(), docstring->c_str(),
-              py::module_local(local))
-        : Class_(scope, name.c_str(), py::module_local(local));
-
-    // cl.def(py::init<Map const &>());
-
-    // Register stream insertion operator (if possible)
-    py::detail::map_if_insertion_operator<Map, Class_>(cl, name);
+        ? python::bind_class<Map, Base...>(
+              scope, name.c_str(), docstring->c_str())
+        : python::bind_class<Map, Base...>(scope, name.c_str());
 
     cl.def(
         "__bool__",
@@ -87,9 +67,12 @@ py::class_<Map, std::unique_ptr<Map>, Args...> declare_container(
 
     cl.def(
         "__iter__",
-        [](Map &m) { return py::make_key_iterator(m.begin(), m.end()); },
+        [](Map &m) {
+            return nb::make_key_iterator<nb::rv_policy::copy>(
+                nb::type<Map>(), "KeyIterator", m.begin(), m.end());
+        },
         // keep container alive while iterator exists
-        py::keep_alive<0, 1>());
+        nb::keep_alive<0, 1>());
 
     // overwrite to avoid that the __len__ of Attributable is used
     cl.def(
@@ -124,9 +107,14 @@ Class_ finalize_container(Class_ cl, bool skip_getitem = false)
 
     cl.def(
         "items",
-        [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
+        [](Map &m) {
+            // All objects in the openPMD object model are handles, so
+            // returning copies is safe and still performant.
+            return nb::make_iterator<nb::rv_policy::copy>(
+                nb::type<Map>(), "ItemIterator", m.begin(), m.end());
+        },
         // keep container alive while iterator exists
-        py::keep_alive<0, 1>());
+        nb::keep_alive<0, 1>());
 
     if (!skip_getitem)
     {
@@ -137,24 +125,54 @@ Class_ finalize_container(Class_ cl, bool skip_getitem = false)
             // copy + keepalive
             // All objects in the openPMD object model are handles, so using a
             // copy is safer and still performant.
-            py::return_value_policy::move,
-            py::keep_alive<0, 1>());
+            nb::rv_policy::move,
+            nb::keep_alive<0, 1>());
     }
 
     // Assignment provided only if the type is copyable
-    py::detail::map_assignment<Map, Class_>(cl);
+    if constexpr (std::is_copy_assignable_v<MappedType>)
+    {
+        cl.def(
+            "__setitem__", [](Map &m, KeyType const &k, MappedType const &v) {
+                auto it = m.find(k);
+                if (it != m.end())
+                {
+                    it->second = v;
+                }
+                else
+                {
+                    m.emplace(k, v);
+                }
+            });
+    }
+    else if constexpr (std::is_copy_constructible_v<MappedType>)
+    {
+        cl.def(
+            "__setitem__", [](Map &m, KeyType const &k, MappedType const &v) {
+                // We can't use m[k] = v; because value type might not be
+                // default constructable
+                auto r = m.emplace(k, v);
+                if (!r.second)
+                {
+                    // value type is not copy assignable so the only way to
+                    // insert it is to erase it first...
+                    m.erase(r.first);
+                    m.emplace(k, v);
+                }
+            });
+    }
 
     cl.def("__delitem__", [](Map &m, KeyType const &k) {
         auto it = m.find(k);
         if (it == m.end())
-            throw py::key_error();
+            throw nb::key_error();
         m.erase(it);
     });
 
     cl.def("__len__", &Map::size);
 
     cl.def("_ipython_key_completions_", [](Map &m) {
-        auto l = py::list();
+        auto l = nb::list();
         for (const auto &myPair : m)
             l.append(myPair.first);
         return l;

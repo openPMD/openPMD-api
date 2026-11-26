@@ -4,7 +4,7 @@ requires = [
     "wheel",
     "cmake>=3.22.0",
     "packaging>=23",
-    "pybind11>=2.13.0,<3.0.0"
+    "nanobind>=3.0.0"
 ]
 build-backend = "setuptools.build_meta"
 

@@ -24,7 +24,6 @@ Supported frontends are C++11 and Python3.
         g++ \
         ipython3 \
         python3-dev \
-        pybind11-dev \
         libglib2.0-dev libbz2-dev libibverbs-dev libnetcdf-dev \
         libhdf5-dev && \
     rm -rf /var/lib/apt/lists/*

@@ -3,6 +3,22 @@
 Upgrade Guide
 =============
 
+0.18.0
+------
+
+The Python bindings are now implemented with `nanobind <https://github.com/wjakob/nanobind>`__ instead of pybind11.
+nanobind 3.0.0 is now the minimally supported version for Python support.
+The CMake options ``openPMD_USE_INTERNAL_PYBIND11`` and ``openPMD_pybind11_*`` are renamed to ``openPMD_USE_INTERNAL_NANOBIND`` and ``openPMD_nanobind_*``.
+
+Visible changes in the Python API:
+
+* Enumerations such as ``Access`` and ``Datatype`` are now Python ``enum.Enum`` types, which changes their ``repr()``.
+* Record classes that may also be scalar record components (e.g. ``Mesh``, ``Record``) still provide all record component methods, but are no longer subclasses of the record component classes in Python, e.g. ``isinstance(mesh, Mesh_Record_Component)`` is ``False``.
+* ``Unit_Dimension.from_index()``, ``Unit_Dimension.as_array()``, ``Unit_Dimension.as_map()``, ``Unit_Dimension.as_arrays()`` and ``Unit_Dimension.as_maps()`` are static functions.
+* ``Iterations`` is an alias for ``Iteration_Container``.
+* The unused classes ``Attribute_Keys`` and ``RankMeta`` were removed, Python lists and dicts are used instead.
+
+
 0.17.0
 ------
 

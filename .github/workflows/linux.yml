@@ -283,7 +283,7 @@ jobs:
       run: |
         share/openPMD/download_samples.sh build
         # Run a debug build,
-        # Pybind has some builtin checks only activated in debug mode.
+        # The Python bindings have some builtin checks only activated in debug mode.
         cmake -S . -B build                  \
           -DopenPMD_USE_PYTHON=ON            \
           -DopenPMD_USE_MPI=ON               \

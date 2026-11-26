@@ -10,19 +10,19 @@
 
 #include "openPMD/binding/python/Common.hpp"
 
-void init_Error(py::module &m)
+void init_Error(nb::module_ &m)
 {
-    auto &baseError = py::register_exception<Error>(m, "Error");
-    py::register_exception<error::OperationUnsupportedInBackend>(
+    // nanobind tries exception translators in reverse order of registration,
+    // so the base class must be registered first
+    nb::exception<Error> baseError(m, "Error");
+    nb::exception<error::OperationUnsupportedInBackend>(
         m, "ErrorOperationUnsupportedInBackend", baseError);
-    py::register_exception<error::WrongAPIUsage>(
-        m, "ErrorWrongAPIUsage", baseError);
-    py::register_exception<error::BackendConfigSchema>(
+    nb::exception<error::WrongAPIUsage>(m, "ErrorWrongAPIUsage", baseError);
+    nb::exception<error::BackendConfigSchema>(
         m, "ErrorBackendConfigSchema", baseError);
-    py::register_exception<error::Internal>(m, "ErrorInternal", baseError);
-    py::register_exception<error::NoSuchAttribute>(
-        m, "ErrorNoSuchAttribute", baseError);
-    py::register_exception<error::IllegalInOpenPMDStandard>(
+    nb::exception<error::Internal>(m, "ErrorInternal", baseError);
+    nb::exception<error::NoSuchAttribute>(m, "ErrorNoSuchAttribute", baseError);
+    nb::exception<error::IllegalInOpenPMDStandard>(
         m, "ErrorIllegalInOpenPMDStandard", baseError);
 
 #ifndef NDEBUG

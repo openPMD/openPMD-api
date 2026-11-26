@@ -34,8 +34,6 @@
 #include "openPMD/snapshots/StatefulIterator.hpp"
 
 #include <optional>
-#include <pybind11/attr.h>
-#include <pybind11/gil.h>
 #include <stdexcept>
 #include <tuple>
 
@@ -63,15 +61,15 @@ struct DefineSeriesConstructorPerPathType
         return str;
     }
 
-    static auto json_cfg_as_string(py::object const &obj) -> std::string
+    static auto json_cfg_as_string(nb::object const &obj) -> std::string
     {
 #if !openPMD_USE_FILESYSTEM_HEADER
-        auto type_repr = py::repr(obj).cast<std::string>();
+        auto type_repr = nb::cast<std::string>(nb::repr(obj));
         if (type_repr.substr(0, 9) == "PosixPath" ||
             type_repr.substr(0, 11) == "WindowsPath")
         {
             auto casted = obj.attr("__str__")();
-            return "@" + py::cast<std::string>(casted);
+            return "@" + nb::cast<std::string>(casted);
         }
 #endif
         return ::auxiliary::json_dumps(obj);
@@ -98,9 +96,9 @@ struct DefineSeriesConstructorPerPathType
         return path;
     }
 #else
-    static auto filepath_as_string(py::object const &path) -> std::string
+    static auto filepath_as_string(nb::object const &path) -> std::string
     {
-        auto type_repr = py::repr(path).cast<std::string>();
+        auto type_repr = nb::cast<std::string>(nb::repr(path));
         if (type_repr.substr(0, 9) != "PosixPath" &&
             type_repr.substr(0, 11) != "WindowsPath")
         {
@@ -109,26 +107,28 @@ struct DefineSeriesConstructorPerPathType
                 "a String or pathlib.Path.");
         }
         auto casted = path.attr("__str__")();
-        return py::cast<std::string>(casted);
+        return nb::cast<std::string>(casted);
     }
 #endif
 
     template <typename PathType, typename JsonCfgType>
-    static void call(py::class_<Series, Attributable> &py_class)
+    static void call(nb::class_<Series, Attributable> &py_class)
     {
         py_class
             .def(
-                py::init([](PathType const &filepath,
-                            Access at,
-                            JsonCfgType const &options) {
+                "__init__",
+                [](Series *self,
+                   PathType const &filepath,
+                   Access at,
+                   JsonCfgType const &options) {
                     decltype(auto) filepath_ = filepath_as_string(filepath);
                     decltype(auto) options_ = json_cfg_as_string(options);
-                    py::gil_scoped_release release;
-                    return new Series(filepath_, at, options_);
-                }),
-                py::arg("filepath"),
-                py::arg("access"),
-                py::arg("options") = "{}",
+                    nb::gil_scoped_release release;
+                    new (self) Series(filepath_, at, options_);
+                },
+                nb::arg("filepath"),
+                nb::arg("access"),
+                nb::arg("options") = "{}",
                 R"END(
 Construct a new Series. Parameters:
 
@@ -181,10 +181,12 @@ It will be replaced with an automatically determined file name extension:
             )END")
 #if openPMD_HAVE_MPI
             .def(
-                py::init([](PathType const &filepath,
-                            Access at,
-                            py::object &comm,
-                            JsonCfgType const &options) {
+                "__init__",
+                [](Series *self,
+                   PathType const &filepath,
+                   Access at,
+                   nb::object &comm,
+                   JsonCfgType const &options) {
                     decltype(auto) filepath_ = filepath_as_string(filepath);
                     decltype(auto) options_ = json_cfg_as_string(options);
                     auto variant = pythonObjectAsMpiComm(comm);
@@ -201,31 +203,31 @@ It will be replaced with an automatically determined file name extension:
                         case py_object_to_mpi_comm_error::error_type::
                             is_not_an_mpi_communicator:
                             /*
-                             * Since this overload accepts py::object for an MPI
+                             * Since this overload accepts nb::object for an MPI
                              * communicator, we need to test if this is actually
                              * an MPI communicator. If not, this is not
                              * immediately an error, we might have just tried to
                              * call the wrong overload. Go back to trying the
-                             * other overloads by throwing to pybind.
+                             * other overloads by throwing to nanobind.
                              */
-                            throw py::reference_cast_error();
+                            throw nb::next_overload();
                         }
                         throw std::runtime_error("Unreachable!");
                     }
                     else
                     {
-                        py::gil_scoped_release release;
-                        return new Series(
+                        nb::gil_scoped_release release;
+                        new (self) Series(
                             filepath_,
                             at,
                             std::get<MPI_Comm>(variant),
                             options_);
                     }
-                }),
-                py::arg("filepath"),
-                py::arg("access"),
-                py::arg("mpi_communicator"),
-                py::arg("options") = "{}",
+                },
+                nb::arg("filepath"),
+                nb::arg("access"),
+                nb::arg("mpi_communicator"),
+                nb::arg("options") = "{}",
                 R"END(
 Construct a new Series. Parameters:
 
@@ -258,10 +260,10 @@ struct StatefulIteratorPythonAdaptor : LegacyIteratorAdaptor
     bool first_iteration = true;
 };
 
-void init_Series(py::module &m)
+void init_Series(nb::module_ &m)
 {
-    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
-        .def_readonly("iteration_index", &IndexedIteration::iterationIndex);
+    python::bind_class<IndexedIteration, Iteration>(m, "IndexedIteration")
+        .def_ro("iteration_index", &IndexedIteration::iterationIndex);
 
     auto snapshots =
         declare_container<Snapshots, Attributable>(m, "Snapshots", R"END(
@@ -281,12 +283,12 @@ not possible once it has been closed.
             .def(
                 "__getitem__",
                 [](Snapshots &s, Series::IterationIndex_t key) {
-                    py::gil_scoped_release release;
+                    nb::gil_scoped_release release;
                     return s[key];
                 },
                 // copy + keepalive
-                py::return_value_policy::copy,
-                py::keep_alive<0, 1>())
+                nb::rv_policy::copy,
+                nb::keep_alive<0, 1>())
             .def(
                 "current_iteration",
                 [](Snapshots &s) -> std::optional<IndexedIteration> {
@@ -300,26 +302,26 @@ not possible once it has been closed.
                         return std::nullopt;
                     }
                 },
-                py::keep_alive<0, 1>(),
+                nb::keep_alive<0, 1>(),
                 "Return the iteration that is currently being written to, if "
                 "it "
                 "exists.");
     finalize_container<Snapshots>(snapshots, /* skip_getitem = */ true);
 
-    py::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
+    nb::class_<StatefulIteratorPythonAdaptor>(m, "StatefulIterator")
         /*
          * Note: This does NOT copy at C++ level, but at Python level (note the
-         * parameter type py::object) and is hence a shallow copy. The returned
+         * parameter type nb::object) and is hence a shallow copy. The returned
          * iterator is the same instance as the provided. This is the correct
          * choice for stateful shared iterators.
          */
-        .def("__iter__", [](py::object self) { return self; })
+        .def("__iter__", [](nb::object self) { return self; })
         .def(
             "__next__",
             [](StatefulIteratorPythonAdaptor &iterator) {
                 if (iterator == ReadIterations::end())
                 {
-                    throw py::stop_iteration();
+                    throw nb::stop_iteration();
                 }
                 /*
                  * Closing the iteration must happen under the GIL lock since
@@ -327,13 +329,13 @@ not possible once it has been closed.
                  */
                 if (!iterator.first_iteration)
                 {
-                    py::gil_scoped_release release;
+                    nb::gil_scoped_release release;
                     ++iterator;
                 }
                 iterator.first_iteration = false;
                 if (iterator == ReadIterations::end())
                 {
-                    throw py::stop_iteration();
+                    throw nb::stop_iteration();
                 }
                 else
                 {
@@ -343,7 +345,7 @@ not possible once it has been closed.
 
         );
 
-    py::class_<ReadIterations>(m, "ReadIterations", R"END(
+    nb::class_<ReadIterations>(m, "ReadIterations", R"END(
 Reading side of the streaming API.
 
 Create instance via Series.readIterations().
@@ -363,26 +365,22 @@ not possible once it has been closed.
                 // Simple iterator implementation:
                 // But we need to release the GIL inside
                 // StatefulIterator::operator++, so manually it is
-                // return py::make_iterator(
+                // return nb::make_iterator(
                 //     readIterations.begin(), readIterations.end());
                 return StatefulIteratorPythonAdaptor(readIterations.begin());
             },
             // keep handle alive while iterator exists
-            py::keep_alive<0, 1>());
+            nb::keep_alive<0, 1>());
 
-    py::enum_<SnapshotWorkflow>(m, "SnapshotWorkflow")
+    nb::enum_<SnapshotWorkflow>(m, "SnapshotWorkflow")
         .value("random_access", SnapshotWorkflow::RandomAccess)
         .value("synchronous", SnapshotWorkflow::Synchronous);
 
-    py::class_<
-        Iterations,
-        // huh, do we not declare this anywhere???
-        // Container<Iteration, Iteration::IterationIndex_t>,
-        Attributable>
-        iterations(m, "Iterations");
-    (void)iterations;
+    // Iterations is bound as Iteration_Container in init_Iteration(),
+    // nanobind does not allow binding a type twice
+    m.attr("Iterations") = m.attr("Iteration_Container");
 
-    py::class_<Series, Attributable> cl(m, "Series");
+    auto cl = python::bind_class<Series, Attributable>(m, "Series");
 
     ::auxiliary::ForEachTypeNested<
         ::internal::DefineSeriesConstructorPerPathType,
@@ -390,14 +388,14 @@ not possible once it has been closed.
         // path argument types
         std::tuple<std::string, std::filesystem::path>,
         // config argument types
-        std::tuple<std::string, std::filesystem::path, py::object>
+        std::tuple<std::string, std::filesystem::path, nb::object>
 #else
         // path argument types
-        std::tuple<std::string, py::object>,
+        std::tuple<std::string, nb::object>,
         // config argument types
-        std::tuple<std::string, py::object>
+        std::tuple<std::string, nb::object>
 #endif
-        >::template call<py::class_<Series, Attributable> &>(cl);
+        >::template call<nb::class_<Series, Attributable> &>(cl);
     //                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     // need to explicitly state template parameters, otherwise Clang on
     // Windows does not understand that it really is a template
@@ -427,61 +425,60 @@ The Series will be evaluated as false in boolean contexts after calling
 this method.
         )")
 
-        .def_property("openPMD", &Series::openPMD, &Series::setOpenPMD)
-        .def_property(
+        .def_prop_rw("openPMD", &Series::openPMD, &Series::setOpenPMD)
+        .def_prop_rw(
             "openPMD_extension",
             &Series::openPMDextension,
             &Series::setOpenPMDextension)
-        .def_property("base_path", &Series::basePath, &Series::setBasePath)
-        .def_property(
-            "meshes_path", &Series::meshesPath, &Series::setMeshesPath)
-        .def_property_readonly("has_rank_table_read", &Series::hasRankTableRead)
-        .def("get_rank_table", &Series::rankTable, py::arg("collective"))
-        .def("set_rank_table", &Series::setRankTable, py::arg("my_rank_info"))
-        .def_property(
+        .def_prop_rw("base_path", &Series::basePath, &Series::setBasePath)
+        .def_prop_rw("meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+        .def_prop_ro("has_rank_table_read", &Series::hasRankTableRead)
+        .def("get_rank_table", &Series::rankTable, nb::arg("collective"))
+        .def("set_rank_table", &Series::setRankTable, nb::arg("my_rank_info"))
+        .def_prop_rw(
             "particles_path", &Series::particlesPath, &Series::setParticlesPath)
-        .def_property("author", &Series::author, &Series::setAuthor)
-        .def_property(
+        .def_prop_rw("author", &Series::author, &Series::setAuthor)
+        .def_prop_rw(
             "machine",
             &Series::machine,
             &Series::setMachine,
             "Indicate the machine or relevant hardware that created the file.")
-        .def_property_readonly("software", &Series::software)
+        .def_prop_ro("software", &Series::software)
         .def(
             "set_software",
             &Series::setSoftware,
-            py::arg("name"),
-            py::arg("version") = std::string("unspecified"))
-        .def_property_readonly("software_version", &Series::softwareVersion)
+            nb::arg("name"),
+            nb::arg("version") = std::string("unspecified"))
+        .def_prop_ro("software_version", &Series::softwareVersion)
         .def(
             "set_software_version",
             [](Series &s, std::string const &softwareVersion) {
-                py::print(
+                nb::print(
                     "Series.set_software_version is deprecated. Set the "
                     "version with the second argument of Series.set_software");
                 s.setSoftware(s.software(), softwareVersion);
             })
         // softwareDependencies
         // machine
-        .def_property("date", &Series::date, &Series::setDate)
-        .def_property(
+        .def_prop_rw("date", &Series::date, &Series::setDate)
+        .def_prop_rw(
             "iteration_encoding",
             &Series::iterationEncoding,
             &Series::setIterationEncoding)
-        .def_property(
+        .def_prop_rw(
             "iteration_format",
             &Series::iterationFormat,
             &Series::setIterationFormat)
-        .def_property("name", &Series::name, &Series::setName)
+        .def_prop_rw("name", &Series::name, &Series::setName)
         .def(
             "flush",
             [](Series &s, std::string const &backend_config) {
-                py::gil_scoped_release release_gil;
+                nb::gil_scoped_release release_gil;
                 s.flush(backend_config);
             },
-            py::arg("backend_config") = "{}")
+            nb::arg("backend_config") = "{}")
 
-        .def_property_readonly(
+        .def_prop_ro(
             "backend", static_cast<std::string (Series::*)()>(&Series::backend))
 
         // TODO remove in future versions (deprecated)
@@ -496,20 +493,19 @@ this method.
         .def("set_iteration_format", &Series::setIterationFormat)
         .def("set_name", &Series::setName)
 
-        .def_property_readonly(
+        .def_prop_ro(
             "iterations",
-            py::cpp_function(
-                [](Series &s) { return s.iterations; },
-                py::return_value_policy::copy,
-                // garbage collection: return value must be freed before Series
-                py::keep_alive<0, 1>()))
+            [](Series &s) { return s.iterations; },
+            nb::rv_policy::copy,
+            // garbage collection: return value must be freed before Series
+            nb::keep_alive<0, 1>())
         .def(
             "read_iterations",
             [](Series &s) {
-                py::gil_scoped_release release;
+                nb::gil_scoped_release release;
                 return s.readIterations();
             },
-            py::keep_alive<0, 1>(),
+            nb::keep_alive<0, 1>(),
             R"END(
 Entry point to the reading end of the streaming API.
 
@@ -526,7 +522,7 @@ Look for the ReadIterations class for further documentation.
         .def(
             "parse_base",
             [](Series &s) {
-                py::gil_scoped_release release;
+                nb::gil_scoped_release release;
                 s.parseBase();
             },
             &R"END(
@@ -545,7 +541,7 @@ first step is parsed.)END"[1])
         .def(
             "write_iterations",
             &Series::writeIterations,
-            py::keep_alive<0, 1>(),
+            nb::keep_alive<0, 1>(),
             R"END(
 Entry point to the writing end of the streaming API.
 
@@ -564,7 +560,7 @@ Look for the WriteIterations class for further documentation.
         .def(
             "snapshots",
             &Series::snapshots,
-            py::keep_alive<0, 1>(),
+            nb::keep_alive<0, 1>(),
             "TODO FILL IN DOCUMENTATION");
 
     add_pickle(
@@ -621,17 +617,17 @@ Parameters:
 
     m.def(
          "merge_json",
-         py::overload_cast<std::string const &, std::string const &>(
+         nb::overload_cast<std::string const &, std::string const &>(
              &json::merge),
-         py::arg("default_value") = "{}",
-         py::arg("overwrite") = "{}",
+         nb::arg("default_value") = "{}",
+         nb::arg("overwrite") = "{}",
          docs_merge_json)
 #if openPMD_HAVE_MPI
         .def(
             "merge_json",
             [](std::string const &default_value,
                std::string const &overwrite,
-               py::object &comm) {
+               nb::object &comm) {
                 auto variant = pythonObjectAsMpiComm(comm);
                 if (auto errorMsg =
                         std::get_if<py_object_to_mpi_comm_error>(&variant))
@@ -641,14 +637,14 @@ Parameters:
                 }
                 else
                 {
-                    py::gil_scoped_release release;
+                    nb::gil_scoped_release release;
                     return json::merge(
                         default_value, overwrite, std::get<MPI_Comm>(variant));
                 }
             },
-            py::arg("default_value") = "{}",
-            py::arg("overwrite") = "{}",
-            py::arg("comm"),
+            nb::arg("default_value") = "{}",
+            nb::arg("overwrite") = "{}",
+            nb::arg("comm"),
             docs_merge_json)
 #endif
         .def("__del__", [](Series &s) {

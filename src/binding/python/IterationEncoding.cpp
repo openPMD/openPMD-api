@@ -22,9 +22,9 @@
 
 #include "openPMD/binding/python/Common.hpp"
 
-void init_IterationEncoding(py::module &m)
+void init_IterationEncoding(nb::module_ &m)
 {
-    py::enum_<IterationEncoding>(m, "Iteration_Encoding")
+    nb::enum_<IterationEncoding>(m, "Iteration_Encoding")
         .value("file_based", IterationEncoding::fileBased)
         .value("group_based", IterationEncoding::groupBased)
         .value("variable_based", IterationEncoding::variableBased);

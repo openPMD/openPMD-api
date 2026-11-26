@@ -27,25 +27,30 @@
 
 #include <sstream>
 
-void init_BaseRecordComponent(py::module &m)
+void init_BaseRecordComponent(nb::module_ &m)
 {
-    py::class_<BaseRecordComponent, Attributable>(
-        m, "Base_Record_Component", py::multiple_inheritance())
+    using python::Self;
+    using python::self_method;
+
+    python::bind_class<BaseRecordComponent, Attributable>(
+        m, "Base_Record_Component")
         .def(
             "__repr__",
-            [](BaseRecordComponent const &brc) {
+            [](Self<BaseRecordComponent> brc) {
                 std::stringstream ss;
                 ss << "<openPMD.Base_Record_Component of '";
-                ss << brc.getDatatype() << "'>";
+                ss << brc->getDatatype() << "'>";
                 return ss.str();
             })
 
-        .def("reset_datatype", &BaseRecordComponent::resetDatatype)
-        .def("available_chunks", &BaseRecordComponent::availableChunks)
+        .def("reset_datatype", self_method(&BaseRecordComponent::resetDatatype))
+        .def(
+            "available_chunks",
+            self_method(&BaseRecordComponent::availableChunks))
 
-        .def_property_readonly("unit_SI", &BaseRecordComponent::unitSI)
-        .def_property_readonly("constant", &BaseRecordComponent::constant)
-        .def_property_readonly("dtype", [](BaseRecordComponent &brc) {
-            return dtype_to_numpy(brc.getDatatype());
+        .def_prop_ro("unit_SI", self_method(&BaseRecordComponent::unitSI))
+        .def_prop_ro("constant", self_method(&BaseRecordComponent::constant))
+        .def_prop_ro("dtype", [](Self<BaseRecordComponent> brc) {
+            return dtype_to_numpy(brc->getDatatype());
         });
 }

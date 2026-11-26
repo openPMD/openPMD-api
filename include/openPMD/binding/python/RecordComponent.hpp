@@ -28,23 +28,19 @@
 
 #include "openPMD/RecordComponent.hpp"
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "openPMD/binding/python/Common.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <utility>
-
-namespace py = pybind11;
-using namespace openPMD;
 
 /*
  * Definitions for these functions `load_chunk` and `store_chunk` found in
  * python/RecordComponent.cpp.
  * No need to pull them here, as they are not templates.
  */
-py::array load_chunk(RecordComponent &r, py::tuple const &slices);
+python::array load_chunk(RecordComponent &r, nb::tuple const &slices);
 
-void store_chunk(RecordComponent &r, py::array &a, py::tuple const &slices);
+void store_chunk(RecordComponent &r, python::array &a, nb::tuple const &slices);
 
 namespace docstring
 {
@@ -56,55 +52,61 @@ Returns true if this record only contains a single component.
 template <typename Class>
 Class &&addRecordComponentSetGet(Class &&class_)
 {
+    using python::Self;
+
     // TODO if we also want to support scalar arrays, we have to switch
-    //      py::array for py::buffer as in Attributable
+    //      python::array for python::buffer as in Attributable
     //      https://github.com/pybind/pybind11/pull/1537
 
     // slicing protocol
     class_
         .def(
             "__getitem__",
-            [](RecordComponent &r, py::tuple const &slices) {
-                return load_chunk(r, slices);
+            [](Self<RecordComponent> r, nb::tuple const &slices) {
+                return load_chunk(*r, slices);
             },
-            py::arg("tuple of index slices"))
+            nb::arg("tuple of index slices"))
         .def(
             "__getitem__",
-            [](RecordComponent &r, py::slice const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
+            [](Self<RecordComponent> r, nb::slice const &slice_obj) {
+                auto const slices = nb::make_tuple(slice_obj);
+                return load_chunk(*r, slices);
             },
-            py::arg("slice"))
+            nb::arg("slice"))
         .def(
             "__getitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj) {
-                auto const slices = py::make_tuple(slice_obj);
-                return load_chunk(r, slices);
+            [](Self<RecordComponent> r, std::int64_t const &slice_obj) {
+                auto const slices = nb::make_tuple(slice_obj);
+                return load_chunk(*r, slices);
             },
-            py::arg("axis index"))
+            nb::arg("axis index"))
 
         .def(
             "__setitem__",
-            [](RecordComponent &r, py::tuple const &slices, py::array &a) {
-                store_chunk(r, a, slices);
-            },
-            py::arg("tuple of index slices"),
-            py::arg("array with values to assign"))
+            [](Self<RecordComponent> r,
+               nb::tuple const &slices,
+               python::array &a) { store_chunk(*r, a, slices); },
+            nb::arg("tuple of index slices"),
+            nb::arg("array with values to assign"))
         .def(
             "__setitem__",
-            [](RecordComponent &r, py::slice const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
+            [](Self<RecordComponent> r,
+               nb::slice const &slice_obj,
+               python::array &a) {
+                auto const slices = nb::make_tuple(slice_obj);
+                store_chunk(*r, a, slices);
             },
-            py::arg("slice"),
-            py::arg("array with values to assign"))
+            nb::arg("slice"),
+            nb::arg("array with values to assign"))
         .def(
             "__setitem__",
-            [](RecordComponent &r, py::int_ const &slice_obj, py::array &a) {
-                auto const slices = py::make_tuple(slice_obj);
-                store_chunk(r, a, slices);
+            [](Self<RecordComponent> r,
+               std::int64_t const &slice_obj,
+               python::array &a) {
+                auto const slices = nb::make_tuple(slice_obj);
+                store_chunk(*r, a, slices);
             },
-            py::arg("axis index"),
-            py::arg("array with values to assign"));
+            nb::arg("axis index"),
+            nb::arg("array with values to assign"));
     return std::forward<Class>(class_);
 }

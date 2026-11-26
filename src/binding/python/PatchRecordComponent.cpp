@@ -34,7 +34,7 @@ namespace
 struct Prc_Load
 {
     template <typename T>
-    static void call(PatchRecordComponent &prc, py::array &a)
+    static void call(PatchRecordComponent &prc, python::array &a)
     {
         prc.loadRaw<T>((T *)a.mutable_data());
     }
@@ -43,22 +43,26 @@ struct Prc_Load
 };
 } // namespace
 
-void init_PatchRecordComponent(py::module &m)
+void init_PatchRecordComponent(nb::module_ &m)
 {
+    using python::Self;
+    using python::self_method;
+
     auto py_prc_cnt =
         declare_container<PyPatchRecordComponentContainer, Attributable>(
             m, "Patch_Record_Component_Container");
 
-    py::class_<PatchRecordComponent, RecordComponent, BaseRecordComponent>(
+    python::bind_class<PatchRecordComponent, RecordComponent>(
         m, "Patch_Record_Component")
-        .def_property(
+        .def_prop_rw(
             "unit_SI",
-            &BaseRecordComponent::unitSI,
-            &PatchRecordComponent::setUnitSI)
+            self_method<PatchRecordComponent>(&BaseRecordComponent::unitSI),
+            self_method(&PatchRecordComponent::setUnitSI))
 
         .def(
             "__repr__",
-            [](PatchRecordComponent const &rc) {
+            [](Self<PatchRecordComponent> prc) {
+                PatchRecordComponent const &rc = *prc;
                 std::stringstream stream;
                 stream << "<openPMD.Patch_Record_Component of type '"
                        << rc.getDatatype() << "' and with extent ";
@@ -79,16 +83,26 @@ void init_PatchRecordComponent(py::module &m)
                 return stream.str();
             })
 
-        .def("reset_dataset", &PatchRecordComponent::resetDataset)
-        .def_property_readonly(
-            "ndims", &PatchRecordComponent::getDimensionality)
-        .def_property_readonly("shape", &PatchRecordComponent::getExtent)
+        .def(
+            "reset_dataset",
+            self_method<PatchRecordComponent>(
+                &PatchRecordComponent::resetDataset))
+        .def_prop_ro(
+            "ndims",
+            self_method<PatchRecordComponent>(
+                &PatchRecordComponent::getDimensionality))
+        .def_prop_ro(
+            "shape",
+            self_method<PatchRecordComponent>(&PatchRecordComponent::getExtent))
 
         .def(
             "load",
-            [](PatchRecordComponent &prc) {
+            [](Self<PatchRecordComponent> self) {
+                PatchRecordComponent &prc = *self;
                 auto const dtype = dtype_to_numpy(prc.getDatatype());
-                auto a = py::array(dtype, prc.getExtent()[0]);
+                auto a = python::array(
+                    dtype,
+                    std::vector<Py_ssize_t>{Py_ssize_t(prc.getExtent()[0])});
 
                 switchNonVectorType<Prc_Load>(prc.getDatatype(), prc, a);
 
@@ -98,14 +112,17 @@ void init_PatchRecordComponent(py::module &m)
         // all buffer types
         .def(
             "store",
-            [](PatchRecordComponent &prc, uint64_t idx, py::buffer const &a) {
-                py::buffer_info buf = a.request();
+            [](Self<PatchRecordComponent> self,
+               uint64_t idx,
+               python::buffer const &a) {
+                PatchRecordComponent &prc = *self;
+                python::buffer_info buf(a);
                 auto const dtype = dtype_from_bufferformat(buf.format);
 
                 using DT = Datatype;
 
                 // allow one-element n-dimensional buffers as well
-                py::ssize_t numElements = 1;
+                Py_ssize_t numElements = 1;
                 if (buf.ndim > 0)
                 {
                     for (auto d = 0; d < buf.ndim; ++d)
@@ -184,36 +201,43 @@ void init_PatchRecordComponent(py::module &m)
                         "Only scalar values supported!");
                 }
             },
-            py::arg("idx"),
-            py::arg("data"))
+            nb::arg("idx"),
+            nb::arg("data"))
         // allowed python intrinsics, after (!) buffer matching
         .def(
             "store",
-            py::overload_cast<uint64_t, double>(
-                &PatchRecordComponent::store<double>),
-            py::arg("idx"),
-            py::arg("data"))
+            self_method<PatchRecordComponent>(
+                nb::overload_cast<uint64_t, double>(
+                    &PatchRecordComponent::store<double>)),
+            nb::arg("idx"),
+            nb::arg("data"))
         .def(
             "store",
-            py::overload_cast<uint64_t, long>(
-                &PatchRecordComponent::store<long>),
-            py::arg("idx"),
-            py::arg("data"))
+            self_method<PatchRecordComponent>(nb::overload_cast<uint64_t, long>(
+                &PatchRecordComponent::store<long>)),
+            nb::arg("idx"),
+            nb::arg("data"))
 
         // TODO implement convenient, patch-object level store/load
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_SI", &PatchRecordComponent::setUnitSI);
+        .def("set_unit_SI", self_method(&PatchRecordComponent::setUnitSI));
 
     finalize_container<PyPatchRecordComponentContainer>(py_prc_cnt);
-    addRecordComponentSetGet(
-        finalize_container<PyBaseRecordPatchRecordComponent>(
-            declare_container<
-                PyBaseRecordPatchRecordComponent,
-                PyPatchRecordComponentContainer,
-                PatchRecordComponent>(m, "Base_Record_Patch_Record_Component")))
-        .def_property_readonly(
-            "scalar",
-            &BaseRecord<PatchRecordComponent>::scalar,
-            &docstring::is_scalar[1]);
+    auto py_base_record =
+        addRecordComponentSetGet(
+            finalize_container<PyBaseRecordPatchRecordComponent>(
+                declare_container<
+                    PyBaseRecordPatchRecordComponent,
+                    PyPatchRecordComponentContainer>(
+                    m, "Base_Record_Patch_Record_Component")))
+            .def_prop_ro(
+                "scalar",
+                &BaseRecord<PatchRecordComponent>::scalar,
+                &docstring::is_scalar[1]);
+    // BaseRecord<PatchRecordComponent> also is a PatchRecordComponent
+    python::inherit_attributes(
+        py_base_record,
+        nb::type<PatchRecordComponent>(),
+        nb::type<Attributable>());
 }

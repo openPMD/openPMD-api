@@ -25,7 +25,7 @@
 
 namespace auxiliary
 {
-auto json_dumps(py::object const &obj) -> std::string;
+auto json_dumps(nb::object const &obj) -> std::string;
 
 /*
  * Functor is a struct of the form:

@@ -24,7 +24,6 @@
 
 #include "openPMD/binding/python/Common.hpp"
 
-#include <pybind11/pytypes.h>
 #include <string>
 #include <utility> // std::move
 
@@ -37,8 +36,8 @@
  * the object and at the same time storing a reference to the original Python
  * object.
  * The template parameters ChildCpp and ChildPy implement a CRT-like pattern,
- * split into a C++ class and a Python trampoline class as documented here:
- * https://pybind11.readthedocs.io/en/stable/advanced/classes.html?highlight=trampoline#overriding-virtual-functions-in-python
+ * split into a C++ class and a Python trampoline class, similar to:
+ * https://nanobind.readthedocs.io/en/latest/classes.html#overriding-virtual-functions-in-python
  *
  * A typical child instantiation would look like:
  * struct ChildPy : ChildCpp, ClonableTrampoline<ChildCpp, ChildPy>;
@@ -49,15 +48,15 @@ struct ClonableTrampoline
     /*
      * If the shared pointer is empty, this object is the original object owned
      * by Python and the Python handle can be acquired by:
-     * py::cast(static_cast<ChildPy const *>(this))
+     * nb::find(static_cast<ChildPy const *>(this))
      *
      * Copied instances will refer to the Python object handle via this member.
      * By only storing this member in copied instances, but not in the original
      * instance, we avoid a memory cycle and ensure clean destruction.
      */
-    std::shared_ptr<py::object> m_originalInstance;
+    std::shared_ptr<nb::object> m_originalInstance;
 
-    [[nodiscard]] py::object get_python_handle() const
+    [[nodiscard]] nb::object get_python_handle() const
     {
         if (m_originalInstance)
         {
@@ -66,24 +65,28 @@ struct ClonableTrampoline
         else
         {
             auto self = static_cast<ChildPy const *>(this);
-            return py::cast(self);
+            return nb::find(self);
         }
     }
 
     template <typename Res, typename... Args>
     Res call_virtual(std::string const &nameOfPythonMethod, Args &&...args)
     {
-        py::gil_scoped_acquire gil;
-        auto ptr = get_python_handle().template cast<ChildPy *>();
-        auto fun = py::get_override(ptr, nameOfPythonMethod.c_str());
-        if (!fun)
+        nb::gil_scoped_acquire gil;
+        nb::object self = get_python_handle();
+        char const *name = nameOfPythonMethod.c_str();
+        // the method must be overridden in Python, i.e. it must not be the
+        // C++ method bound in the base class
+        nb::object fun = nb::getattr(self.type(), name, nb::none());
+        if (fun.is_none() ||
+            fun.is(nb::getattr(nb::type<ChildCpp>(), name, nb::none())))
         {
             throw std::runtime_error(
                 "Virtual method not found. Did you define '" +
                 nameOfPythonMethod + "' as method in Python?");
         }
-        auto res = fun(std::forward<Args>(args)...);
-        return py::detail::cast_safe<Res>(std::move(res));
+        auto res = self.attr(name)(std::forward<Args>(args)...);
+        return nb::cast<Res>(std::move(res));
     }
 
     [[nodiscard]] std::unique_ptr<ChildCpp> clone_impl() const
@@ -97,7 +100,7 @@ struct ClonableTrampoline
         {
             auto res = std::make_unique<ChildPy>(*self);
             res->m_originalInstance =
-                std::make_shared<py::object>(py::cast(self));
+                std::make_shared<nb::object>(nb::find(self));
             return res;
         }
     }
@@ -145,66 +148,66 @@ struct PyPartialStrategy
     }
 };
 
-void init_Chunk(py::module &m)
+void init_Chunk(nb::module_ &m)
 {
 
-    py::class_<ChunkInfo>(m, "ChunkInfo")
-        .def(py::init<Offset, Extent>(), py::arg("offset"), py::arg("extent"))
+    nb::class_<ChunkInfo>(m, "ChunkInfo")
+        .def(nb::init<Offset, Extent>(), nb::arg("offset"), nb::arg("extent"))
         .def(
             "__repr__",
             [](const ChunkInfo &c) {
                 return "<openPMD.ChunkInfo of dimensionality " +
                     std::to_string(c.offset.size()) + "'>";
             })
-        .def_readwrite("offset", &ChunkInfo::offset)
-        .def_readwrite("extent", &ChunkInfo::extent);
-    py::bind_vector<PyVecChunkInfo>(m, "VectorChunkInfo")
+        .def_rw("offset", &ChunkInfo::offset)
+        .def_rw("extent", &ChunkInfo::extent);
+    // reference_internal: element access returns references into the
+    // container (as in pybind11), so that in-place modification works
+    nb::bind_vector<PyVecChunkInfo, nb::rv_policy::reference_internal>(
+        m, "VectorChunkInfo")
         .def("merge_chunks", &chunk_assignment::mergeChunks<ChunkInfo>);
-    py::class_<WrittenChunkInfo, ChunkInfo>(m, "WrittenChunkInfo")
-        .def(py::init<Offset, Extent>(), py::arg("offset"), py::arg("extent"))
+    nb::class_<WrittenChunkInfo, ChunkInfo>(m, "WrittenChunkInfo")
+        .def(nb::init<Offset, Extent>(), nb::arg("offset"), nb::arg("extent"))
         .def(
-            py::init<Offset, Extent, int>(),
-            py::arg("offset"),
-            py::arg("extent"),
-            py::arg("rank"))
+            nb::init<Offset, Extent, int>(),
+            nb::arg("offset"),
+            nb::arg("extent"),
+            nb::arg("rank"))
         .def(
             "__repr__",
             [](const WrittenChunkInfo &c) {
                 return "<openPMD.WrittenChunkInfo of dimensionality " +
                     std::to_string(c.offset.size()) + "'>";
             })
-        .def_readwrite("offset", &WrittenChunkInfo::offset)
-        .def_readwrite("extent", &WrittenChunkInfo::extent)
-        .def_readwrite("source_id", &WrittenChunkInfo::sourceID)
+        .def_rw("offset", &WrittenChunkInfo::offset)
+        .def_rw("extent", &WrittenChunkInfo::extent)
+        .def_rw("source_id", &WrittenChunkInfo::sourceID)
 
         .def(
-            py::pickle(
-                // __getstate__
-                [](const WrittenChunkInfo &w) {
-                    return py::make_tuple(w.offset, w.extent, w.sourceID);
-                },
+            "__getstate__",
+            [](const WrittenChunkInfo &w) {
+                return nb::make_tuple(w.offset, w.extent, w.sourceID);
+            })
+        .def("__setstate__", [](WrittenChunkInfo &self, nb::tuple const &t) {
+            // our state tuple has exactly three values
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state!");
 
-                // __setstate__
-                [](py::tuple const &t) {
-                    // our state tuple has exactly three values
-                    if (t.size() != 3)
-                        throw std::runtime_error("Invalid state!");
+            auto const offset = nb::cast<Offset>(t[0]);
+            auto const extent = nb::cast<Extent>(t[1]);
+            auto const sourceID =
+                nb::cast<decltype(WrittenChunkInfo::sourceID)>(t[2]);
 
-                    auto const offset = t[0].cast<Offset>();
-                    auto const extent = t[1].cast<Extent>();
-                    auto const sourceID =
-                        t[2].cast<decltype(WrittenChunkInfo::sourceID)>();
+            new (&self) WrittenChunkInfo(offset, extent, sourceID);
+        });
 
-                    return WrittenChunkInfo(offset, extent, sourceID);
-                }));
-
-    py::enum_<host_info::Method>(m, "HostInfo")
+    nb::enum_<host_info::Method>(m, "HostInfo")
         .value("POSIX_HOSTNAME", host_info::Method::POSIX_HOSTNAME)
         .value("MPI_PROCESSOR_NAME", host_info::Method::MPI_PROCESSOR_NAME)
 #if openPMD_HAVE_MPI
         .def(
             "get_collective",
-            [](host_info::Method const &self, py::object &comm) {
+            [](host_info::Method const &self, nb::object &comm) {
                 auto variant = pythonObjectAsMpiComm(comm);
                 if (auto errorMsg =
                         std::get_if<py_object_to_mpi_comm_error>(&variant))
@@ -225,7 +228,8 @@ void init_Chunk(py::module &m)
             })
         .def("available", &host_info::methodAvailable);
 
-    py::bind_vector<ChunkTable>(m, "ChunkTable")
+    nb::bind_vector<ChunkTable, nb::rv_policy::reference_internal>(
+        m, "ChunkTable")
         .def("merge_chunks", &chunk_assignment::mergeChunks<WrittenChunkInfo>)
         .def(
             "merge_chunks_from_same_sourceID",
@@ -233,129 +237,132 @@ void init_Chunk(py::module &m)
 
     using namespace chunk_assignment;
 
-    py::bind_map<Assignment>(m, "Assignment");
+    nb::bind_map<Assignment, nb::rv_policy::reference_internal>(
+        m, "Assignment");
 
-    py::class_<PartialAssignment>(m, "PartialAssignment")
-        .def(py::init<>())
-        .def_readwrite("not_assigned", &PartialAssignment::notAssigned)
-        .def_readwrite("assigned", &PartialAssignment::assigned);
+    nb::class_<PartialAssignment>(m, "PartialAssignment")
+        .def(nb::init<>())
+        .def_rw("not_assigned", &PartialAssignment::notAssigned)
+        .def_rw("assigned", &PartialAssignment::assigned);
 
-    py::bind_map<RankMeta>(m, "RankMeta");
+    // RankMeta is converted from/to a Python dict (with pybind11, this class
+    // was bound without being opaque, so the binding was not used either)
 
-    py::class_<PartialStrategy>(m, "PartialStrategyCpp")
+    nb::class_<PartialStrategy>(m, "PartialStrategyCpp")
         .def(
             "assign",
-            py::overload_cast<
+            nb::overload_cast<
                 ChunkTable,
                 RankMeta const &,
                 RankMeta const &,
                 size_t,
                 size_t>(&PartialStrategy::assign),
-            py::arg("chunk_table"),
-            py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta(),
-            py::arg("my_rank") = 0,
-            py::arg("num_ranks") = 1)
+            nb::arg("chunk_table"),
+            nb::arg("rank_meta_in") = RankMeta(),
+            nb::arg("rank_meta_out") = RankMeta(),
+            nb::arg("my_rank") = 0,
+            nb::arg("num_ranks") = 1)
         .def(
             "assign",
-            py::overload_cast<
+            nb::overload_cast<
                 PartialAssignment,
                 RankMeta const &,
                 RankMeta const &,
                 size_t,
                 size_t>(&PartialStrategy::assign),
-            py::arg("partial_assignment"),
-            py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta(),
-            py::arg("my_rank") = 0,
-            py::arg("num_ranks") = 1);
-    py::class_<PyPartialStrategy, PartialStrategy>(m, "PartialStrategy")
-        .def(py::init<>());
+            nb::arg("partial_assignment"),
+            nb::arg("rank_meta_in") = RankMeta(),
+            nb::arg("rank_meta_out") = RankMeta(),
+            nb::arg("my_rank") = 0,
+            nb::arg("num_ranks") = 1);
+    nb::class_<PyPartialStrategy, PartialStrategy>(m, "PartialStrategy")
+        .def(nb::init<>());
 
-    py::class_<Strategy>(m, "StrategyCpp")
+    nb::class_<Strategy>(m, "StrategyCpp")
         .def(
             "assign",
-            py::overload_cast<
+            nb::overload_cast<
                 ChunkTable,
                 RankMeta const &,
                 RankMeta const &,
                 size_t,
                 size_t>(&Strategy::assign),
-            py::arg("chunk_table"),
-            py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta(),
-            py::arg("my_rank") = 0,
-            py::arg("num_ranks") = 1)
+            nb::arg("chunk_table"),
+            nb::arg("rank_meta_in") = RankMeta(),
+            nb::arg("rank_meta_out") = RankMeta(),
+            nb::arg("my_rank") = 0,
+            nb::arg("num_ranks") = 1)
         .def(
             "assign",
-            py::overload_cast<
+            nb::overload_cast<
                 PartialAssignment,
                 RankMeta const &,
                 RankMeta const &,
                 size_t,
                 size_t>(&Strategy::assign),
-            py::arg("partial_assignment"),
-            py::arg("rank_meta_in") = RankMeta(),
-            py::arg("rank_meta_out") = RankMeta(),
-            py::arg("my_rank") = 0,
-            py::arg("num_ranks") = 1);
-    py::class_<PyStrategy, Strategy>(m, "Strategy").def(py::init<>());
+            nb::arg("partial_assignment"),
+            nb::arg("rank_meta_in") = RankMeta(),
+            nb::arg("rank_meta_out") = RankMeta(),
+            nb::arg("my_rank") = 0,
+            nb::arg("num_ranks") = 1);
+    nb::class_<PyStrategy, Strategy>(m, "Strategy").def(nb::init<>());
 
-    py::class_<FromPartialStrategy, Strategy>(m, "FromPartialStrategy")
+    nb::class_<FromPartialStrategy, Strategy>(m, "FromPartialStrategy")
         .def(
-            py::init([](PartialStrategy const &firstPass,
-                        Strategy const &secondPass) {
-                return FromPartialStrategy(
-                    firstPass.clone(), secondPass.clone());
-            }));
+            "__init__",
+            [](FromPartialStrategy *self,
+               PartialStrategy const &firstPass,
+               Strategy const &secondPass) {
+                new (self)
+                    FromPartialStrategy(firstPass.clone(), secondPass.clone());
+            });
 
-    py::class_<RoundRobin, Strategy>(m, "RoundRobin").def(py::init<>());
-    py::class_<RoundRobinOfSourceRanks, Strategy>(m, "RoundRobinOfSourceRanks")
-        .def(py::init<>());
-    py::class_<Blocks, Strategy>(m, "Blocks").def(py::init<>());
-    py::class_<BlocksOfSourceRanks, Strategy>(m, "BlocksOfSourceRanks")
-        .def(py::init<>());
+    nb::class_<RoundRobin, Strategy>(m, "RoundRobin").def(nb::init<>());
+    nb::class_<RoundRobinOfSourceRanks, Strategy>(m, "RoundRobinOfSourceRanks")
+        .def(nb::init<>());
+    nb::class_<Blocks, Strategy>(m, "Blocks").def(nb::init<>());
+    nb::class_<BlocksOfSourceRanks, Strategy>(m, "BlocksOfSourceRanks")
+        .def(nb::init<>());
 
-    py::class_<ByHostname, PartialStrategy>(m, "ByHostname")
+    nb::class_<ByHostname, PartialStrategy>(m, "ByHostname")
         .def(
-            py::init([](Strategy const &withinNode) {
-                return ByHostname(withinNode.clone());
-            }),
-            py::arg("strategy_within_node"));
+            "__init__",
+            [](ByHostname *self, Strategy const &withinNode) {
+                new (self) ByHostname(withinNode.clone());
+            },
+            nb::arg("strategy_within_node"));
 
-    (void)py::class_<auxiliary::BlockSlicer>(m, "BlockSlicer");
+    (void)nb::class_<auxiliary::BlockSlicer>(m, "BlockSlicer");
 
-    py::class_<auxiliary::OneDimensionalBlockSlicer, auxiliary::BlockSlicer>(
+    nb::class_<auxiliary::OneDimensionalBlockSlicer, auxiliary::BlockSlicer>(
         m, "OneDimensionalBlockSlicer")
-        .def(py::init<>())
-        .def(py::init<Extent::value_type>(), py::arg("dim"));
+        .def(nb::init<>())
+        .def(nb::init<Extent::value_type>(), nb::arg("dim"));
 
-    py::class_<ByCuboidSlice, Strategy>(m, "ByCuboidSlice")
+    nb::class_<ByCuboidSlice, Strategy>(m, "ByCuboidSlice")
         .def(
-            py::init([](auxiliary::BlockSlicer const &blockSlicer,
-                        Extent totalExtent) {
-                return ByCuboidSlice(
-                    blockSlicer.clone(), std::move(totalExtent));
-            }),
-            py::arg("block_slicer"),
-            py::arg("total_extent"));
+            "__init__",
+            [](ByCuboidSlice *self,
+               auxiliary::BlockSlicer const &blockSlicer,
+               Extent totalExtent) {
+                new (self)
+                    ByCuboidSlice(blockSlicer.clone(), std::move(totalExtent));
+            },
+            nb::arg("block_slicer"),
+            nb::arg("total_extent"));
 
-    py::class_<BinPacking, Strategy>(m, "BinPacking")
-        .def(py::init<>())
-        .def(py::init<size_t>(), py::arg("split_along_dimension"));
+    nb::class_<BinPacking, Strategy>(m, "BinPacking")
+        .def(nb::init<>())
+        .def(nb::init<size_t>(), nb::arg("split_along_dimension"));
 
-    py::class_<FailingStrategy, Strategy>(m, "FailingStrategy")
-        .def(py::init<>());
+    nb::class_<FailingStrategy, Strategy>(m, "FailingStrategy")
+        .def(nb::init<>());
 
-    py::class_<DiscardingStrategy, Strategy>(m, "DiscardingStrategy")
-        .def(py::init<>());
+    nb::class_<DiscardingStrategy, Strategy>(m, "DiscardingStrategy")
+        .def(nb::init<>());
 
     // implicit conversions
-    {
-        py::implicitly_convertible<py::list, PyVecChunkInfo>();
-        py::implicitly_convertible<py::list, ChunkTable>();
-        py::implicitly_convertible<ChunkTable, PyVecChunkInfo>();
-        py::implicitly_convertible<py::dict, Assignment>();
-        py::implicitly_convertible<py::dict, RankMeta>();
-    }
+    // (conversions from Python lists and dicts are registered by
+    // nb::bind_vector() and nb::bind_map())
+    nb::implicitly_convertible<ChunkTable, PyVecChunkInfo>();
 }

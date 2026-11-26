@@ -35,21 +35,22 @@
 #include <variant>
 #include <vector>
 
-void init_Mesh(py::module &m)
+void init_Mesh(nb::module_ &m)
 {
     auto py_m_cont =
         declare_container<PyMeshContainer, Attributable>(m, "Mesh_Container");
 
-    py::class_<Mesh, BaseRecord<MeshRecordComponent>> cl(m, "Mesh");
+    auto cl =
+        python::bind_class<Mesh, BaseRecord<MeshRecordComponent>>(m, "Mesh");
 
-    py::enum_<Mesh::Geometry>(m, "Geometry") // TODO: m -> cl
+    nb::enum_<Mesh::Geometry>(m, "Geometry") // TODO: m -> cl
         .value("cartesian", Mesh::Geometry::cartesian)
         .value("thetaMode", Mesh::Geometry::thetaMode)
         .value("cylindrical", Mesh::Geometry::cylindrical)
         .value("spherical", Mesh::Geometry::spherical)
         .value("other", Mesh::Geometry::other);
 
-    cl.def(py::init<Mesh const &>())
+    cl.def(nb::init<Mesh const &>())
 
         .def(
             "__repr__",
@@ -59,7 +60,7 @@ void init_Mesh(py::module &m)
                     std::to_string(mesh.numAttributes()) + " attributes>";
             })
 
-        .def_property(
+        .def_prop_rw(
             "unit_dimension",
             &Mesh::unitDimension,
             [](Mesh &self,
@@ -74,7 +75,7 @@ void init_Mesh(py::module &m)
             },
             python::doc_unit_dimension)
 
-        .def_property(
+        .def_prop_rw(
             "grid_unit_dimension",
             &Mesh::gridUnitDimension,
             [](Mesh &self,
@@ -89,44 +90,45 @@ void init_Mesh(py::module &m)
             },
             python::doc_mesh_unit_dimension)
 
-        .def_property(
+        .def_prop_rw(
             "geometry",
             &Mesh::geometry,
-            py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
-        .def_property(
+            nb::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
+        .def_prop_rw(
             "geometry_string",
             &Mesh::geometryString,
-            py::overload_cast<std::string>(&Mesh::setGeometry))
-        .def_property(
+            nb::overload_cast<std::string>(&Mesh::setGeometry))
+        .def_prop_rw(
             "geometry_parameters",
             &Mesh::geometryParameters,
             &Mesh::setGeometryParameters)
-        .def_property(
+        .def_prop_rw(
             "data_order",
             [](Mesh const &mesh) {
                 return static_cast<char>(mesh.dataOrder());
             },
             [](Mesh &mesh, char d) { mesh.setDataOrder(Mesh::DataOrder(d)); },
             "Data Order of the Mesh (deprecated and set to C in openPMD 2)")
-        .def_property("axis_labels", &Mesh::axisLabels, &Mesh::setAxisLabels)
+        .def_prop_rw("axis_labels", &Mesh::axisLabels, &Mesh::setAxisLabels)
 
         // note: overloads on types are order-dependent (first wins)
-        //       https://github.com/pybind/pybind11/issues/1512
+        //       https://github.com/pybind/pybind11/issues/1512 (same in
+        //       nanobind)
         // We specialize `double` here generically and cast in read if needed.
         // Later on, we could add support for 1D numpy arrays with distinct
         // type.
-        .def_property(
+        .def_prop_rw(
             "grid_spacing",
             &Mesh::gridSpacing<double>,
             &Mesh::setGridSpacing<double>)
-        .def_property(
+        .def_prop_rw(
             "grid_global_offset",
             &Mesh::gridGlobalOffset,
             &Mesh::setGridGlobalOffset)
-        .def_property(
+        .def_prop_rw(
             "grid_unit_SI",
             /*
-             * Using pybind11's support for std::variant in order to implement a
+             * Using nanobind's support for std::variant in order to implement a
              * polymorphic type for this property. Will be a scalar double in
              * openPMD 1.*, a list of double in openPMD 2.*.
              * Unlike in the C++ API, this means that no new API calls
@@ -172,7 +174,7 @@ When writing a list value to an openPMD 1.* file, an error will be thrown,
 since most openPMD 1.*-based readers will not be able to interpret this
 properly.
 Ref.: https://github.com/openPMD/openPMD-standard/pull/193)"[1])
-        .def_property(
+        .def_prop_rw(
             "time_offset",
             &Mesh::timeOffset<double>,
             &Mesh::setTimeOffset<double>)
@@ -180,12 +182,12 @@ Ref.: https://github.com/openPMD/openPMD-standard/pull/193)"[1])
         // TODO remove in future versions (deprecated)
         .def(
             "set_unit_dimension",
-            py::overload_cast<unit_representations::AsMap const &>(
+            nb::overload_cast<unit_representations::AsMap const &>(
                 &Mesh::setUnitDimension))
         .def(
             "set_geometry",
-            py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
-        .def("set_geometry", py::overload_cast<std::string>(&Mesh::setGeometry))
+            nb::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
+        .def("set_geometry", nb::overload_cast<std::string>(&Mesh::setGeometry))
         .def("set_geometry_parameters", &Mesh::setGeometryParameters)
         .def("set_axis_labels", &Mesh::setAxisLabels)
         .def("set_grid_spacing", &Mesh::setGridSpacing<float>)
@@ -194,7 +196,7 @@ Ref.: https://github.com/openPMD/openPMD-standard/pull/193)"[1])
         .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
         .def(
             "set_grid_unit_SI",
-            py::overload_cast<double>(&Mesh::setGridUnitSI));
+            nb::overload_cast<double>(&Mesh::setGridUnitSI));
     add_pickle(
         cl,
         [](std::shared_ptr<openPMD::Series> series,

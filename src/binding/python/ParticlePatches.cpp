@@ -28,12 +28,13 @@
 
 #include <string>
 
-void init_ParticlePatches(py::module &m)
+void init_ParticlePatches(nb::module_ &m)
 {
     auto py_pp_cnt = declare_container<PyPatchContainer, Attributable>(
         m, "Particle_Patches_Container");
 
-    py::class_<ParticlePatches, Container<PatchRecord> >(m, "Particle_Patches")
+    python::bind_class<ParticlePatches, Container<PatchRecord>>(
+        m, "Particle_Patches")
         .def(
             "__repr__",
             [](ParticlePatches const &pp) {
@@ -44,7 +45,7 @@ void init_ParticlePatches(py::module &m)
                 return stream.str();
             })
 
-        .def_property_readonly("num_patches", &ParticlePatches::numPatches);
+        .def_prop_ro("num_patches", &ParticlePatches::numPatches);
 
     finalize_container<PyPatchContainer>(py_pp_cnt);
 }

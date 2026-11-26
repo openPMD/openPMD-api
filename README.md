@@ -101,7 +101,7 @@ Required:
 
 Shipped internally (downloaded by CMake unless `openPMD_SUPERBUILD=OFF` is set):
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.10+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.13.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [nanobind](https://github.com/wjakob/nanobind) 3.0.0+ ([new BSD](https://github.com/wjakob/nanobind/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.1+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
@@ -116,7 +116,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.10 - 3.14
-  * pybind11 2.13.0+
+  * nanobind 3.0.0+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
@@ -265,7 +265,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 Additionally, the following libraries are downloaded via [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html)
 during the configuration of the project or, if the corresponding `<PACKAGENAME>_ROOT` variable is provided, can be provided externally:
 * [Catch2](https://github.com/catchorg/Catch2) (2.13.10+)
-* [PyBind11](https://github.com/pybind/pybind11) (2.13.0+)
+* [nanobind](https://github.com/wjakob/nanobind) (3.0.0+)
 * [NLohmann-JSON](https://github.com/nlohmann/json) (3.9.1+)
 * [toml11](https://github.com/ToruNiina/toml11) (3.7.1+)
 
@@ -443,7 +443,7 @@ openPMD-api stands on the shoulders of giants and we are grateful for the follow
 * HDF5 by [the HDF group](https://www.hdfgroup.org) and community
 * [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)
 * [toml11](https://github.com/ToruNiina/toml11) by [Toru Niina](https://github.com/ToruNiina) and [contributors](https://github.com/ToruNiina/toml11#Contributors)
-* [pybind11](https://github.com/pybind/pybind11) by [Wenzel Jakob (EPFL)](https://github.com/wjakob) and [contributors](https://github.com/pybind/pybind11/graphs/contributors)
+* [nanobind](https://github.com/wjakob/nanobind) by [Wenzel Jakob (EPFL)](https://github.com/wjakob) and [contributors](https://github.com/wjakob/nanobind/graphs/contributors)
 * all contributors to the evolution of modern C++ and early library preview developers, e.g. [Michael Park (Facebook)](https://github.com/mpark)
 * the [CMake build system](https://cmake.org) and [contributors](https://github.com/Kitware/CMake/blob/master/Copyright.txt)
 * packaging support by the [conda-forge](https://conda-forge.org), [PyPI](https://pypi.org) and [Spack](https://spack.io) communities, among others

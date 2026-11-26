@@ -32,12 +32,13 @@
 #include <string>
 #include <vector>
 
-void init_ParticleSpecies(py::module &m)
+void init_ParticleSpecies(nb::module_ &m)
 {
     auto py_ps_cnt = declare_container<PyPartContainer, Attributable>(
         m, "Particle_Container");
 
-    py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
+    auto cl = python::bind_class<ParticleSpecies, Container<Record>>(
+        m, "ParticleSpecies");
     cl.def(
           "__repr__",
           [](ParticleSpecies const &p) {
@@ -48,13 +49,12 @@ void init_ParticleSpecies(py::module &m)
               return stream.str();
           })
 
-        .def_property_readonly(
+        .def_prop_ro(
             "particle_patches",
-            py::cpp_function(
-                [](ParticleSpecies &ps) { return ps.particlePatches; },
-                py::return_value_policy::copy,
-                // garbage collection: return value must be freed before Series
-                py::keep_alive<0, 1>()));
+            [](ParticleSpecies &ps) { return ps.particlePatches; },
+            nb::rv_policy::copy,
+            // garbage collection: return value must be freed before Series
+            nb::keep_alive<0, 1>());
     add_pickle(
         cl,
         [](std::shared_ptr<openPMD::Series> series,

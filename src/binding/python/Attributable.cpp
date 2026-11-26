@@ -27,8 +27,6 @@
 #include "openPMD/binding/python/Common.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
-#include <pybind11/detail/common.h>
-
 #include <algorithm>
 #include <array>
 #include <complex>
@@ -36,19 +34,16 @@
 #include <iterator>
 #include <map>
 #include <optional>
-#include <pybind11/pytypes.h>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-using PyAttributeKeys = std::vector<std::string>;
-
 bool setAttributeFromBufferInfo(
-    Attributable &attr, std::string const &key, py::buffer &a)
+    Attributable &attr, std::string const &key, python::buffer &a)
 {
     using DT = Datatype;
 
-    py::buffer_info buf = a.request();
+    python::buffer_info buf(a);
 
     // Numpy: Handling of arrays and scalars
     // work-around for https://github.com/pybind/pybind11/issues/1224
@@ -136,19 +131,8 @@ bool setAttributeFromBufferInfo(
          * - not strided with paddings
          * - not a view in another buffer that results in striding
          */
-        auto *view = new Py_buffer();
-        int flags = PyBUF_STRIDES | PyBUF_FORMAT;
-        if (PyObject_GetBuffer(a.ptr(), view, flags) != 0)
-        {
-            delete view;
-            throw py::error_already_set();
-        }
-        bool isContiguous = (PyBuffer_IsContiguous(view, 'A') != 0);
-        PyBuffer_Release(view);
-        delete view;
-
-        if (!isContiguous)
-            throw py::index_error(
+        if (!buf.any_contiguous)
+            throw nb::index_error(
                 "non-contiguous buffer provided, handling not implemented!");
         // @todo in order to implement stride handling, one needs to
         //       loop over the input data strides during write below,
@@ -274,27 +258,28 @@ namespace detail
 {
 template <typename RequestedType>
 bool setAttributeFromObject_default(
-    Attributable &attr, std::string const &key, py::object &obj)
+    Attributable &attr, std::string const &key, nb::object &obj)
 {
-    if (std::string(py::str(py::type::of(obj))) == "<class 'list'>")
+    if (PyList_CheckExact(obj.ptr()))
     {
         using ListType = std::vector<RequestedType>;
-        return attr.setAttribute<ListType>(key, obj.cast<ListType>());
+        return attr.setAttribute<ListType>(key, nb::cast<ListType>(obj));
     }
     else
     {
-        return attr.setAttribute<RequestedType>(key, obj.cast<RequestedType>());
+        return attr.setAttribute<RequestedType>(
+            key, nb::cast<RequestedType>(obj));
     }
 }
 
 bool setAttributeFromObject_double(
-    Attributable &attr, std::string const &key, py::object &obj)
+    Attributable &attr, std::string const &key, nb::object &obj)
 {
-    if (std::string(py::str(py::type::of(obj))) == "<class 'list'>")
+    if (PyList_CheckExact(obj.ptr()))
     {
         using ListType = std::vector<double>;
         using ArrayType = std::array<double, 7>;
-        ListType const &asVector = obj.cast<ListType>();
+        ListType const &asVector = nb::cast<ListType>(obj);
         if (asVector.size() == 7 && key == "unitDimension")
         {
             ArrayType asArray;
@@ -308,14 +293,14 @@ bool setAttributeFromObject_double(
     }
     else
     {
-        return attr.setAttribute<double>(key, obj.cast<double>());
+        return attr.setAttribute<double>(key, nb::cast<double>(obj));
     }
 }
 
 bool setAttributeFromObject_bool(
-    Attributable &attr, std::string const &key, py::object &obj)
+    Attributable &attr, std::string const &key, nb::object &obj)
 {
-    return attr.setAttribute<bool>(key, obj.cast<bool>());
+    return attr.setAttribute<bool>(key, nb::cast<bool>(obj));
 }
 
 template <bool is_signed = std::is_signed_v<char>>
@@ -336,27 +321,28 @@ struct char_to_explicit_char<false>
 };
 
 template <typename TargetType>
-std::optional<TargetType> tryCast(py::object const &obj)
+std::optional<TargetType> tryCast(nb::object const &obj)
 {
     // Do a check to avoid throwing exceptions
     if constexpr (std::is_default_constructible_v<TargetType>)
     {
         TargetType val{};
-        auto python_val = py::cast(std::move(val));
-        if (!py::isinstance(obj, py::type::of(python_val)))
+        auto python_val = nb::cast(std::move(val));
+        if (PyObject_IsInstance(obj.ptr(), python_val.type().ptr()) != 1)
         {
+            PyErr_Clear();
             return std::nullopt;
         }
     }
     try
     {
-        return obj.cast<TargetType>();
+        return nb::cast<TargetType>(obj);
     }
-    catch (py::cast_error const &)
+    catch (nb::cast_error const &)
     {
         return std::nullopt;
     }
-    catch (py::value_error const &err)
+    catch (nb::python_error const &)
     {
         return std::nullopt;
     }
@@ -364,7 +350,7 @@ std::optional<TargetType> tryCast(py::object const &obj)
 
 template <typename Char_t>
 bool setAttributeFromObject_char(
-    Attributable &attr, std::string const &key, py::object &obj)
+    Attributable &attr, std::string const &key, nb::object &obj)
 {
     using explicit_char_type = std::conditional_t<
         std::is_same_v<Char_t, char>,
@@ -395,7 +381,7 @@ bool setAttributeFromObject_char(
     // Assuming `char` is signed on the current platform,
     // then this cast will cover `signed char`.
     // It's a bit weird: The Numpy datatype will be the same as `char`
-    // (.ie. 'b'), but the `py::object` will contain an integer.
+    // (.ie. 'b'), but the `nb::object` will contain an integer.
     // Similar for `unsigned char` if `char`s are unsigned.
     else if (auto casted_int = tryCast<int>(obj); casted_int.has_value())
     {
@@ -459,7 +445,7 @@ struct SetAttributeFromObject
 
     template <typename RequestedType>
     static bool
-    call(Attributable &attr, std::string const &key, py::object &obj)
+    call(Attributable &attr, std::string const &key, nb::object &obj)
     {
         if constexpr (std::is_same_v<RequestedType, double>)
         {
@@ -488,56 +474,61 @@ struct SetAttributeFromObject
 bool setAttributeFromObject(
     Attributable &attr,
     std::string const &key,
-    py::object &obj,
-    pybind11::dtype datatype)
+    nb::object &obj,
+    python::dtype datatype)
 {
     Datatype requestedDatatype = dtype_from_numpy(std::move(datatype));
     return switchNonVectorType<SetAttributeFromObject>(
         requestedDatatype, attr, key, obj);
 }
 
-void init_Attributable(py::module &m)
+void init_Attributable(nb::module_ &m)
 {
-    py::class_<Attributable::MyPath>(m, "AttributablePath")
-        .def_readonly("directory", &Attributable::MyPath::directory)
-        .def_readonly("series_name", &Attributable::MyPath::seriesName)
-        .def_readonly(
-            "series_extension", &Attributable::MyPath::seriesExtension)
-        .def_readonly("group", &Attributable::MyPath::group)
-        .def_readonly("access", &Attributable::MyPath::access)
-        .def_property_readonly("file_path", &Attributable::MyPath::filePath)
-        .def_property_readonly(
-            "openPMD_path", &Attributable::MyPath::openPMDPath);
+    using python::Self;
+    using python::self_method;
 
-    py::class_<Attributable>(m, "Attributable")
-        .def(py::init<Attributable const &>())
+    nb::class_<Attributable::MyPath>(m, "AttributablePath")
+        .def_ro("directory", &Attributable::MyPath::directory)
+        .def_ro("series_name", &Attributable::MyPath::seriesName)
+        .def_ro("series_extension", &Attributable::MyPath::seriesExtension)
+        .def_ro("group", &Attributable::MyPath::group)
+        .def_ro("access", &Attributable::MyPath::access)
+        .def_prop_ro("file_path", &Attributable::MyPath::filePath)
+        .def_prop_ro("openPMD_path", &Attributable::MyPath::openPMDPath);
+
+    python::bind_class<Attributable>(m, "Attributable")
+        .def(
+            "__init__",
+            [](Attributable *self, Self<Attributable> other) {
+                new (self) Attributable(*other);
+            })
 
         .def(
             "__repr__",
-            [](Attributable const &attr) {
+            [](Self<Attributable> attr) {
                 return "<openPMD.Attributable with '" +
-                    std::to_string(attr.numAttributes()) + "' attribute(s)>";
+                    std::to_string(attr->numAttributes()) + "' attribute(s)>";
             })
         .def(
             "series_flush",
-            [](Attributable &attr, std::string const &backend_config) {
-                py::gil_scoped_release release_gil;
-                attr.seriesFlush(backend_config);
+            [](Self<Attributable> attr, std::string const &backend_config) {
+                nb::gil_scoped_release release_gil;
+                attr->seriesFlush(backend_config);
             },
-            py::arg("backend_config") = "{}")
+            nb::arg("backend_config") = "{}")
         .def(
             "iteration_flush",
-            [](Attributable &attr, std::string const &backend_config) {
-                py::gil_scoped_release release_gil;
-                attr.iterationFlush(backend_config);
+            [](Self<Attributable> attr, std::string const &backend_config) {
+                nb::gil_scoped_release release_gil;
+                attr->iterationFlush(backend_config);
             },
-            py::arg("backend_config") = "{}")
+            nb::arg("backend_config") = "{}")
 
-        .def_property_readonly(
+        .def_prop_ro(
             "attributes",
-            [](Attributable &attr) { return attr.attributes(); },
+            [](Self<Attributable> attr) { return attr->attributes(); },
             // ref + keepalive
-            py::return_value_policy::move)
+            nb::rv_policy::move)
 
         // C++ pass-through API: Setter
         // note that the order of overloads is important!
@@ -545,29 +536,33 @@ void init_Attributable(py::module &m)
         // specialized specifically...
         .def(
             "set_attribute",
-            [](Attributable &attr, std::string const &key, py::buffer &a) {
-                // std::cout << "set attr via py::buffer: " << key << std::endl;
-                return setAttributeFromBufferInfo(attr, key, a);
+            [](Self<Attributable> attr,
+               std::string const &key,
+               python::buffer &a) {
+                // std::cout << "set attr via python::buffer: " << key <<
+                // std::endl;
+                return setAttributeFromBufferInfo(*attr, key, a);
             })
         .def(
             "set_attribute",
-            [](Attributable &attr,
+            [](Self<Attributable> attr,
                std::string const &key,
-               py::object &obj,
-               pybind11::dtype datatype) {
+               nb::object &obj,
+               python::dtype datatype) {
                 return setAttributeFromObject(
-                    attr, key, obj, std::move(datatype));
+                    *attr, key, obj, std::move(datatype));
             },
-            py::arg("key"),
-            py::arg("value"),
-            py::arg("datatype"))
+            nb::arg("key"),
+            nb::arg("value"),
+            nb::arg("datatype"))
 
         // fundamental Python types
-        .def("set_attribute", &Attributable::setAttribute<bool>)
+        .def("set_attribute", self_method(&Attributable::setAttribute<bool>))
         .def(
             "set_attribute",
-            &Attributable::setAttribute<
-                typename ::detail::char_to_explicit_char<>::opposite_type>)
+            self_method(
+                &Attributable::setAttribute<
+                    typename ::detail::char_to_explicit_char<>::opposite_type>))
         // -> handle all native python integers as long
         // .def("set_attribute", &Attributable::setAttribute< short >)
         // .def("set_attribute", &Attributable::setAttribute< int >)
@@ -578,21 +573,21 @@ void init_Attributable(py::module &m)
         // .def("set_attribute", &Attributable::setAttribute< unsigned long >)
         // .def("set_attribute", &Attributable::setAttribute< unsigned long long
         // >)
-        .def("set_attribute", &Attributable::setAttribute<long>)
+        .def("set_attribute", self_method(&Attributable::setAttribute<long>))
         // work-around for https://github.com/pybind/pybind11/issues/1512
         // -> handle all native python floats as double
         // .def("set_attribute", &Attributable::setAttribute< float >)
         // .def("set_attribute", &Attributable::setAttribute< long double >)
-        .def("set_attribute", &Attributable::setAttribute<double>)
+        .def("set_attribute", self_method(&Attributable::setAttribute<double>))
         // work-around for https://github.com/pybind/pybind11/issues/1509
         // -> since there is only str in Python, chars are strings
         // .def("set_attribute", &Attributable::setAttribute< char >)
         .def(
             "set_attribute",
-            [](Attributable &attr,
+            [](Self<Attributable> attr,
                std::string const &key,
                std::string const &value) {
-                return attr.setAttribute(key, value);
+                return attr->setAttribute(key, value);
             })
 
         // Plain Python arrays and plain python lists of homogeneous,
@@ -603,20 +598,24 @@ void init_Attributable(py::module &m)
         // > >)
         .def(
             "set_attribute",
-            &Attributable::setAttribute<std::vector<unsigned char>>)
-        .def("set_attribute", &Attributable::setAttribute<std::vector<long>>)
+            self_method(
+                &Attributable::setAttribute<std::vector<unsigned char>>))
         .def(
             "set_attribute",
-            &Attributable::setAttribute<std::vector<
-                double>>) // TODO: this implicitly casts list of complex
+            self_method(&Attributable::setAttribute<std::vector<long>>))
+        .def(
+            "set_attribute",
+            self_method(&Attributable::setAttribute<
+                        std::vector<double>>)) // TODO: this implicitly casts
+                                               // list of complex
         // probably affected by bug
         // https://github.com/pybind/pybind11/issues/1258
         .def(
             "set_attribute",
-            [](Attributable &attr,
+            [](Self<Attributable> attr,
                std::string const &key,
                std::vector<std::string> const &value) {
-                return attr.setAttribute(key, value);
+                return attr->setAttribute(key, value);
             })
         // .def("set_attribute", &Attributable::setAttribute< std::array<
         // double, 7 > >)
@@ -624,43 +623,44 @@ void init_Attributable(py::module &m)
         // C++ pass-through API: Getter
         .def(
             "get_attribute",
-            [](Attributable &attr, std::string const &key) {
-                auto v = attr.getAttribute(key);
+            [](Self<Attributable> attr, std::string const &key) {
+                auto v = attr->getAttribute(key);
                 return std::visit(
-                    [](auto const &val) { return py::cast(val); },
+                    [](auto const &val) { return nb::cast(val); },
                     v.getVariant<attribute_types>());
                 // TODO instead of returning lists, return all arrays (ndim > 0)
                 // as numpy arrays?
             })
-        .def_property_readonly(
+        .def_prop_ro(
             "attribute_dtypes",
-            [](Attributable const &attributable) {
-                std::map<std::string, pybind11::dtype> dtypes;
-                for (auto const &attr : attributable.attributes())
+            [](Self<Attributable> attributable) {
+                std::map<std::string, nb::object> dtypes;
+                for (auto const &attr : attributable->attributes())
                 {
                     dtypes[attr] =
-                        dtype_to_numpy(attributable.getAttribute(attr).dtype);
+                        dtype_to_numpy(attributable->getAttribute(attr).dtype);
                 }
                 return dtypes;
             })
-        .def("delete_attribute", &Attributable::deleteAttribute)
-        .def("contains_attribute", &Attributable::containsAttribute)
+        .def("delete_attribute", self_method(&Attributable::deleteAttribute))
+        .def(
+            "contains_attribute", self_method(&Attributable::containsAttribute))
 
         // @todo _ipython_key_completions_ if we find a way to add a []
         // interface
 
-        .def_property(
-            "comment", &Attributable::comment, &Attributable::setComment)
+        .def_prop_rw(
+            "comment",
+            self_method(&Attributable::comment),
+            self_method(&Attributable::setComment))
         // TODO remove in future versions (deprecated)
-        .def("set_comment", &Attributable::setComment)
-        .def("my_path", &Attributable::myPath)
+        .def("set_comment", self_method(&Attributable::setComment))
+        .def("my_path", self_method(&Attributable::myPath))
         .def(
             "populate_missing_metadata",
-            &Attributable::populateMissingMetadata,
-            py::arg("recursive"))
-        .def_property_readonly("memory_id", [](Attributable const &attr) {
-            return attr.memoryID();
+            self_method(&Attributable::populateMissingMetadata),
+            nb::arg("recursive"))
+        .def_prop_ro("memory_id", [](Self<Attributable> attr) {
+            return attr->memoryID();
         });
-
-    py::bind_vector<PyAttributeKeys>(m, "Attribute_Keys");
 }

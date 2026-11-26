@@ -18,19 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <limits>
-#include <pybind11/detail/common.h>
-#include <pybind11/gil.h>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
 
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Error.hpp"
-#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
@@ -46,6 +39,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -53,15 +47,33 @@
 #include <type_traits>
 #include <vector>
 
-/** Convert a py::tuple of py::slices to Offset & Extent
+/** Same as pybind11::slice::compute() */
+inline bool compute_slice(
+    nb::handle slice,
+    size_t length,
+    size_t *start,
+    size_t *stop,
+    size_t *step,
+    size_t *slicelength)
+{
+    return PySlice_GetIndicesEx(
+               slice.ptr(),
+               static_cast<Py_ssize_t>(length),
+               reinterpret_cast<Py_ssize_t *>(start),
+               reinterpret_cast<Py_ssize_t *>(stop),
+               reinterpret_cast<Py_ssize_t *>(step),
+               reinterpret_cast<Py_ssize_t *>(slicelength)) == 0;
+}
+
+/** Convert a nb::tuple of nb::slices to Offset & Extent
  *
  * https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.indexing.html
  * https://github.com/numpy/numpy/blob/v1.16.1/numpy/core/src/multiarray/mapping.c#L348-L375
  */
 inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
-    uint8_t const ndim, Extent const &full_extent, py::tuple const &slices)
+    uint8_t const ndim, Extent const &full_extent, nb::tuple const &slices)
 {
-    uint8_t const numSlices = py::len(slices);
+    uint8_t const numSlices = nb::len(slices);
 
     Offset offset(ndim, 0u);
     Extent extent(ndim, 1u);
@@ -74,14 +86,14 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
         ++curAxis;
 
         if (i >= ndim && posEllipsis == -1 && slices[i].ptr() != Py_Ellipsis)
-            throw py::index_error(
+            throw nb::index_error(
                 "too many indices for dimension of record component!");
 
         if (slices[i].ptr() == Py_Ellipsis)
         {
             // only allowed once
             if (posEllipsis != -1)
-                throw py::index_error(
+                throw nb::index_error(
                     "an index can only have a single ellipsis ('...')");
             posEllipsis = curAxis;
 
@@ -116,25 +128,25 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 
         if (PySlice_Check(slices[i].ptr()))
         {
-            py::slice slice = py::cast<py::slice>(slices[i]);
+            nb::object slice = slices[i];
 
             size_t start, stop, step, slicelength;
             auto mocked_extent = full_extent.at(curAxis);
-            // py::ssize_t is a signed type, so we will need to use another
+            // Py_ssize_t is a signed type, so we will need to use another
             // magic number for JOINED_DIMENSION in this computation, since the
             // C++ API's JOINED_DIMENSION would be interpreted as a negative
             // index
             bool undo_mocked_extent = false;
             constexpr auto PYTHON_JOINED_DIMENSION =
-                std::numeric_limits<py::ssize_t>::max() - 1;
+                std::numeric_limits<Py_ssize_t>::max() - 1;
             if (mocked_extent == Dataset::JOINED_DIMENSION)
             {
                 undo_mocked_extent = true;
                 mocked_extent = PYTHON_JOINED_DIMENSION;
             }
-            if (!slice.compute(
-                    mocked_extent, &start, &stop, &step, &slicelength))
-                throw py::error_already_set();
+            if (!compute_slice(
+                    slice, mocked_extent, &start, &stop, &step, &slicelength))
+                throw nb::python_error();
 
             if (undo_mocked_extent)
             {
@@ -145,13 +157,14 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
                 // that the mocked alternative value is actually the intended
                 // one
                 size_t start2, stop2, step2, slicelength2;
-                if (!slice.compute(
+                if (!compute_slice(
+                        slice,
                         mocked_extent + 1,
                         &start2,
                         &stop2,
                         &step2,
                         &slicelength2))
-                    throw py::error_already_set();
+                    throw nb::python_error();
                 if (slicelength == slicelength2)
                 {
                     // slicelength was given as an absolute value and
@@ -169,7 +182,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
             // (ssize_t*)&start, (ssize_t*)&stop, step);
 
             if (step != 1u)
-                throw py::index_error(
+                throw nb::index_error(
                     "strides in selection are inefficient, not implemented!");
 
             // verified for size later in C++ API
@@ -184,7 +197,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 
         try
         {
-            auto const index = py::cast<std::int64_t>(slices[i]);
+            auto const index = nb::cast<std::int64_t>(slices[i]);
 
             if (index < 0)
                 offset.at(curAxis) = full_extent.at(curAxis) + index;
@@ -195,33 +208,35 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
             flatten.at(curAxis) = true; // indices flatten the dimension
 
             if (offset.at(curAxis) >= full_extent.at(curAxis))
-                throw py::index_error(
-                    std::string("index ") + std::to_string(offset.at(curAxis)) +
-                    std::string(" is out of bounds for axis ") +
-                    std::to_string(i) + std::string(" with size ") +
-                    std::to_string(full_extent.at(curAxis)));
+                throw nb::index_error(
+                    (std::string("index ") +
+                     std::to_string(offset.at(curAxis)) +
+                     std::string(" is out of bounds for axis ") +
+                     std::to_string(i) + std::string(" with size ") +
+                     std::to_string(full_extent.at(curAxis)))
+                        .c_str());
 
             continue;
         }
         // NOLINTNEXTLINE(bugprone-empty-catch)
-        catch (const py::cast_error &e)
+        catch (const nb::cast_error &e)
         {
             // not an index
         }
 
         if (slices[i].ptr() == Py_None)
         {
-            // py::none newaxis = py::cast< py::none >( slices[i] );;
-            throw py::index_error("None (newaxis) not implemented!");
+            // nb::none newaxis = nb::cast< nb::none >( slices[i] );;
+            throw nb::index_error("None (newaxis) not implemented!");
 
             // continue;
         }
 
         // if we get here, the last slice type was not successfully processed
         --curAxis;
-        throw py::index_error(
-            std::string("unknown index type passed: ") +
-            py::str(slices[i]).cast<std::string>());
+        throw nb::index_error((std::string("unknown index type passed: ") +
+                               nb::cast<std::string>(nb::str(slices[i])))
+                                  .c_str());
     }
 
     // fill omitted higher indices with "select all"
@@ -236,9 +251,9 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
 inline std::tuple<Offset, Extent, std::vector<bool>> parseJoinedTupleSlices(
     uint8_t const ndim,
     Extent const &full_extent,
-    py::tuple const &slices,
+    nb::tuple const &slices,
     size_t joined_dim,
-    py::array const &a)
+    python::array const &a)
 {
 
     std::vector<bool> flatten;
@@ -265,7 +280,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseJoinedTupleSlices(
         {
             if (extent.at(i) == 0 || extent.at(i) == Dataset::JOINED_DIMENSION)
             {
-                extent[i] = a.shape()[i];
+                extent[i] = a.shape().at(i);
             }
         }
         else
@@ -293,22 +308,11 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseJoinedTupleSlices(
  * - not strided with paddings
  * - not a view in another buffer that results in striding
  */
-inline void check_buffer_is_contiguous(py::array &a)
+inline void check_buffer_is_contiguous(python::array &a)
 {
 
-    auto *view = new Py_buffer();
-    int flags = PyBUF_STRIDES | PyBUF_FORMAT;
-    if (PyObject_GetBuffer(a.ptr(), view, flags) != 0)
-    {
-        delete view;
-        throw py::error_already_set();
-    }
-    bool isContiguous = (PyBuffer_IsContiguous(view, 'C') != 0);
-    PyBuffer_Release(view);
-    delete view;
-
-    if (!isContiguous)
-        throw py::index_error(
+    if (!python::buffer_info(a).c_contiguous)
+        throw nb::index_error(
             "strides in chunk are inefficient, not implemented!");
     // @todo in order to implement stride handling, one needs to
     //       loop over the input data strides in store/load calls
@@ -321,7 +325,7 @@ struct StoreChunkFromPythonArray
     template <typename T>
     static void call(
         RecordComponent &r,
-        py::array &a,
+        python::array &a,
         Offset const &offset,
         Extent const &extent)
     {
@@ -332,9 +336,8 @@ struct StoreChunkFromPythonArray
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
             (T *)data,
-            [owning_handle =
-                 std::make_optional(a.cast<py::object>())](T *) mutable {
-                py::gil_scoped_acquire need_the_gil_for_this;
+            [owning_handle = std::make_optional(nb::object(a))](T *) mutable {
+                nb::gil_scoped_acquire need_the_gil_for_this;
                 owning_handle.reset();
             });
         r.storeChunk(std::move(shared), offset, extent);
@@ -347,7 +350,7 @@ struct LoadChunkIntoPythonArray
     template <typename T>
     static void call(
         RecordComponent &r,
-        py::array &a,
+        python::array &a,
         Offset const &offset,
         Extent const &extent)
     {
@@ -358,9 +361,8 @@ struct LoadChunkIntoPythonArray
         // a race condition by manipulating the data that was passed
         std::shared_ptr<T> shared(
             (T *)data,
-            [owning_handle =
-                 std::make_optional(a.cast<py::object>())](T *) mutable {
-                py::gil_scoped_acquire need_the_gil_for_this;
+            [owning_handle = std::make_optional(nb::object(a))](T *) mutable {
+                nb::gil_scoped_acquire need_the_gil_for_this;
                 owning_handle.reset();
             });
         r.loadChunk(std::move(shared), offset, extent);
@@ -373,8 +375,8 @@ struct LoadChunkIntoPythonBuffer
     template <typename T>
     static void call(
         RecordComponent &r,
-        py::buffer &buffer,
-        py::buffer_info const &buffer_info,
+        python::buffer &buffer,
+        python::buffer_info const &buffer_info,
         Offset const &offset,
         Extent const &extent)
     {
@@ -386,8 +388,8 @@ struct LoadChunkIntoPythonBuffer
         std::shared_ptr<T> shared(
             (T *)data,
             [owning_handle =
-                 std::make_optional(buffer.cast<py::object>())](T *) mutable {
-                py::gil_scoped_acquire need_the_gil_for_this;
+                 std::make_optional(nb::object(buffer))](T *) mutable {
+                nb::gil_scoped_acquire need_the_gil_for_this;
                 owning_handle.reset();
             });
         r.loadChunk(std::move(shared), offset, extent);
@@ -407,7 +409,7 @@ struct LoadChunkIntoPythonBuffer
  */
 inline void store_chunk(
     RecordComponent &r,
-    py::array &a,
+    python::array &a,
     Offset const &offset,
     Extent const &extent,
     std::vector<bool> const &flatten)
@@ -440,36 +442,40 @@ inline void store_chunk(
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
     //   verify shape and extent
+    auto const a_shape = a.shape();
     if (size_t(a.ndim()) != r_shape.size())
-        throw py::index_error(
-            std::string("dimension of chunk (") + std::to_string(a.ndim()) +
-            std::string(
-                "D) does not fit dimension of selection "
-                "in record component (") +
-            std::to_string(r_shape.size()) + std::string("D)"));
+        throw nb::index_error(
+            (std::string("dimension of chunk (") + std::to_string(a.ndim()) +
+             std::string(
+                 "D) does not fit dimension of selection "
+                 "in record component (") +
+             std::to_string(r_shape.size()) + std::string("D)"))
+                .c_str());
 
     if (auto joined_dim = r.joinedDimension(); joined_dim.has_value())
     {
-        for (py::ssize_t d = 0; d < a.ndim(); ++d)
+        for (Py_ssize_t d = 0; d < a.ndim(); ++d)
         {
             // selection causes overflow of r
-            if (d != py::ssize_t(*joined_dim) && extent.at(d) != r_shape.at(d))
-                throw py::index_error(
-                    std::string("selection for axis ") + std::to_string(d) +
-                    " of record component with joined dimension " +
-                    std::to_string(*joined_dim) +
-                    " must be equivalent to its global extent " +
-                    std::to_string(extent.at(d)) + ", but was " +
-                    std::to_string(r_shape.at(d)) + ".");
+            if (d != Py_ssize_t(*joined_dim) && extent.at(d) != r_shape.at(d))
+                throw nb::index_error(
+                    (std::string("selection for axis ") + std::to_string(d) +
+                     " of record component with joined dimension " +
+                     std::to_string(*joined_dim) +
+                     " must be equivalent to its global extent " +
+                     std::to_string(extent.at(d)) + ", but was " +
+                     std::to_string(r_shape.at(d)) + ".")
+                        .c_str());
             // underflow of selection in r for given a
-            if (s_shape.at(d) != std::uint64_t(a.shape()[d]))
-                throw py::index_error(
-                    std::string("size of chunk (") +
-                    std::to_string(a.shape()[d]) + std::string(") for axis ") +
-                    std::to_string(d) +
-                    std::string(" does not match selection ") +
-                    std::string("size in record component (") +
-                    std::to_string(s_extent.at(d)) + std::string(")"));
+            if (s_shape.at(d) != std::uint64_t(a_shape[d]))
+                throw nb::index_error(
+                    (std::string("size of chunk (") +
+                     std::to_string(a_shape[d]) + std::string(") for axis ") +
+                     std::to_string(d) +
+                     std::string(" does not match selection ") +
+                     std::string("size in record component (") +
+                     std::to_string(s_extent.at(d)) + std::string(")"))
+                        .c_str());
         }
     }
     else
@@ -478,21 +484,23 @@ inline void store_chunk(
         {
             // selection causes overflow of r
             if (offset.at(d) + extent.at(d) > r_shape.at(d))
-                throw py::index_error(
-                    std::string("slice ") + std::to_string(offset.at(d)) +
-                    std::string(":") + std::to_string(extent.at(d)) +
-                    std::string(" is out of bounds for axis ") +
-                    std::to_string(d) + std::string(" with size ") +
-                    std::to_string(r_shape.at(d)));
+                throw nb::index_error(
+                    (std::string("slice ") + std::to_string(offset.at(d)) +
+                     std::string(":") + std::to_string(extent.at(d)) +
+                     std::string(" is out of bounds for axis ") +
+                     std::to_string(d) + std::string(" with size ") +
+                     std::to_string(r_shape.at(d)))
+                        .c_str());
             // underflow of selection in r for given a
-            if (s_shape.at(d) != std::uint64_t(a.shape()[d]))
-                throw py::index_error(
-                    std::string("size of chunk (") +
-                    std::to_string(a.shape()[d]) + std::string(") for axis ") +
-                    std::to_string(d) +
-                    std::string(" does not match selection ") +
-                    std::string("size in record component (") +
-                    std::to_string(s_extent.at(d)) + std::string(")"));
+            if (s_shape.at(d) != std::uint64_t(a_shape[d]))
+                throw nb::index_error(
+                    (std::string("size of chunk (") +
+                     std::to_string(a_shape[d]) + std::string(") for axis ") +
+                     std::to_string(d) +
+                     std::string(" does not match selection ") +
+                     std::string("size in record component (") +
+                     std::to_string(s_extent.at(d)) + std::string(")"))
+                        .c_str());
         }
     }
 
@@ -512,10 +520,10 @@ inline void store_chunk(
 
 /** Store Chunk
  *
- * Called with a py::tuple of slices and a py::array
+ * Called with a nb::tuple of slices and a python::array
  */
 inline void
-store_chunk(RecordComponent &r, py::array &a, py::tuple const &slices)
+store_chunk(RecordComponent &r, python::array &a, nb::tuple const &slices)
 {
     uint8_t ndim = r.getDimensionality();
     auto const full_extent = r.getExtent();
@@ -540,7 +548,7 @@ store_chunk(RecordComponent &r, py::array &a, py::tuple const &slices)
 
 struct PythonDynamicMemoryView
 {
-    using ShapeContainer = pybind11::array::ShapeContainer;
+    using ShapeContainer = std::vector<Py_ssize_t>;
 
     template <typename T>
     PythonDynamicMemoryView(
@@ -555,7 +563,7 @@ struct PythonDynamicMemoryView
         , m_datatype(determineDatatype<T>())
     {}
 
-    [[nodiscard]] pybind11::object currentView() const;
+    [[nodiscard]] nb::object currentView() const;
 
     std::shared_ptr<void> m_dynamicView;
     ShapeContainer m_arrayShape;
@@ -565,10 +573,77 @@ struct PythonDynamicMemoryView
 
 namespace
 {
+/** PEP 3118 format string for T, same as pybind11::format_descriptor<T> */
+template <typename T>
+char const *buffer_format()
+{
+    if constexpr (std::is_same_v<T, bool>)
+        return "?";
+    else if constexpr (std::is_integral_v<T>)
+    {
+        constexpr bool is_signed = std::is_signed_v<T>;
+        if constexpr (sizeof(T) == 1)
+            return is_signed ? "b" : "B";
+        else if constexpr (sizeof(T) == 2)
+            return is_signed ? "h" : "H";
+        else if constexpr (sizeof(T) == 4)
+            return is_signed ? "i" : "I";
+        else
+            return is_signed ? "q" : "Q";
+    }
+    else if constexpr (std::is_same_v<T, float>)
+        return "f";
+    else if constexpr (std::is_same_v<T, double>)
+        return "d";
+    else if constexpr (std::is_same_v<T, long double>)
+        return "g";
+    else if constexpr (std::is_same_v<T, std::complex<float>>)
+        return "Zf";
+    else if constexpr (std::is_same_v<T, std::complex<double>>)
+        return "Zd";
+    else if constexpr (std::is_same_v<T, std::complex<long double>>)
+        return "Zg";
+    else
+        static_assert(
+            openPMD::auxiliary::dependent_false_v<T>,
+            "Unsupported buffer type");
+}
+
+/** Same as pybind11::memoryview::from_buffer() */
+template <typename T>
+nb::object memoryview_from_buffer(
+    T *ptr,
+    std::vector<Py_ssize_t> const &shape,
+    std::vector<Py_ssize_t> const &strides,
+    bool readonly)
+{
+    Py_buffer view{};
+    view.buf = ptr;
+    view.obj = nullptr;
+    view.itemsize = sizeof(T);
+    view.len = view.itemsize;
+    for (auto extent : shape)
+    {
+        view.len *= extent;
+    }
+    view.readonly = readonly ? 1 : 0;
+    view.ndim = static_cast<int>(shape.size());
+    view.format = const_cast<char *>(buffer_format<T>());
+    // copied by PyMemoryView_FromBuffer
+    view.shape = const_cast<Py_ssize_t *>(shape.data());
+    view.strides = const_cast<Py_ssize_t *>(strides.data());
+    PyObject *res = PyMemoryView_FromBuffer(&view);
+    if (!res)
+    {
+        throw nb::python_error();
+    }
+    return nb::steal(res);
+}
+
 struct GetCurrentView
 {
     template <typename T>
-    static pybind11::object call(PythonDynamicMemoryView const &dynamicView)
+    static nb::object call(PythonDynamicMemoryView const &dynamicView)
     {
         auto span =
             static_cast<DynamicMemoryView<T> *>(dynamicView.m_dynamicView.get())
@@ -577,20 +652,19 @@ struct GetCurrentView
         {
             /*
              * Fallback for zero-sized store_chunk calls.
-             * py::memoryview cannot be used since it checks for nullpointers,
+             * A memoryview cannot be used since it checks for nullpointers,
              * even when the extent is zero.
              * This may sound like an esoteric use case at first, but may happen
              * in parallel usage when the chunk distribution ends up assigning
              * zero-sized chunks to some rank.
              */
-            return py::array(
+            return python::array(
                 dtype_to_numpy(dynamicView.m_datatype),
-                dynamicView.m_arrayShape,
-                dynamicView.m_strides);
+                dynamicView.m_arrayShape);
         }
         else
         {
-            return py::memoryview::from_buffer(
+            return memoryview_from_buffer(
                 span.data(),
                 dynamicView.m_arrayShape,
                 dynamicView.m_strides,
@@ -602,7 +676,7 @@ struct GetCurrentView
 };
 } // namespace
 
-pybind11::object PythonDynamicMemoryView::currentView() const
+nb::object PythonDynamicMemoryView::currentView() const
 {
     return switchDatasetType<GetCurrentView>(m_datatype, *this);
 }
@@ -616,11 +690,10 @@ struct StoreChunkSpan
     call(RecordComponent &r, Offset const &offset, Extent const &extent)
     {
         DynamicMemoryView<T> dynamicView = r.storeChunk<T>(offset, extent);
-        pybind11::array::ShapeContainer arrayShape(
-            extent.begin(), extent.end());
-        std::vector<py::ssize_t> strides(extent.size());
+        std::vector<Py_ssize_t> arrayShape(extent.begin(), extent.end());
+        std::vector<Py_ssize_t> strides(extent.size());
         {
-            py::ssize_t accumulator = sizeof(T);
+            Py_ssize_t accumulator = sizeof(T);
             size_t dim = extent.size();
             while (dim > 0)
             {
@@ -630,9 +703,7 @@ struct StoreChunkSpan
             }
         }
         return PythonDynamicMemoryView(
-            std::move(dynamicView),
-            std::move(arrayShape),
-            py::array::ShapeContainer(std::move(strides)));
+            std::move(dynamicView), std::move(arrayShape), std::move(strides));
     }
 
     static constexpr char const *errorMsg = "RecordComponent.store_chunk()";
@@ -662,7 +733,7 @@ inline PythonDynamicMemoryView store_chunk_span(
 }
 
 inline PythonDynamicMemoryView
-store_chunk_span(RecordComponent &r, py::tuple const &slices)
+store_chunk_span(RecordComponent &r, nb::tuple const &slices)
 {
     uint8_t ndim = r.getDimensionality();
     auto const full_extent = r.getExtent();
@@ -686,12 +757,12 @@ store_chunk_span(RecordComponent &r, py::tuple const &slices)
  */
 void load_chunk(
     RecordComponent &r,
-    py::buffer &buffer,
+    python::buffer &buffer,
     Offset const &offset,
     Extent const &extent)
 {
     auto const dtype = dtype_to_numpy(r.getDatatype());
-    py::buffer_info buffer_info = buffer.request(/* writable = */ true);
+    python::buffer_info buffer_info(buffer, /* writable = */ true);
 
     auto const &strides = buffer_info.strides;
     // this function requires a contiguous slab of memory, so check the strides
@@ -702,7 +773,7 @@ void load_chunk(
             "[Record_Component::load_chunk()] Empty buffer passed.");
     }
     {
-        py::ssize_t accumulator = toBytes(r.getDatatype());
+        Py_ssize_t accumulator = toBytes(r.getDatatype());
         if (buffer_info.itemsize != accumulator)
         {
             std::stringstream errorMsg;
@@ -741,7 +812,7 @@ void load_chunk(
  */
 inline void load_chunk(
     RecordComponent &r,
-    py::array &a,
+    python::array &a,
     Offset const &offset,
     Extent const &extent)
 {
@@ -755,33 +826,35 @@ inline void load_chunk(
         s_load *= si;
         str_extent_shape.append(" ").append(std::to_string(si));
     }
-    for (py::ssize_t d = 0; d < a.ndim(); ++d)
+    auto const a_shape = a.shape();
+    for (Py_ssize_t d = 0; d < a.ndim(); ++d)
     {
-        s_array *= a.shape()[d];
-        str_array_shape.append(" ").append(std::to_string(a.shape()[d]));
+        s_array *= a_shape[d];
+        str_array_shape.append(" ").append(std::to_string(a_shape[d]));
     }
 
     /* we allow flattening of the result dimension
     if( size_t(a.ndim()) > extent.size() )
-        throw py::index_error(
+        throw nb::index_error((
             std::string("dimension of array (") +
             std::to_string(a.ndim()) +
             std::string("D) does not fit dimension of selection "
                         "in record component (") +
             std::to_string(extent.size()) +
             std::string("D)")
-        );
+        ).c_str());
     */
     if (s_array < s_load)
     {
-        throw py::index_error(
-            std::string("size of array (") + std::to_string(s_array) +
-            std::string("; shape:") + str_array_shape +
-            std::string(
-                ") is smaller than size of selection "
-                "in record component (") +
-            std::to_string(s_load) + std::string("; shape:") +
-            str_extent_shape + std::string(")"));
+        throw nb::index_error(
+            (std::string("size of array (") + std::to_string(s_array) +
+             std::string("; shape:") + str_array_shape +
+             std::string(
+                 ") is smaller than size of selection "
+                 "in record component (") +
+             std::to_string(s_load) + std::string("; shape:") +
+             str_extent_shape + std::string(")"))
+                .c_str());
     }
 
     check_buffer_is_contiguous(a);
@@ -801,9 +874,9 @@ inline void load_chunk(
 
 /** Load Chunk
  *
- * Called with a py::tuple of slices.
+ * Called with a nb::tuple of slices.
  */
-py::array load_chunk(RecordComponent &r, py::tuple const &slices)
+python::array load_chunk(RecordComponent &r, nb::tuple const &slices)
 {
     uint8_t ndim = r.getDimensionality();
     auto const full_extent = r.getExtent();
@@ -827,21 +900,24 @@ py::array load_chunk(RecordComponent &r, py::tuple const &slices)
         [&maskIt](std::uint64_t) { return !*(maskIt++); });
 
     auto const dtype = dtype_to_numpy(r.getDatatype());
-    auto a = py::array(dtype, shape);
+    auto a = python::array(dtype, shape);
 
     load_chunk(r, a, offset, extent);
 
     return a;
 }
 
-void init_RecordComponent(py::module &m)
+void init_RecordComponent(nb::module_ &m)
 {
-    py::class_<PythonDynamicMemoryView>(m, "Dynamic_Memory_View")
+    using python::Self;
+    using python::self_method;
+
+    nb::class_<PythonDynamicMemoryView>(m, "Dynamic_Memory_View")
         .def(
             "__repr__",
             [](PythonDynamicMemoryView const &view) {
                 return "<openPMD.Dynamic_Memory_view of dimensionality '" +
-                    std::to_string(view.m_arrayShape->size()) + "'>";
+                    std::to_string(view.m_arrayShape.size()) + "'>";
             })
         .def("current_buffer", [](PythonDynamicMemoryView const &view) {
             return view.currentView();
@@ -851,10 +927,12 @@ void init_RecordComponent(py::module &m)
         declare_container<PyRecordComponentContainer, Attributable>(
             m, "Record_Component_Container");
 
-    py::class_<RecordComponent, BaseRecordComponent> cl(m, "Record_Component");
+    auto cl = python::bind_class<RecordComponent, BaseRecordComponent>(
+        m, "Record_Component");
     cl.def(
           "__repr__",
-          [](RecordComponent const &rc) {
+          [](Self<RecordComponent> self) {
+              RecordComponent const &rc = *self;
               std::stringstream stream;
               stream << "<openPMD.Record_Component of type '"
                      << rc.getDatatype() << "' and with extent ";
@@ -875,28 +953,29 @@ void init_RecordComponent(py::module &m)
               return stream.str();
           })
 
-        .def_property(
+        .def_prop_rw(
             "unit_SI",
-            &BaseRecordComponent::unitSI,
-            &RecordComponent::setUnitSI)
+            self_method<RecordComponent>(&BaseRecordComponent::unitSI),
+            self_method(&RecordComponent::setUnitSI))
 
-        .def("reset_dataset", &RecordComponent::resetDataset)
+        .def("reset_dataset", self_method(&RecordComponent::resetDataset))
 
-        .def_property_readonly("ndim", &RecordComponent::getDimensionality)
-        .def_property_readonly("shape", &RecordComponent::getExtent)
-        .def_property_readonly("empty", &RecordComponent::empty)
+        .def_prop_ro("ndim", self_method(&RecordComponent::getDimensionality))
+        .def_prop_ro("shape", self_method(&RecordComponent::getExtent))
+        .def_prop_ro("empty", self_method(&RecordComponent::empty))
 
         // buffer types
         .def(
             "make_constant",
-            [](RecordComponent &rc, py::buffer &a) {
-                py::buffer_info buf = a.request();
+            [](Self<RecordComponent> self, python::buffer &a) {
+                RecordComponent &rc = *self;
+                python::buffer_info buf(a);
                 auto const dtype = dtype_from_bufferformat(buf.format);
 
                 using DT = Datatype;
 
                 // allow one-element n-dimensional buffers as well
-                py::ssize_t numElements = 1;
+                Py_ssize_t numElements = 1;
                 if (buf.ndim > 0)
                 {
                     for (auto d = 0; d < buf.ndim; ++d)
@@ -996,42 +1075,43 @@ void init_RecordComponent(py::module &m)
                         "Only scalar values supported!");
                 }
             },
-            py::arg("value"))
+            nb::arg("value"))
         // allowed python intrinsics, after (!) buffer matching
         .def(
             "make_constant",
-            &RecordComponent::makeConstant<char>,
-            py::arg("value"))
+            self_method(&RecordComponent::makeConstant<char>),
+            nb::arg("value"))
         .def(
             "make_constant",
-            &RecordComponent::makeConstant<long>,
-            py::arg("value"))
+            self_method(&RecordComponent::makeConstant<long>),
+            nb::arg("value"))
         .def(
             "make_constant",
-            &RecordComponent::makeConstant<double>,
-            py::arg("value"))
+            self_method(&RecordComponent::makeConstant<double>),
+            nb::arg("value"))
         .def(
             "make_empty",
-            [](RecordComponent &rc, Datatype dt, uint8_t dimensionality) {
-                return rc.makeEmpty(dt, dimensionality);
+            [](Self<RecordComponent> rc, Datatype dt, uint8_t dimensionality) {
+                return rc->makeEmpty(dt, dimensionality);
             },
-            py::arg("datatype"),
-            py::arg("dimensionality"))
+            nb::arg("datatype"),
+            nb::arg("dimensionality"))
         .def(
             "make_empty",
-            [](RecordComponent &rc,
-               pybind11::object dt,
+            [](Self<RecordComponent> rc,
+               nb::object dt,
                uint8_t dimensionality) {
-                return rc.makeEmpty(
+                return rc->makeEmpty(
                     dtype_from_numpy(std::move(dt)), dimensionality);
             })
 
         // deprecated: pass-through C++ API
         .def(
             "load_chunk",
-            [](RecordComponent &r,
+            [](Self<RecordComponent> self,
                Offset const &offset_in,
                Extent const &extent_in) {
+                RecordComponent &r = *self;
                 uint8_t ndim = r.getDimensionality();
 
                 // default arguments
@@ -1055,20 +1135,21 @@ void init_RecordComponent(py::module &m)
                 std::copy(
                     std::begin(extent), std::end(extent), std::begin(shape));
                 auto const dtype = dtype_to_numpy(r.getDatatype());
-                auto a = py::array(dtype, shape);
+                auto a = python::array(dtype, shape);
                 load_chunk(r, a, offset, extent);
 
                 return a;
             },
-            py::arg_v(
-                "offset", Offset(1, 0u), "np.zeros(Record_Component.shape)"),
-            py::arg_v("extent", Extent(1, -1u), "Record_Component.shape"))
+            nb::arg("offset").sig("np.zeros(Record_Component.shape)") =
+                Offset(1, 0u),
+            nb::arg("extent").sig("Record_Component.shape") = Extent(1, -1u))
         .def(
             "load_chunk",
-            [](RecordComponent &r,
-               py::buffer buffer,
+            [](Self<RecordComponent> self,
+               python::buffer buffer,
                Offset const &offset_in,
                Extent const &extent_in) {
+                RecordComponent &r = *self;
                 uint8_t ndim = r.getDimensionality();
 
                 // default arguments
@@ -1091,18 +1172,19 @@ void init_RecordComponent(py::module &m)
                 std::vector<bool> flatten(ndim, false);
                 load_chunk(r, buffer, offset, extent);
             },
-            py::arg("pre-allocated buffer"),
-            py::arg_v(
-                "offset", Offset(1, 0u), "np.zeros(Record_Component.shape)"),
-            py::arg_v("extent", Extent(1, -1u), "Record_Component.shape"))
+            nb::arg("pre-allocated buffer"),
+            nb::arg("offset").sig("np.zeros(Record_Component.shape)") =
+                Offset(1, 0u),
+            nb::arg("extent").sig("Record_Component.shape") = Extent(1, -1u))
 
         // deprecated: pass-through C++ API
         .def(
             "store_chunk",
-            [](RecordComponent &r,
-               py::array &a,
+            [](Self<RecordComponent> self,
+               python::array &a,
                Offset const &offset_in,
                Extent const &extent_in) {
+                RecordComponent &r = *self;
                 // default arguments
                 //   offset = {0u}: expand to right dim {0u, 0u, ...}
                 Offset offset = offset_in;
@@ -1113,22 +1195,26 @@ void init_RecordComponent(py::module &m)
                 //   extent = {-1u}: take full size
                 Extent extent(a.ndim(), 1u);
                 if (extent_in.size() == 1u && extent_in.at(0) == -1u)
+                {
+                    auto const a_shape = a.shape();
                     for (auto d = 0; d < a.ndim(); ++d)
-                        extent.at(d) = a.shape()[d];
+                        extent.at(d) = a_shape[d];
+                }
                 else
                     extent = extent_in;
 
                 std::vector<bool> flatten(r.getDimensionality(), false);
                 store_chunk(r, a, offset, extent, flatten);
             },
-            py::arg("array"),
-            py::arg_v("offset", Offset(1, 0u), "np.zeros_like(array)"),
-            py::arg_v("extent", Extent(1, -1u), "array.shape"))
+            nb::arg("array"),
+            nb::arg("offset").sig("np.zeros_like(array)") = Offset(1, 0u),
+            nb::arg("extent").sig("array.shape") = Extent(1, -1u))
         .def(
             "store_chunk",
-            [](RecordComponent &r,
+            [](Self<RecordComponent> self,
                Offset const &offset_in,
                Extent const &extent_in) {
+                RecordComponent &r = *self;
                 // default arguments
                 //   offset = {0u}: expand to right dim {0u, 0u, ...}
                 unsigned dimensionality = r.getDimensionality();
@@ -1149,15 +1235,17 @@ void init_RecordComponent(py::module &m)
                 std::vector<bool> flatten(r.getDimensionality(), false);
                 return store_chunk_span(r, offset, extent, flatten);
             },
-            py::arg_v("offset", Offset(1, 0u), "np.zeros_like(array)"),
-            py::arg_v("extent", Extent(1, -1u), "array.shape"))
+            nb::arg("offset").sig("np.zeros_like(array)") = Offset(1, 0u),
+            nb::arg("extent").sig("array.shape") = Extent(1, -1u))
 
-        .def_property_readonly_static(
+        .def_prop_ro_static(
             "SCALAR",
-            [](py::object const &) { return RecordComponent::SCALAR; })
+            [](nb::object const &) { return RecordComponent::SCALAR; })
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
+        .def(
+            "set_unit_SI",
+            self_method(&RecordComponent::setUnitSI)) // deprecated
         ;
     add_pickle(
         cl,
@@ -1175,18 +1263,20 @@ void init_RecordComponent(py::module &m)
     addRecordComponentSetGet(cl);
 
     finalize_container<PyRecordComponentContainer>(py_rc_cnt);
-    addRecordComponentSetGet(
-        finalize_container<PyBaseRecordRecordComponent>(
-            declare_container<
-                PyBaseRecordRecordComponent,
-                PyRecordComponentContainer,
-                RecordComponent>(m, "Base_Record_Record_Component")))
-        .def_property_readonly(
-            "scalar",
-            &BaseRecord<RecordComponent>::scalar,
-            &docstring::is_scalar[1]);
+    auto py_base_record = addRecordComponentSetGet(
+                              finalize_container<PyBaseRecordRecordComponent>(
+                                  declare_container<
+                                      PyBaseRecordRecordComponent,
+                                      PyRecordComponentContainer>(
+                                      m, "Base_Record_Record_Component")))
+                              .def_prop_ro(
+                                  "scalar",
+                                  &BaseRecord<RecordComponent>::scalar,
+                                  &docstring::is_scalar[1]);
+    // BaseRecord<RecordComponent> also is a RecordComponent
+    python::inherit_attributes(py_base_record, cl, nb::type<Attributable>());
 
-    py::enum_<RecordComponent::Allocation>(m, "Allocation")
+    nb::enum_<RecordComponent::Allocation>(m, "Allocation")
         .value("USER", RecordComponent::Allocation::USER)
         .value("API", RecordComponent::Allocation::API)
         .value("AUTO", RecordComponent::Allocation::AUTO);

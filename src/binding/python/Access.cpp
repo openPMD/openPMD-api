@@ -22,9 +22,10 @@
 
 #include "openPMD/binding/python/Common.hpp"
 
-void init_Access(py::module &m)
+void init_Access(nb::module_ &m)
 {
-    py::enum_<Access>(m, "Access")
+    nb::enum_<Access> access(m, "Access");
+    access
         .value(
             "read_only",
             Access::READ_ONLY,
@@ -110,4 +111,6 @@ Global attributes are available directly after calling
 Series.read_iterations(), Iterations and all their corresponding data
 become available by use of the returned Iterator, e.g. in a foreach loop.
 See Access.read_only for when to use this.)");
+    // e.g. create_random_access and create
+    python::make_enum_aliases(access);
 }
