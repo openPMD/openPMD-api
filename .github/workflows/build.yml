@@ -12,6 +12,7 @@ env:
     .github/python-wasm-side-module.patch
     .github/hdf5-dont-atexit-emscripten.patch
     .github/hdf5-read-h5tequal-tristate.patch
+    .github/setup-py-python-find-abi.patch
 
 jobs:
   build_wheels:
