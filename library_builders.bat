@@ -267,7 +267,8 @@ exit /b 0
 
   cmake -S dep-zlib/zlib-1.3.1 -B build-zlib ^
     -DBUILD_SHARED_LIBS=OFF ^
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Release ^
+    -DZLIB_BUILD_EXAMPLES=OFF
   if errorlevel 1 exit 1
 :: Manually-specified variables were not used by the project:
 ::   CMAKE_BUILD_TYPE
