@@ -11,6 +11,12 @@ rem wheel, a mismatch with an older system msvcp140.dll faults in Mtx_destroy.
 rem Setting it here too keeps the whole dependency toolchain consistent.
 set "CXXFLAGS=%CXXFLAGS% /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
 
+rem Unzip with the build Python (python -m zipfile -e), not PowerShell's
+rem Expand-Archive: spawned from the PowerShell 7 build step, Windows PowerShell
+rem 5.1 inherits PS7's PSModulePath and loads PS7's Archive module, whose
+rem ExtractToDirectory overload does not exist on .NET Framework (windows-2022
+rem image 20261123). Expand-Archive then extracts nothing, without an errorlevel.
+
 echo "CFLAGS: %CFLAGS%"
 echo "CXXFLAGS: %CXXFLAGS%"
 echo "LDFLAGS: %LDFLAGS%"
@@ -27,7 +33,8 @@ exit /b 0
   if exist adios2-stamp exit /b 0
   curl %CURL_RETRY% -sLo adios2-2.11.0.zip ^
     https://github.com/ornladios/ADIOS2/archive/v2.11.0.zip
-  powershell Expand-Archive adios2-2.11.0.zip -DestinationPath dep-adios2
+  python -m zipfile -e adios2-2.11.0.zip dep-adios2
+  if errorlevel 1 exit 1
 
   :: Patch Win32 on ADIOS 2.11.0 https://github.com/ornladios/ADIOS2/issues/4808
   curl %CURL_RETRY% -sLo dep-adios2/ADIOS2-2.11.0/patch.diff https://github.com/franzpoeschel/ADIOS2/commit/13e9747799e32841b29f166c2bcdfd82ee915f1a.patch
@@ -98,7 +105,8 @@ exit /b 0
 
   curl %CURL_RETRY% -sLo blosc2-2.11.1.zip ^
     https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.zip
-  powershell Expand-Archive blosc2-2.11.1.zip -DestinationPath dep-blosc2
+  python -m zipfile -e blosc2-2.11.1.zip dep-blosc2
+  if errorlevel 1 exit 1
 
   cmake --version
 
@@ -139,7 +147,8 @@ exit /b 0
 
   curl %CURL_RETRY% -sLo hdf5-1.14.1-2.zip ^
     https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.1/src/hdf5-1.14.1-2.zip
-  powershell Expand-Archive hdf5-1.14.1-2.zip -DestinationPath dep-hdf5
+  python -m zipfile -e hdf5-1.14.1-2.zip dep-hdf5
+  if errorlevel 1 exit 1
 
   cmake -S dep-hdf5/hdf5-1.14.1-2 -B build-hdf5 ^
     -DCMAKE_BUILD_TYPE=Release  ^
@@ -181,7 +190,7 @@ exit /b 0
     https://www.sqlite.org/2026/sqlite-amalgamation-%SQLITE_VERSION%.zip
   if errorlevel 1 exit 1
 
-  powershell Expand-Archive sqlite-amalgamation-%SQLITE_VERSION%.zip -DestinationPath '.'
+  python -m zipfile -e sqlite-amalgamation-%SQLITE_VERSION%.zip .
   if errorlevel 1 exit 1
 
   cd sqlite-amalgamation-%SQLITE_VERSION%
@@ -253,7 +262,8 @@ exit /b 0
 
   curl %CURL_RETRY% -sLo zlib-1.3.1.zip ^
     https://github.com/madler/zlib/archive/v1.3.1.zip
-  powershell Expand-Archive zlib-1.3.1.zip -DestinationPath dep-zlib
+  python -m zipfile -e zlib-1.3.1.zip dep-zlib
+  if errorlevel 1 exit 1
 
   cmake -S dep-zlib/zlib-1.3.1 -B build-zlib ^
     -DBUILD_SHARED_LIBS=OFF ^
