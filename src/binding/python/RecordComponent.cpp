@@ -96,7 +96,7 @@ inline std::tuple<Offset, Extent, std::vector<bool>> parseTupleSlices(
             uint8_t const numSlicesAfterEllipsis =
                 numSlices - uint8_t(posEllipsis) - 1u;
             // how many slices does the ellipsis represent
-            uint8_t const numSlicesEllipsis = numSlices -
+            uint8_t const numSlicesEllipsis = ndim -
                 uint8_t(posEllipsis) // slices before
                 - numSlicesAfterEllipsis; // slices after
 
