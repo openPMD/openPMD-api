@@ -4,6 +4,10 @@
 # however rank 0 should be the most common option here
 attribute_writing_ranks = 0
 
+[adios2.dataset]
+# one of "adios2_default", "row_major" or "column_major"
+array_ordering = "adios2_default"
+
 [adios2.engine]
 type = "sst"
 preferred_flush_target = "disk"

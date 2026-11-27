@@ -195,7 +195,56 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
-openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
+# Remember whether the options were set explicitly (e.g. on the command line)
+# before creating the cache entries. CMake marks command-line cache entries as
+# UNINITIALIZED until the option() call assigns them a type.
+if(DEFINED openPMD_USE_CUDA)
+    set(openPMD_USE_CUDA_explicit TRUE)
+    get_property(_openPMD_USE_CUDA_type CACHE openPMD_USE_CUDA PROPERTY TYPE)
+    if(_openPMD_USE_CUDA_type STREQUAL "UNINITIALIZED")
+        set(openPMD_USE_CUDA_user_specified TRUE)
+    else()
+        set(openPMD_USE_CUDA_user_specified FALSE)
+    endif()
+else()
+    set(openPMD_USE_CUDA_explicit FALSE)
+    set(openPMD_USE_CUDA_user_specified FALSE)
+endif()
+if(DEFINED openPMD_USE_CUDA_EXAMPLES)
+    get_property(_openPMD_USE_CUDA_EXAMPLES_type CACHE
+        openPMD_USE_CUDA_EXAMPLES PROPERTY TYPE)
+    if(_openPMD_USE_CUDA_EXAMPLES_type STREQUAL "UNINITIALIZED")
+        set(openPMD_USE_CUDA_EXAMPLES_user_specified TRUE)
+    else()
+        set(openPMD_USE_CUDA_EXAMPLES_user_specified FALSE)
+    endif()
+else()
+    set(openPMD_USE_CUDA_EXAMPLES_user_specified FALSE)
+endif()
+openpmd_option(CUDA            "Use CUDA in tests and examples" OFF)
+
+# deprecated: backwards compatibility to the CUDA_EXAMPLES option
+openpmd_option(CUDA_EXAMPLES   "Deprecated: use openPMD_USE_CUDA" OFF)
+mark_as_advanced(openPMD_USE_CUDA_EXAMPLES)
+if(openPMD_USE_CUDA_user_specified
+   AND openPMD_USE_CUDA_EXAMPLES_user_specified)
+    message(WARNING
+        "Both openPMD_USE_CUDA and the deprecated openPMD_USE_CUDA_EXAMPLES "
+        "were specified; openPMD_USE_CUDA takes precedence.")
+endif()
+if(NOT openPMD_USE_CUDA_EXAMPLES STREQUAL "OFF")
+    message(DEPRECATION
+        "openPMD_USE_CUDA_EXAMPLES is deprecated; use openPMD_USE_CUDA")
+    if(NOT openPMD_USE_CUDA_explicit)
+        set(openPMD_USE_CUDA "${openPMD_USE_CUDA_EXAMPLES}" CACHE STRING
+            "Use CUDA in tests and examples" FORCE)
+    endif()
+endif()
+unset(openPMD_USE_CUDA_explicit)
+unset(openPMD_USE_CUDA_user_specified)
+unset(openPMD_USE_CUDA_EXAMPLES_user_specified)
+unset(_openPMD_USE_CUDA_type)
+unset(_openPMD_USE_CUDA_EXAMPLES_type)
 
 
 # Helper Functions ############################################################
@@ -272,14 +321,19 @@ target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
 
 # external: CUDA (optional)
-if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
-    if(openPMD_USE_CUDA_EXAMPLES STREQUAL AUTO)
-       find_package(CUDAToolkit)
-    elseif(openPMD_USE_CUDA_EXAMPLES)
-       find_package(CUDAToolkit REQUIRED)
-    endif()
+if(openPMD_USE_CUDA STREQUAL AUTO)
+    find_package(CUDAToolkit QUIET)
+    set(openPMD_HAVE_CUDA ${CUDAToolkit_FOUND})
+elseif(openPMD_USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    set(openPMD_HAVE_CUDA TRUE)
+else()
+    set(openPMD_HAVE_CUDA FALSE)
 endif()
-if(CUDAToolkit_FOUND)
+
+# The CUDA language is only needed to compile the examples. Tests only use the
+# CUDA runtime, which is linked via the CUDA::cudart imported target.
+if(openPMD_HAVE_CUDA AND openPMD_BUILD_EXAMPLES)
     enable_language(CUDA)
     set(openPMD_HAVE_CUDA_EXAMPLES TRUE)
 else()
@@ -858,6 +912,7 @@ if(openPMD_BUILD_TESTING)
                 test/Files_SerialIO/components_without_extent.cpp
                 test/Files_SerialIO/read_while_writing.cpp
                 test/Files_SerialIO/file_state_lifetime.cpp
+                test/Files_SerialIO/adios2_array_ordering.cpp
             )
         elseif(${test_name} STREQUAL "ParallelIO" AND openPMD_HAVE_MPI)
             list(APPEND ${out_list}
@@ -910,6 +965,10 @@ if(openPMD_BUILD_TESTING)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
+        if(${testname} STREQUAL SerialIO AND openPMD_HAVE_CUDA)
+            target_link_libraries(${testname}Tests PRIVATE CUDA::cudart)
+            target_compile_definitions(${testname}Tests PRIVATE openPMD_TEST_CUDA=1)
+        endif()
         if(${testname} MATCHES "Parallel.+$")
             # Parallel tests use CatchRunner (custom main with MPI)
             target_link_libraries(${testname}Tests PRIVATE CatchRunner)

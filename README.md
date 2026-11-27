@@ -121,7 +121,7 @@ Optional language bindings:
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
   * dask 2021+ (optional, for dask dataframes)
-* CUDA C++ (optional, currently used only in tests)
+* CUDA C++ (optional, used in tests and examples)
 
 ## Installation
 
@@ -284,7 +284,11 @@ In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 | `openPMD_BUILD_TESTING`       | **ON**/OFF | Build tests              |
 | `openPMD_BUILD_EXAMPLES`      | **ON**/OFF | Build examples           |
 | `openPMD_BUILD_CLI_TOOLS`     | **ON**/OFF | Build command-line tools |
-| `openPMD_USE_CUDA_EXAMPLES`   | ON/**OFF** | Use CUDA in examples     |
+| `openPMD_USE_CUDA`            | ON/AUTO/**OFF** | Use CUDA in tests and examples |
+
+CUDA is never used unless requested. The deprecated
+`openPMD_USE_CUDA_EXAMPLES` option is kept as an advanced alias for
+`openPMD_USE_CUDA`.
 
 ## Linking to your project
 
