@@ -252,7 +252,9 @@ jobs:
         python3.15 -m pip install -U dask
         python3.15 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
+      # SPACK_PYTHON: setup-python puts Python 3.15 first on PATH, but Spack
+      # 0.22 cannot bootstrap clingo with it; run Spack with the system Python.
+      env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror, SPACK_PYTHON: /usr/bin/python3}
       run: |
         # Use this to make the HDF5 plugins available from the C/C++ API.
         export HDF5_PLUGIN_PATH="$(sudo -E .github/workflows/dependencies/install_hdf5_plugins)"
@@ -277,11 +279,16 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      name: Install Python
+      with:
+        python-version: "3.15"
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev python3 python3-numpy python3-mpi4py python3-pandas python3-h5py-mpi python3-pip
-        python3 -m pip install jsonschema==4.* referencing
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev
+        python3.15 -m pip install jsonschema==4.* referencing
+        python3.15 -m pip install numpy mpi4py pandas
 #       TODO ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
@@ -295,7 +302,8 @@ jobs:
           -DopenPMD_USE_HDF5=ON              \
           -DopenPMD_USE_FILESYSTEM_HEADER=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_BUILD_TYPE=Debug           \
+          -DPython_EXECUTABLE=$(which python3.15)
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 

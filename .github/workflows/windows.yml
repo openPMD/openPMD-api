@@ -53,7 +53,7 @@ jobs:
       if: steps.hdf5-cache.outputs.cache-hit != 'true'
       run: |
         $PSNativeCommandUseErrorActionPreference = $true
-        curl -sSLo hdf5.tar.gz "https://github.com/HDFGroup/hdf5/releases/download/hdf5_$env:HDF5_VERSION/hdf5-$env:HDF5_VERSION.tar.gz"
+        curl -fsSLo hdf5.tar.gz "https://github.com/HDFGroup/hdf5/releases/download/hdf5_$env:HDF5_VERSION/hdf5-$env:HDF5_VERSION.tar.gz"
         tar -xzf hdf5.tar.gz
         cmake -S "hdf5-$env:HDF5_VERSION" -B build-hdf5 -A Win32 `
               -DBUILD_SHARED_LIBS=OFF           `
