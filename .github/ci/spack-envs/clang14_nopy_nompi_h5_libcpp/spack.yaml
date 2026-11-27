@@ -12,7 +12,7 @@ spack:
     all:
       target: [x86_64]
       variants: ~mpi ~fortran
-      compiler: [clang@11.1.0]
+      compiler: [clang@14.0.0]
 
   compilers:
   - compiler:
@@ -24,11 +24,11 @@ spack:
       modules: []
       operating_system: ubuntu22.04
       paths:
-        cc: /usr/bin/clang-11
-        cxx: /usr/bin/clang++-11
+        cc: /usr/bin/clang-14
+        cxx: /usr/bin/clang++-14
         f77: null
         fc: null
-      spec: clang@11.1.0
+      spec: clang@14.0.0
       target: x86_64
 
   config:

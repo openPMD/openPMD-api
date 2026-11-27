@@ -270,7 +270,7 @@ template <typename T, typename T_key, typename T_container>
 auto Container<T, T_key, T_container>::contains(key_type const &key) const
     -> bool
 {
-    return container().find(key) != container().end();
+    return container().contains(key);
 }
 
 template <typename T, typename T_key, typename T_container>

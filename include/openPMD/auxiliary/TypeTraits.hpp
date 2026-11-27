@@ -25,8 +25,11 @@
 
 #include <array>
 #include <complex>
+#include <concepts>
 #include <cstddef> // size_t
 #include <memory>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -34,95 +37,56 @@ namespace openPMD::auxiliary
 {
 namespace detail
 {
-    template <typename>
-    struct IsVector
-    {
-        static constexpr bool value = false;
-    };
+    template <template <typename...> class Base, typename... Args>
+    auto infer_template_args(Base<Args...> &) -> Base<Args...>;
 
-    template <typename T>
-    struct IsVector<std::vector<T>>
-    {
-        static constexpr bool value = true;
-    };
+    template <template <typename...> class Base, typename... Args>
+    auto infer_template_args(Base<Args...> const &) -> Base<Args...>;
 
     template <typename>
-    struct IsArray
-    {
-        static constexpr bool value = false;
-    };
+    struct IsArrayImpl : std::false_type
+    {};
 
     template <typename T, size_t n>
-    struct IsArray<std::array<T, n>>
-    {
-        static constexpr bool value = true;
-    };
+    struct IsArrayImpl<std::array<T, n>> : std::true_type
+    {};
 
-    template <typename>
-    struct IsComplex
+    /*
+     * Pointer-like types: detect them and expose the pointee type at once.
+     */
+    template <typename T>
+    struct PointerTraits
     {
         static constexpr bool value = false;
-    };
-
-    template <typename T>
-    struct IsComplex<std::complex<T>>
-    {
-        static constexpr bool value = true;
-    };
-
-    template <typename T>
-    struct IsPointer
-    {
-        constexpr static bool value = false;
-    };
-
-    template <typename T>
-    struct IsPointer<T *>
-    {
-        constexpr static bool value = true;
         using type = T;
     };
 
     template <typename T>
-    struct IsPointer<std::shared_ptr<T>>
+    struct PointerTraits<T *>
     {
-        constexpr static bool value = true;
+        static constexpr bool value = true;
+        using type = T;
+    };
+
+    template <typename T>
+    struct PointerTraits<std::shared_ptr<T>>
+    {
+        static constexpr bool value = true;
         using type = T;
     };
 
     template <typename T, typename Del>
-    struct IsPointer<std::unique_ptr<T, Del>>
+    struct PointerTraits<std::unique_ptr<T, Del>>
     {
-        constexpr static bool value = true;
+        static constexpr bool value = true;
         using type = T;
     };
 
     template <typename T>
-    struct IsPointer<UniquePtrWithLambda<T>>
+    struct PointerTraits<UniquePtrWithLambda<T>>
     {
-        constexpr static bool value = true;
+        static constexpr bool value = true;
         using type = T;
-    };
-
-    template <typename>
-    struct IsChar
-    {
-        constexpr static bool value = false;
-    };
-    template <>
-    struct IsChar<char>
-    {
-        constexpr static bool value = true;
-    };
-    template <>
-    struct IsChar<signed char>
-    {
-        constexpr static bool value = true;
-    };
-    template <>
-    struct IsChar<unsigned char>
-    {
-        constexpr static bool value = true;
     };
 
     template <typename T>
@@ -142,20 +106,59 @@ namespace detail
     };
 } // namespace detail
 
+/** Whether T is an instantiation of the class template Base. */
+template <template <typename...> class Base, typename T>
+concept IsTemplateBaseOf =
+    requires(T &t) { detail::infer_template_args<Base>(t); };
+
+/** Whether T is a std::vector. */
 template <typename T>
-inline constexpr bool IsVector_v = detail::IsVector<T>::value;
+concept IsVector = IsTemplateBaseOf<std::vector, T>;
+
+/** Whether T is a std::array. */
+template <typename T>
+concept IsArray = detail::IsArrayImpl<T>::value;
+
+/** Whether T is a std::complex. */
+template <typename T>
+concept IsComplex = IsTemplateBaseOf<std::complex, T>;
+
+/** Whether T is a raw pointer, std::shared_ptr, std::unique_ptr or
+ *  UniquePtrWithLambda. */
+template <typename T>
+concept IsPointer = detail::PointerTraits<T>::value;
+
+/** Whether C is one of the character types. */
+template <typename C>
+concept IsChar = std::same_as<C, char> || std::same_as<C, signed char> ||
+    std::same_as<C, unsigned char>;
+
+/** Emulate the C++ named requirement ContiguousContainer.
+ *
+ * Users can specialize detail::IsArrayImpl for a type to signal it can be
+ * used as a contiguous container.
+ *
+ * See:
+ *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
+ */
+template <typename T>
+concept IsContiguousContainer = IsVector<T> || IsArray<T>;
+
+// Backwards-compatible variable templates.
+template <typename T>
+inline constexpr bool IsVector_v = IsVector<T>;
 
 template <typename T>
-inline constexpr bool IsArray_v = detail::IsArray<T>::value;
+inline constexpr bool IsArray_v = IsArray<T>;
 
 template <typename T>
-inline constexpr bool IsPointer_v = detail::IsPointer<T>::value;
+inline constexpr bool IsPointer_v = IsPointer<T>;
 
 template <typename T>
-using IsPointer_t = typename detail::IsPointer<T>::type;
+using IsPointer_t = typename detail::PointerTraits<T>::type;
 
 template <typename C>
-inline constexpr bool IsChar_v = detail::IsChar<C>::value;
+inline constexpr bool IsChar_v = IsChar<C>;
 
 template <typename T>
 using ScalarType_t = typename detail::ScalarType<T>::type;
@@ -163,19 +166,18 @@ using ScalarType_t = typename detail::ScalarType<T>::type;
 template <typename T>
 using VectorType_t = std::vector<ScalarType_t<T>>;
 
-/** Emulate in the C++ concept ContiguousContainer
- *
- * Users can implement this trait for a type to signal it can be used as
- * contiguous container.
- *
- * See:
- *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
- */
 template <typename T>
-inline constexpr bool IsContiguousContainer_v = IsVector_v<T> || IsArray_v<T>;
+inline constexpr bool IsContiguousContainer_v = IsContiguousContainer<T>;
 
 template <typename T>
-inline constexpr bool IsComplex_v = detail::IsComplex<T>::value;
+inline constexpr bool IsComplex_v = IsComplex<T>;
+
+template <template <typename...> class Base, typename T>
+inline constexpr bool IsTemplateBaseOf_v = IsTemplateBaseOf<Base, T>;
+
+template <template <typename...> class Base, typename T>
+using AsTemplateBase_t =
+    decltype(detail::infer_template_args<Base>(std::declval<T &>()));
 
 namespace
 {
@@ -225,37 +227,5 @@ namespace detail
     // little trick to avoid trailing commas in the macro expansions below
     template <typename Arg, typename... Args>
     using variant_tail_t = std::variant<Args...>;
-
-    template <template <typename...> class Base, typename... Args>
-    auto infer_template_args(Base<Args...> &) -> Base<Args...>;
-
-    template <template <typename...> class Base, typename... Args>
-    auto infer_template_args(Base<Args...> const &) -> Base<Args...>;
-
-    template <
-        template <typename...> class Base,
-        typename T,
-        typename SFINAE = void>
-    struct IsTemplateBaseOf
-    {
-        static constexpr bool value = false;
-    };
-
-    template <template <typename...> class Base, typename T>
-    struct IsTemplateBaseOf<
-        Base,
-        T,
-        std::void_t<decltype(detail::infer_template_args<Base>(
-            std::declval<T &>()))>>
-    {
-        static constexpr bool value = true;
-        using type =
-            decltype(detail::infer_template_args<Base>(std::declval<T &>()));
-    };
 } // namespace detail
-
-template <template <typename...> class Base, typename T>
-constexpr bool IsTemplateBaseOf_v = detail::IsTemplateBaseOf<Base, T>::value;
-template <template <typename...> class Base, typename T>
-using AsTemplateBase_t = typename detail::IsTemplateBaseOf<Base, T>::type;
 } // namespace openPMD::auxiliary
