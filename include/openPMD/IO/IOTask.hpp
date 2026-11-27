@@ -86,7 +86,8 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation){
     AVAILABLE_CHUNKS, //!< Query chunks that can be loaded in a dataset
     DEREGISTER, //!< Inform the backend that an object has been deleted.
     TOUCH, //!< tell the backend that the file is to be considered active
-    SET_WRITTEN //!< tell backend to consider a file written / not written
+    SET_WRITTEN, //!< tell backend to consider a file written / not written
+    INCREASE_FLUSH_COUNTER //!< track if an object has been flushed
 }; // note: if you change the enum members here, please update
    // docs/source/dev/design.rst
 
@@ -498,6 +499,8 @@ struct OPENPMDAPI_EXPORT
 
     Extent extent = {};
     Offset offset = {};
+    /** Optional memory selection for non-contiguous memory regions */
+    std::optional<MemorySelection> memorySelection = std::nullopt;
     Datatype dtype = Datatype::UNDEFINED;
     auxiliary::WriteBuffer data;
 };
@@ -561,7 +564,9 @@ struct OPENPMDAPI_EXPORT
     }
 
     // in parameters
-    bool queryOnly = false; // query if the backend supports this
+    /** If true, only query if the backend supports buffer views without
+     * performing operation */
+    bool queryOnly = false;
     Offset offset;
     Extent extent;
     Datatype dtype = Datatype::UNDEFINED;
@@ -826,6 +831,27 @@ struct OPENPMDAPI_EXPORT
     }
 
     bool target_status = false;
+};
+
+template <>
+struct OPENPMDAPI_EXPORT
+    Parameter<Operation::INCREASE_FLUSH_COUNTER> : public AbstractParameter
+{
+    explicit Parameter() = default;
+
+    Parameter(Parameter const &) = default;
+    Parameter(Parameter &&) = default;
+
+    Parameter &operator=(Parameter const &) = default;
+    Parameter &operator=(Parameter &&) = default;
+
+    std::unique_ptr<AbstractParameter> to_heap() && override
+    {
+        return std::make_unique<Parameter<Operation::INCREASE_FLUSH_COUNTER>>(
+            std::move(*this));
+    }
+
+    std::shared_ptr<unsigned long long> flush_counter;
 };
 
 /** @brief Self-contained description of a single IO operation.

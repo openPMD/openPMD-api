@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include <future>
@@ -35,9 +36,7 @@ class HDF5IOHandler : public AbstractIOHandler
 {
 public:
     HDF5IOHandler(
-        std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
-        std::string path,
-        Access,
+        internal::AbstractIOHandlerInitFrom &&initialize_from,
         json::TracingJSON config);
     ~HDF5IOHandler() override;
 
@@ -46,7 +45,7 @@ public:
         return "HDF5";
     }
 
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
 
 private:
     std::unique_ptr<HDF5IOHandlerImpl> m_impl;

@@ -19,19 +19,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/DummyIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandler_internal.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
-#include <iostream>
-#include <optional>
 #include <utility>
 
 namespace openPMD
 {
-DummyIOHandler::DummyIOHandler(std::string path, Access at)
+DummyIOHandler::DummyIOHandler(internal::AbstractIOHandlerInitFrom &&init_from)
     : AbstractIOHandler(
-          std::nullopt,
-          std::move(path),
-          at,
+          std::move(init_from),
           json::TracingJSON(
               nlohmann::json::object(), json::SupportedLanguages::JSON))
 {}
@@ -39,7 +36,7 @@ DummyIOHandler::DummyIOHandler(std::string path, Access at)
 void DummyIOHandler::enqueue(IOTask const &)
 {}
 
-std::future<void> DummyIOHandler::flush(internal::ParsedFlushParams &)
+std::future<void> DummyIOHandler::flush_impl(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

@@ -140,6 +140,14 @@ namespace detail
     {
         using type = T;
     };
+    template <typename T>
+    struct PointerVal
+    {};
+    template <typename T>
+    struct PointerVal<T *>
+    {
+        using type = T;
+    };
 } // namespace detail
 
 template <typename T>
@@ -162,6 +170,9 @@ using ScalarType_t = typename detail::ScalarType<T>::type;
 
 template <typename T>
 using VectorType_t = std::vector<ScalarType_t<T>>;
+
+template <typename T>
+using PointerVal_t = typename detail::PointerVal<T>::type;
 
 /** Emulate in the C++ concept ContiguousContainer
  *
