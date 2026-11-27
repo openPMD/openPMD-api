@@ -46,3 +46,57 @@ function(openpmd_print_summary)
     endforeach()
     message("")
 endfunction()
+
+
+# Escapes a single argument for the Libs and Cflags fields of a pkg-config
+# .pc file and stores it in the variable <outname>
+#
+function(openpmd_pc_escape_arg outname arg)
+    # argument vectors are split shell-like and # starts a comment
+    # (not handled: "${" and "$$" are subject to variable expansion)
+    string(REGEX REPLACE "([\\\\\"' \t#])" "\\\\\\1" arg "${arg}")
+    set(${outname} "${arg}" PARENT_SCOPE)
+endfunction()
+
+
+# Escapes arguments for the Libs and Cflags fields of a pkg-config .pc file
+# and appends them, each prefixed by a space, to the variable <outname>
+#
+function(openpmd_pc_escape outname)
+    set(escaped "${${outname}}")
+    foreach(arg IN LISTS ARGN)
+        if(arg STREQUAL "")
+            continue()
+        endif()
+        openpmd_pc_escape_arg(arg "${arg}")
+        string(APPEND escaped " ${arg}")
+    endforeach()
+    set(${outname} "${escaped}" PARENT_SCOPE)
+endfunction()
+
+
+# Appends link items, each prefixed by a space, to the variable <outname>
+# for the Libs fields of a pkg-config .pc file:
+# - shared libraries given by absolute path become -L<dir> -l<name>, since
+#   importers of .pc files (e.g., CMake's FindPkgConfig) place plain paths
+#   before the object files, which fails to link with --as-needed
+# - other absolute paths are escaped
+# - other items are appended as they are, since they can consist of
+#   multiple arguments, e.g., "-framework Accelerate"
+#
+function(openpmd_pc_link_items outname)
+    set(items "${${outname}}")
+    foreach(item IN LISTS ARGN)
+        if(item STREQUAL "")
+            continue()
+        elseif(IS_ABSOLUTE "${item}" AND
+               item MATCHES "^(.+)/lib([^/]+)\\.(so|dylib)$")
+            openpmd_pc_escape(items "-L${CMAKE_MATCH_1}" "-l${CMAKE_MATCH_2}")
+        elseif(IS_ABSOLUTE "${item}")
+            openpmd_pc_escape(items "${item}")
+        else()
+            string(APPEND items " ${item}")
+        endif()
+    endforeach()
+    set(${outname} "${items}" PARENT_SCOPE)
+endfunction()
