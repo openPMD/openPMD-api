@@ -1,5 +1,12 @@
 Dockerfile
 
+# VCS, build directories, wheels & downloaded samples
+.git
+build
+dist
+wheelhouse
+samples
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Vim template
 # Swap
