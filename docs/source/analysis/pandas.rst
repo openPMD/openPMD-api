@@ -62,6 +62,76 @@ as extra dataframe columns:
    # like before but with a new column "s_ref"
    print(df)
 
+
+.. _analysis-pandas-floating:
+
+Floating-Point Precision
+------------------------
+
+Dataframe columns use the floating-point type stored in the file by default.
+To analyze data with a different precision, request it with ``floating``:
+
+.. code-block:: python
+
+   import numpy as np
+
+   df = electrons.to_df(floating=np.float64)
+   df = s.to_df("electrons", floating=np.float64)
+
+This changes all floating-point columns, including floating-point attributes, and keeps other columns such as the particle ``id`` unchanged.
+
+Prefer this over converting the dataframe afterwards: data is scaled to SI units while it is read, and ``floating`` scales in the wider of the stored and the requested precision.
+For single-precision data, ``.astype(np.float64)`` on the final dataframe keeps the rounding errors of a scaling in single precision.
+
+
+.. _analysis-pandas-compare:
+
+Comparing Particles Between Iterations
+--------------------------------------
+
+Pandas operations on two dataframes align on their index.
+By default, this index is the row of a particle in the loaded data, which is not related to its identity: particle order can change between iterations and particles can be lost.
+
+.. warning::
+
+   Subtracting dataframes that use the default index compares *different particles* whenever their order differs, without raising an error.
+
+To compare particles, use the openPMD particle ``id`` as the index:
+
+.. code-block:: python
+
+   # example with a particle species that has an "id" record
+   s = io.Series("diags/openPMD/monitor.h5", io.Access.read_only)
+   initial = s.snapshots()[1].particles["beam"].to_df(index="id")
+   final = s.snapshots()[100].particles["beam"].to_df(index="id")
+
+   # per particle, independent of their order
+   delta_x = final["position_x"] - initial["position_x"]
+
+This replaces ``to_df().set_index("id")``: ``id`` moves from the columns to the index.
+Use ``df.reset_index()`` to turn it back into a column.
+
+When combining all iterations, the same option creates a `MultiIndex <https://pandas.pydata.org/docs/user_guide/advanced.html>`__ of ``iteration`` and ``id``, which identifies each row uniquely.
+Both are no longer columns, but they can still be used by name, e.g., in ``df.groupby("iteration")``:
+
+.. code-block:: python
+
+   df = s.to_df("beam", index="id")
+
+   # one iteration, with the same index as to_df(index="id") above
+   final = df.loc[100]
+   delta_x = df.loc[100, "position_x"] - df.loc[1, "position_x"]
+
+   # all iterations of the particle with id 42
+   trajectory = df.xs(42, level="id")
+
+Please note:
+
+* ``id`` is an optional record in openPMD. Using ``index="id"`` on a particle species without it raises a ``ValueError``.
+* openPMD recommends, but does not enforce, that ids are unique. Non-unique ids cause a warning, because operations that align on such an index can multiply rows.
+* Particles that exist in only one of two dataframes become ``NaN`` in operations on both of them. Pandas statistics such as ``.mean()`` skip these values by default.
+
+
 .. _analysis-pandas-ascii:
 
 openPMD to ASCII

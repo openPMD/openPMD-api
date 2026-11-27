@@ -51,6 +51,10 @@ if __name__ == "__main__":
     df = electrons.to_df(slice=np.s_[:100])
     print(df)
 
+    # all particles, floating-point columns in double precision
+    df = electrons.to_df(floating=np.float64)
+    print(df.dtypes)
+
     # all particles over all steps
     df = s.to_df("electrons", attributes=["particleShape"])
     print(df)
