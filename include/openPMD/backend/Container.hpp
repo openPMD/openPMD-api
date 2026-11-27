@@ -24,15 +24,20 @@
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/ChildView.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
+#include "openPMD/backend/Writable.hpp"
 
+#include <cassert>
 #include <initializer_list>
 #include <map>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -53,11 +58,32 @@ namespace traits
     struct GenerationPolicy
     {
         constexpr static bool is_noop = true;
-        template <typename T>
-        void operator()(T &)
+        template <typename Container, typename T>
+        void operator()(Container &, T &)
         {}
     };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy
+    {
+        static void call(Element_t &)
+        {}
+        static void call(Element_t const &)
+        {}
+    };
+
+    template <typename Element_t>
+    struct ElementAccessPolicy<Element_t const>
+    {
+        static void call(Element_t const &el)
+        {
+            ElementAccessPolicy<Element_t>::call(el);
+        }
+    };
 } // namespace traits
+
+class CustomHierarchy;
+class CustomDataset;
 
 namespace internal
 {
@@ -65,28 +91,18 @@ namespace internal
     template <typename>
     class EraseStaleEntries;
 
-    template <
-        typename T,
-        typename T_key = std::string,
-        typename T_container = std::map<T_key, T>>
-    class ContainerData : virtual public AttributableData
-    {
-    public:
-        using InternalContainer = T_container;
+    template <typename T>
+    constexpr inline bool isDerivedFromAttributable =
+        std::is_base_of_v<Attributable, T>;
 
-        /**
-         * The wrapped container holding all the actual data, e.g. std::map.
-         */
-        InternalContainer m_container;
+    /*
+     * Opt out from this check due to the recursive definition of
+     * class CustomHierarchy : public Container<CustomHierarchy>{ ... };
+     * Cannot check this while CustomHierarchy is still an incomplete type.
+     */
+    template <>
+    constexpr inline bool isDerivedFromAttributable<CustomHierarchy> = true;
 
-        ContainerData() = default;
-
-        ContainerData(ContainerData const &) = delete;
-        ContainerData(ContainerData &&) = delete;
-
-        ContainerData &operator=(ContainerData const &) = delete;
-        ContainerData &operator=(ContainerData &&) = delete;
-    };
 } // namespace internal
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
@@ -105,8 +121,8 @@ template <
 class Container : virtual public Attributable
 {
     static_assert(
-        std::is_base_of<Attributable, T>::value,
-        "Type of container element must be derived from Writable");
+        internal::isDerivedFromAttributable<T>,
+        "Type of container element must be derived from Attributable");
 
     friend class Iteration;
     friend class ParticleSpecies;
@@ -116,65 +132,112 @@ class Container : virtual public Attributable
     template <typename>
     friend class internal::EraseStaleEntries;
     friend class StatefulIterator;
+    friend struct traits::ElementAccessPolicy<CustomHierarchy>;
+
+    using Self_t = Container<T, T_key, T_container>;
 
 protected:
-    using ContainerData = internal::ContainerData<T, T_key, T_container>;
     using InternalContainer = T_container;
+    using View = internal::ChildView<T, T_key, false>;
+    using ConstView = internal::ChildView<T, T_key, true>;
 
-    std::shared_ptr<ContainerData> m_containerData;
+    internal::ChildFilter m_child_filter = internal::default_child_filter();
 
-    inline void setData(std::shared_ptr<ContainerData> containerData)
+    inline void setData(std::shared_ptr<internal::AttributableData> data)
     {
-        m_containerData = std::move(containerData);
-        Attributable::setData(m_containerData);
+        Attributable::setData(std::move(data));
     }
 
-    inline InternalContainer const &container() const
+    inline auto group_data() const
+        -> internal::object_type::GroupMetaData const &
     {
-        return m_containerData->m_container;
+        auto const *res = (**m_attri).m_writable.objectType.requireGroup();
+        assert(res != nullptr);
+        return *res;
     }
 
-    inline InternalContainer &container()
+    inline auto group_data() -> internal::object_type::GroupMetaData &
     {
-        return m_containerData->m_container;
+        return *this->writable().objectType.requireGroup();
+    }
+
+    // Static, so it receives the container's own Writable explicitly. This is
+    // the same object as this->writable() for non-static callers.
+    static auto create_child(T_key const &key, Writable &self) -> T
+    {
+        T child;
+        child.linkHierarchy(self);
+        child.writable().ownKeyWithinParent =
+            internal::children_cache_detail::key_to_string(key);
+        return child;
+    }
+
+    inline auto container() -> View
+    {
+        return View(
+            &group_data().m_children_cache,
+            &this->writable(),
+            m_child_filter,
+            &Container::create_child);
+    }
+
+    inline auto container() const -> ConstView
+    {
+        return ConstView(
+            &group_data().m_children_cache, nullptr, m_child_filter, nullptr);
+    }
+
+    OPENPMD_protected
+    /** Remove a key from the authoritative children and every typed cache.
+     *
+     * Performs no IO checks or DELETE_PATH enqueuing.
+     */
+    void erase_unchecked(typename InternalContainer::key_type const &key)
+    {
+        container().erase(key);
+    }
+
+    /** Clear all children and every typed cache without IO checks. */
+    void clear_children_unchecked()
+    {
+        container().clear();
     }
 
 public:
-    using key_type = typename InternalContainer::key_type;
-    using mapped_type = typename InternalContainer::mapped_type;
-    using value_type = typename InternalContainer::value_type;
-    using size_type = typename InternalContainer::size_type;
-    using difference_type = typename InternalContainer::difference_type;
-    using allocator_type = typename InternalContainer::allocator_type;
-    using reference = typename InternalContainer::reference;
-    using const_reference = typename InternalContainer::const_reference;
-    using pointer = typename InternalContainer::pointer;
-    using const_pointer = typename InternalContainer::const_pointer;
-    using iterator = typename InternalContainer::iterator;
-    using const_iterator = typename InternalContainer::const_iterator;
-    using reverse_iterator = typename InternalContainer::reverse_iterator;
-    using const_reverse_iterator =
-        typename InternalContainer::const_reverse_iterator;
+    using key_type = typename View::key_type;
+    using mapped_type = typename View::mapped_type;
+    using value_type = typename View::value_type;
+    using size_type = typename View::size_type;
+    using difference_type = typename View::difference_type;
+    using allocator_type = typename View::allocator_type;
+    using reference = typename View::reference;
+    using const_reference = typename View::const_reference;
+    using pointer = typename View::pointer;
+    using const_pointer = typename View::const_pointer;
+    using iterator = typename View::iterator;
+    using const_iterator = typename View::const_iterator;
+    using reverse_iterator = typename View::reverse_iterator;
+    using const_reverse_iterator = typename View::const_reverse_iterator;
 
-    iterator begin() noexcept;
-    const_iterator begin() const noexcept;
-    const_iterator cbegin() const noexcept;
+    iterator begin();
+    const_iterator begin() const;
+    const_iterator cbegin() const;
 
-    iterator end() noexcept;
-    const_iterator end() const noexcept;
-    const_iterator cend() const noexcept;
+    iterator end();
+    const_iterator end() const;
+    const_iterator cend() const;
 
-    reverse_iterator rbegin() noexcept;
-    const_reverse_iterator rbegin() const noexcept;
-    const_reverse_iterator crbegin() const noexcept;
+    reverse_iterator rbegin();
+    const_reverse_iterator rbegin() const;
+    const_reverse_iterator crbegin() const;
 
-    reverse_iterator rend() noexcept;
-    const_reverse_iterator rend() const noexcept;
-    const_reverse_iterator crend() const noexcept;
+    reverse_iterator rend();
+    const_reverse_iterator rend() const;
+    const_reverse_iterator crend() const;
 
-    bool empty() const noexcept;
+    bool empty() const;
 
-    size_type size() const noexcept;
+    size_type size() const;
 
     /** Remove all objects from the container and (if written) from disk.
      *
@@ -188,14 +251,22 @@ public:
     std::pair<iterator, bool> insert(value_type &&value);
     iterator insert(const_iterator hint, value_type const &value);
     iterator insert(const_iterator hint, value_type &&value);
+    /**
+     * Insert all elements in the range [first, last) in a single batch,
+     * keeping the front and backend containers synchronized.
+     *
+     * The initializer_list overload below is implemented in terms of this
+     * one.
+     */
     template <class InputIt>
     void insert(InputIt first, InputIt last)
     {
-        container().insert(first, last);
+        for (; first != last; ++first)
+        {
+            insert(*first);
+        }
     }
     void insert(std::initializer_list<value_type> ilist);
-
-    void swap(Container &other);
 
     mapped_type &at(key_type const &key);
     mapped_type const &at(key_type const &key) const;
@@ -257,16 +328,15 @@ public:
     // virtual iterator erase(const_iterator first, const_iterator last)
 
     template <class... Args>
-    auto emplace(Args &&...args)
-        -> decltype(InternalContainer().emplace(std::forward<Args>(args)...))
+    auto emplace(Args &&...args) -> std::pair<iterator, bool>
     {
         return container().emplace(std::forward<Args>(args)...);
     }
 
     template <typename ChildClass>
-    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive)
+    void visitHierarchyContainer(HierarchyVisitor &v, bool recursive)
     {
-        if (recursive)
+        if (recursive && this->writable().objectType.isGroup())
         {
             for (auto &p : *this)
             {
@@ -282,7 +352,7 @@ OPENPMD_protected
 
     void clear_unchecked();
 
-    virtual void
+    void
     flush(std::string const &path, internal::FlushParams const &flushParams);
 
     Container();

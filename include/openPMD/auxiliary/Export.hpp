@@ -22,7 +22,15 @@
 
 #ifndef OPENPMDAPI_EXPORT
 #ifdef _MSC_VER
+// openPMD_EXPORTS is defined by CMake while building the library. Consumers
+// (including the tests) must not see dllexport on these symbols: MSVC would
+// otherwise expect the annotated non-inline members to be defined in the
+// consuming translation unit.
+#ifdef openPMD_EXPORTS
 #define OPENPMDAPI_EXPORT __declspec(dllexport)
+#else
+#define OPENPMDAPI_EXPORT
+#endif
 #elif defined(__NVCC__)
 #define OPENPMDAPI_EXPORT
 #else

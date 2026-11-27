@@ -50,8 +50,6 @@ public:
     template <typename T>
     Record &setTimeOffset(T);
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
 private:
     Record();
 
@@ -63,6 +61,8 @@ private:
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // Record
 
 template <typename T>

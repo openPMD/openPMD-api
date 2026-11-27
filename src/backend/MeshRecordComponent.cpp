@@ -66,7 +66,7 @@ MeshRecordComponent &MeshRecordComponent::setPosition(std::vector<T> pos)
     return *this;
 }
 
-void MeshRecordComponent::visitHierarchy(HierarchyVisitor &v, bool)
+void MeshRecordComponent::visitHierarchyImpl(HierarchyVisitor &v, bool)
 {
     v(*this);
 }

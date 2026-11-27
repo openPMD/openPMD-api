@@ -172,20 +172,19 @@ namespace internal
     template class internal::ScalarIterator<                                   \
         baserecordtype,                                                        \
         baserecordtype::Data_t,                                                \
-        baserecordtype::T_Container::InternalContainer::iterator>;             \
+        baserecordtype::T_Container::iterator>;                                \
     template class internal::ScalarIterator<                                   \
         baserecordtype const,                                                  \
         baserecordtype::Data_t const,                                          \
-        baserecordtype::T_Container::InternalContainer::const_iterator>;       \
+        baserecordtype::T_Container::const_iterator>;                          \
     template class internal::ScalarIterator<                                   \
         baserecordtype,                                                        \
         baserecordtype::Data_t,                                                \
-        baserecordtype::T_Container::InternalContainer::reverse_iterator>;     \
+        baserecordtype::T_Container::reverse_iterator>;                        \
     template class internal::ScalarIterator<                                   \
         baserecordtype const,                                                  \
         baserecordtype::Data_t const,                                          \
-        baserecordtype::T_Container::InternalContainer::                       \
-            const_reverse_iterator>;
+        baserecordtype::T_Container::const_reverse_iterator>;
 
 #define OPENPMD_INSTANTIATE(recordcomponenttype)                               \
     INSTANTIATE_ITERATORS_FOR_BASERECORD(BaseRecord<recordcomponenttype>)
@@ -198,7 +197,7 @@ namespace internal
 template <typename T_elem>
 auto BaseRecord<T_elem>::begin() -> iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -211,7 +210,7 @@ auto BaseRecord<T_elem>::begin() -> iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::begin() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -224,7 +223,7 @@ auto BaseRecord<T_elem>::begin() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::cbegin() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ false);
     }
@@ -237,7 +236,7 @@ auto BaseRecord<T_elem>::cbegin() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::end() -> iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -250,7 +249,7 @@ auto BaseRecord<T_elem>::end() -> iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::end() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -263,7 +262,7 @@ auto BaseRecord<T_elem>::end() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::cend() const -> const_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeIterator(/* is_end = */ true);
     }
@@ -276,78 +275,78 @@ auto BaseRecord<T_elem>::cend() const -> const_iterator
 template <typename T_elem>
 auto BaseRecord<T_elem>::rbegin() -> reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
     else
     {
-        return makeReverseIterator(this->container().rbegin());
+        return makeReverseIterator(T_Container::rbegin());
     }
 }
 
 template <typename T_elem>
 auto BaseRecord<T_elem>::rbegin() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
     else
     {
-        return makeReverseIterator(this->container().rbegin());
+        return makeReverseIterator(T_Container::rbegin());
     }
 }
 
 template <typename T_elem>
 auto BaseRecord<T_elem>::crbegin() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ false);
     }
     else
     {
-        return makeReverseIterator(this->container().crbegin());
+        return makeReverseIterator(T_Container::crbegin());
     }
 }
 
 template <typename T_elem>
 auto BaseRecord<T_elem>::rend() -> reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
     else
     {
-        return makeReverseIterator(this->container().rend());
+        return makeReverseIterator(T_Container::rend());
     }
 }
 
 template <typename T_elem>
 auto BaseRecord<T_elem>::rend() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
     else
     {
-        return makeReverseIterator(this->container().rend());
+        return makeReverseIterator(T_Container::rend());
     }
 }
 
 template <typename T_elem>
 auto BaseRecord<T_elem>::crend() const -> const_reverse_iterator
 {
-    if (get().m_datasetDefined)
+    if (get().datasetDefined())
     {
         return makeReverseIterator(/* is_end = */ true);
     }
     else
     {
-        return makeReverseIterator(this->container().crend());
+        return makeReverseIterator(T_Container::crend());
     }
 }
 
@@ -456,12 +455,17 @@ auto BaseRecord<T_elem>::at(key_type const &key) const -> mapped_type const &
     bool const keyScalar = (key == RecordComponent::SCALAR);
     if (keyScalar)
     {
-        if (!get().m_datasetDefined)
+        if (!get().datasetDefined())
         {
             throw std::out_of_range(
                 "[at()] Requested scalar entry from non-scalar record.");
         }
         return static_cast<mapped_type const &>(*this);
+    }
+    else if (scalar())
+    {
+        throw std::out_of_range(
+            "[at()] Requested non-scalar entry from a scalar record.");
     }
     else
     {
@@ -474,7 +478,11 @@ auto BaseRecord<T_elem>::erase(key_type const &key) -> size_type
 {
     bool const keyScalar = (key == RecordComponent::SCALAR);
     size_type res;
-    if (!keyScalar)
+    if (!keyScalar && scalar())
+    {
+        res = 0;
+    }
+    else if (!keyScalar)
         res = Container<T_elem>::erase(key);
     else
     {
@@ -510,7 +518,7 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
 {
     auto &r = get();
-    if (r.m_datasetDefined)
+    if (r.datasetDefined())
     {
         if (key == RecordComponent::SCALAR)
         {
@@ -527,7 +535,7 @@ auto BaseRecord<T_elem>::find(key_type const &key) -> iterator
     }
     else
     {
-        return makeIterator(r.m_container.find(key));
+        return makeIterator(T_Container::find(key));
     }
 }
 
@@ -535,7 +543,7 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
 {
     auto &r = get();
-    if (r.m_datasetDefined)
+    if (r.datasetDefined())
     {
         if (key == RecordComponent::SCALAR)
         {
@@ -552,7 +560,7 @@ auto BaseRecord<T_elem>::find(key_type const &key) const -> const_iterator
     }
     else
     {
-        return makeIterator(r.m_container.find(key));
+        return makeIterator(T_Container::find(key));
     }
 }
 
@@ -561,7 +569,11 @@ auto BaseRecord<T_elem>::count(key_type const &key) const -> size_type
 {
     if (key == RecordComponent::SCALAR)
     {
-        return get().m_datasetDefined ? 1 : 0;
+        return get().datasetDefined() ? 1 : 0;
+    }
+    else if (scalar())
+    {
+        return 0;
     }
     else
     {
@@ -626,10 +638,11 @@ auto BaseRecord<T_elem>::insert(value_type const &value)
     -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->container().insert(value);
+    auto res = T_Container::insert(value);
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res.first);
+        auto const key = res.first->first;
+        this->erase_unchecked(key);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -639,10 +652,11 @@ template <typename T_elem>
 auto BaseRecord<T_elem>::insert(value_type &&value) -> std::pair<iterator, bool>
 {
     detail::verifyNonscalar(this);
-    auto res = this->container().insert(std::move(value));
+    auto res = T_Container::insert(std::move(value));
     if (res.first->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res.first);
+        auto const key = res.first->first;
+        this->erase_unchecked(key);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return {makeIterator(std::move(res.first)), res.second};
@@ -657,15 +671,14 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type const &value)
         auxiliary::overloaded{
             [](typename const_iterator::Left left) { return left; },
             [this](typename const_iterator::Right) {
-                return static_cast<BaseRecord<T_elem> const *>(this)
-                    ->container()
-                    .begin();
+                return T_Container::cbegin();
             }},
         hint.m_iterator);
-    auto res = this->container().insert(base_hint, value);
+    auto res = T_Container::insert(base_hint, value);
     if (res->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res);
+        auto const key = res->first;
+        this->erase_unchecked(key);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
@@ -680,65 +693,24 @@ auto BaseRecord<T_elem>::insert(const_iterator hint, value_type &&value)
         auxiliary::overloaded{
             [](typename const_iterator::Left left) { return left; },
             [this](typename const_iterator::Right) {
-                return static_cast<BaseRecord<T_elem> const *>(this)
-                    ->container()
-                    .begin();
+                return T_Container::cbegin();
             }},
         hint.m_iterator);
-    auto res = this->container().insert(base_hint, std::move(value));
+    auto res = T_Container::insert(base_hint, std::move(value));
     if (res->first == RecordComponent::SCALAR)
     {
-        this->container().erase(res);
+        auto const key = res->first;
+        this->erase_unchecked(key);
         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
     }
     return makeIterator(res);
 }
 
 template <typename T_elem>
-template <typename InputIt>
-auto BaseRecord<T_elem>::insert(InputIt first, InputIt last) -> void
-{
-    detail::verifyNonscalar(this);
-    this->container().insert(first, last);
-    /*
-     * We skip this check as it changes the runtime of this call from
-     * O(last-first) to O(container().size()).
-     */
-    // for (auto it = this->container().begin(); it != end; ++it)
-    // {
-    //     if (it->first == RecordComponent::SCALAR)
-    //     {
-    //         this->container().erase(it);
-    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
-    //     }
-    // }
-}
-
-template <typename T_elem>
 auto BaseRecord<T_elem>::insert(std::initializer_list<value_type> ilist) -> void
 {
     detail::verifyNonscalar(this);
-    this->container().insert(std::move(ilist));
-    /*
-     * We skip this check as it changes the runtime of this call from
-     * O(last-first) to O(container().size()).
-     */
-    // for (auto it = this->container().begin(); it != end; ++it)
-    // {
-    //     if (it->first == RecordComponent::SCALAR)
-    //     {
-    //         this->container().erase(it);
-    //         throw error::WrongAPIUsage(detail::NO_SCALAR_INSERT);
-    //     }
-    // }
-}
-
-template <typename T_elem>
-auto BaseRecord<T_elem>::swap(BaseRecord &other) noexcept -> void
-{
-    detail::verifyNonscalar(this);
-    detail::verifyNonscalar(&other);
-    this->container().swap(other.container());
+    this->insert(ilist.begin(), ilist.end());
 }
 
 template <typename T_elem>
@@ -791,7 +763,8 @@ inline void BaseRecord<T_elem>::flush(
      * Defensive programming. Normally, this error should yield as soon as
      * possible.
      */
-    if (scalar() && !T_Container::empty())
+    if (scalar() && this->writable().objectType.isGroup() &&
+        !T_Container::empty())
     {
         throw error::WrongAPIUsage(
             "A scalar component can not be contained at the same time as "
@@ -799,9 +772,12 @@ inline void BaseRecord<T_elem>::flush(
     }
 
     this->flush_impl(name, flushParams);
+    /*
+     * The dirty flag is unset centrally here, after flush_impl() has updated
+     * the middle-end state. The flush_impl() overrides (Mesh, Record,
+     * PatchRecord) must therefore not unset dirty flags themselves.
+     */
     this->determineUnsetDirty(flushParams.flushLevel);
-    // flush_impl must take care to correctly set the dirty() flag so this
-    // method doesn't do it
 }
 
 template <typename T_elem>

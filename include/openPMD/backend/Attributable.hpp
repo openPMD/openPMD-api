@@ -23,6 +23,7 @@
 #include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/ThrowError.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/HierarchyVisitor.hpp"
@@ -47,6 +48,13 @@ namespace traits
 {
     template <typename T>
     struct GenerationPolicy;
+    template <typename>
+    struct ElementAccessPolicy;
+    namespace detail
+    {
+        template <typename Container, typename Iterator>
+        void emplace_object_as_customly_managed(Container &cont, Iterator &it);
+    }
 } // namespace traits
 class AbstractFilePosition;
 class Attributable;
@@ -57,9 +65,12 @@ namespace internal
 {
     class IterationData;
     class SeriesData;
+    template <typename, typename, bool>
+    class ChildView;
     struct HomogenizeExtents;
     struct ConfigAttribute;
     class ScientificDefaults;
+    class AttributableData;
 
     class SharedAttributableData
     {
@@ -87,6 +98,18 @@ namespace internal
          * The attributes defined by this Attributable.
          */
         A_MAP m_attributes;
+
+        /**
+         * True if the frontend instance owning Writable::attributable was
+         * created through a custom-hierarchy view and has not yet been
+         * replaced by a regular typed view.
+         *
+         * This cannot be inferred from the typed caches: a cache can contain
+         * either a custom-created handle or an alias materialized from the
+         * regular hierarchy. The flag distinguishes those cases for
+         * custom-hierarchy flush/visit and for preferCurrentBackpointer().
+         */
+        bool managed_as_custom_hierarchy = false;
     };
 
     /*
@@ -112,6 +135,8 @@ namespace internal
 
         using SharedData_t = std::shared_ptr<SharedAttributableData>;
         using A_MAP = SharedData_t::element_type::A_MAP;
+        using parent_t = std::shared_ptr<SharedAttributableData>;
+        friend class openPMD::CustomHierarchy;
 
     public:
         AttributableData();
@@ -120,12 +145,24 @@ namespace internal
         AttributableData(AttributableData &&) = delete;
         virtual ~AttributableData() = default;
 
+        inline auto asSharedPtrOfAttributable()
+            -> std::shared_ptr<SharedAttributableData> &
+        {
+            return *this;
+        }
+
+        [[nodiscard]] inline auto asSharedPtrOfAttributable() const
+            -> std::shared_ptr<SharedAttributableData> const &
+        {
+            return *this;
+        }
+
         AttributableData &operator=(AttributableData const &) = delete;
         AttributableData &operator=(AttributableData &&) = delete;
 
         // Make copies explicit, only to be used under the conditions described
         // above
-        void cloneFrom(AttributableData const &other);
+        void cloneFrom(parent_t const &other);
 
         template <typename T>
         T asInternalCopyOf()
@@ -244,11 +281,19 @@ class Attributable
     template <typename T, typename Series_type>
     friend T &internal::makeOwning(T &self, Series_type);
     friend class StatefulSnapshotsContainer;
+    template <typename, typename, bool>
+    friend class internal::ChildView;
     friend class internal::AttributableData;
     friend class Snapshots;
     friend struct internal::HomogenizeExtents;
     friend struct internal::ConfigAttribute;
     friend class internal::ScientificDefaults;
+    friend class CustomHierarchy;
+    template <typename>
+    friend struct traits::ElementAccessPolicy;
+    template <typename Container, typename Iterator>
+    friend void traits::detail::emplace_object_as_customly_managed(
+        Container &cont, Iterator &it);
 
 protected:
     // tag for internal constructor
@@ -293,6 +338,14 @@ public:
      * @return  Stored Attribute in Variant form.
      */
     Attribute getAttribute(std::string const &key) const;
+
+    /** Retrieve value of Attribute stored with provided key.
+     *
+     * @param   key Key (i.e. name) of the Attribute to retrieve value for.
+     * @return  If found, the stored Attribute in Variant form. Otherwise, an
+     *          empty std::optional.
+     */
+    std::optional<Attribute> getAttributeOptional(std::string const &key) const;
 
     /** Remove Attribute of provided value both logically and physically.
      *
@@ -418,7 +471,7 @@ public:
      * @param visitor Operations to run for each object.
      * @param recursive Extend the operation recursively to children.
      */
-    virtual void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
+    void visitHierarchy(HierarchyVisitor &visitor, bool recursive);
 
     /**
      * Visitor pattern for the openPMD object hierarchy in postfix traversal,
@@ -464,6 +517,18 @@ public:
      */
     [[nodiscard]] uintptr_t memoryID() const;
 
+    /** Return a generic view of this object's hierarchy.
+     *
+     * The returned view is lazy: children are read from the backend and
+     * represented by frontend handles only when they are accessed.
+     *
+     * Children created or erased through the returned view affect the regular
+     * openPMD hierarchy. Handles created through this view are kept alive by
+     * the containing backend group, independently of the lifetime of the
+     * returned handle.
+     */
+    auto customHierarchies() -> CustomHierarchy;
+
     // clang-format off
 OPENPMD_protected
     // clang-format on
@@ -488,6 +553,9 @@ OPENPMD_protected
     void seriesFlush_impl(internal::FlushParams const &, bool flush_io_handler);
 
     void flushAttributes(internal::FlushParams const &);
+
+    void customHierarchyFlush(
+        internal::FlushParams const &, bool managed_as_custom_object);
 
     enum ReadMode
     {
@@ -588,6 +656,8 @@ OPENPMD_protected
     {
         return (*m_attri)->m_writable;
     }
+
+    void preferCurrentBackpointer() const;
 
     inline void setData(std::shared_ptr<internal::AttributableData> attri)
     {
@@ -699,6 +769,9 @@ OPENPMD_protected
      */
     void setWritten(bool val, EnqueueAsynchronously);
 
+protected:
+    virtual void visitHierarchyImpl(HierarchyVisitor &visitor, bool recursive);
+
 private:
     /**
      * @brief Link with parent.
@@ -765,6 +838,6 @@ Attributable::readVectorFloatingpoint(std::string const &key) const
         std::is_floating_point<T>::value,
         "Type of attribute must be floating point");
 
-    return getAttribute(key).get<std::vector<T> >();
+    return getAttribute(key).get<std::vector<T>>();
 }
 } // namespace openPMD

@@ -89,8 +89,6 @@ public:
     template <typename T>
     void store(T);
 
-    void visitHierarchy(HierarchyVisitor &v, bool recursive) override;
-
     // clang-format off
 OPENPMD_private
     // clang-format on
@@ -111,6 +109,8 @@ OPENPMD_protected
 protected:
     void scientificDefaults_impl(
         internal::WriteOrRead, OpenpmdStandard) override;
+
+    void visitHierarchyImpl(HierarchyVisitor &v, bool recursive) override;
 }; // PatchRecordComponent
 
 template <typename T>
