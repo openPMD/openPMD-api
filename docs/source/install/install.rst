@@ -176,6 +176,12 @@ Replace the last three commands with
    # administrative privileges might be required for system paths
    cmake --build . --config Release --target install
 
+.. note::
+
+   With shared libraries (``-DopenPMD_BUILD_SHARED_LIBS=ON``, the default), the Python tests in ``ctest`` cannot import ``openpmd_api`` from the build directory.
+   Python 3.8+ does not search ``PATH`` for the ``openPMD.dll`` that the Python module depends on.
+   Build with ``-DopenPMD_BUILD_SHARED_LIBS=OFF`` to run the Python tests before installing.
+
 Post "From Source" Install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

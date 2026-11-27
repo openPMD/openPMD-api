@@ -25,7 +25,8 @@ jobs:
         cmake --build build --config Debug --parallel 2
         cmake --build build --config Debug --target install
 
-# add before install, and fix Python path:
+# add before install: needs a static build, since Python 3.8+ does not search
+# PATH for openPMD.dll when the Python tests import the build directory
 # ctest --test-dir build -C Debug --output-on-failure
 
   build_win_msvc_x86:
@@ -88,9 +89,8 @@ jobs:
               -DPython_EXECUTABLE="$env:pythonLocation\python.exe" `
               -DCMAKE_INSTALL_PREFIX="$env:pythonLocation"
         cmake --build build --config Release --parallel 4
-        # install first: the Python tests import the installed module
-        cmake --build build --config Release --target install
         ctest --test-dir build -C Release --output-on-failure
+        cmake --build build --config Release --target install
 
         python -c "import openpmd_api as io; print(io.__version__, io.variants); assert io.variants['hdf5']"
         python -m openpmd_api.ls --help
@@ -157,5 +157,6 @@ jobs:
         cmake --build build --config Release --parallel 2
         cmake --build build --config Debug --target install
 
-# add before install, and fix Python path:
+# add before install: needs a static build, since Python 3.8+ does not search
+# PATH for openPMD.dll when the Python tests import the build directory
 # ctest --test-dir build -C Debug --output-on-failure

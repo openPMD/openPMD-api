@@ -97,10 +97,10 @@ build_script:
   - cmd: cmake --build . --config %CONFIGURATION% -j 2
   # shared: Python 3.8+ does not search PATH for openPMD.dll, so the Python
   #         tests need it installed in %CONDA_INSTALL_LOCN%\Library\bin
-  - cmd: if "%SHARED%"=="ON" cmake --build . --config %CONFIGURATION% --target install
+  - cmd: if /I "%SHARED%"=="ON" cmake --build . --config %CONFIGURATION% --target install
 
 test_script:
   # static: test the Python package in the build directory, then install
   - cmd: ctest -V -C %CONFIGURATION%
-  - cmd: if "%SHARED%"=="OFF" cmake --build . --config %CONFIGURATION% --target install
+  - cmd: if /I NOT "%SHARED%"=="ON" cmake --build . --config %CONFIGURATION% --target install
   - cmd: call %CONDA_INSTALL_LOCN%\python.exe -c "import openpmd_api; print(openpmd_api.__version__); print(openpmd_api.variants)"
