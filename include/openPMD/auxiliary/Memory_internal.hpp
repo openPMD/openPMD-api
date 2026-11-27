@@ -25,6 +25,8 @@
 namespace openPMD::auxiliary
 {
 // cannot use a unique_ptr inside a std::variant, so we represent it with this
-using WriteBufferTypes =
-    std::variant<WriteBuffer::CopyableUniquePtr, WriteBuffer::SharedPtr>;
+using WriteBufferTypes = std::variant<
+    WriteBuffer::CopyableUniquePtr,
+    WriteBuffer::SharedPtr,
+    WriteBuffer::ReadSharedPtr>;
 } // namespace openPMD::auxiliary

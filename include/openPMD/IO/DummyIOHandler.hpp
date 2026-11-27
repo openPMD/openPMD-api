@@ -44,7 +44,7 @@ public:
     /** No-op consistent with the IOHandler interface to enable library use
      * without IO.
      */
-    std::future<void> flush(internal::ParsedFlushParams &) override;
+    std::future<void> flush_impl(internal::ParsedFlushParams &) override;
     std::string backendName() const override;
 }; // DummyIOHandler
 } // namespace openPMD
