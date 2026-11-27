@@ -1,195 +1,183 @@
-# manylinux2010 wheels
+# manylinux_2_28 wheels
 # https://github.com/pypa/manylinux
 #
-FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
-# FROM       quay.io/pypa/manylinux1_x86_64 as build-env
-ENV        DEBIAN_FRONTEND noninteractive
+# Build & test the wheels, then copy them to ./dist/:
+#   docker build -t openpmd-api-wheels .
+#   docker run --rm -v "$PWD/dist":/dist openpmd-api-wheels
+#
+# Note: the wheels we publish on PyPI are built with cibuildwheel, see the
+#       "wheels" branch.
+#
+FROM       quay.io/pypa/manylinux_2_28_x86_64 AS build-env
 
-# Python 3.8-3.12 via "38 39 311 312"
-ARG        PY_VERSIONS="38 39 310 311 312"
+# CPython versions: /opt/python/cp<ver>-cp<ver>/
+#   note: the test-* stages below expect wheels for all of these
+ARG        PY_VERSIONS="311 312 313 314 315"
+# parallel jobs for the dependency builds
+ARG        BUILD_PARALLEL=2
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
 ENV        CXXFLAGS="-fPIC ${CXXFLAGS}"
 
-# install dependencies
-#   CMake, zlib?, HDF5, c-blosc, ADIOS2
-RUN        yum check-update -y \
-           ; yum -y install \
-               glibc-static \
-               tar
-#RUN        curl -sOL https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz \
-#           && file cmake*.tar.gz \
-#           && tar -xzf cmake*.tar.gz \
-#           && rm cmake*.tar.gz \
-#           && mv cmake* /opt/cmake
-#ENV        PATH=/opt/cmake/bin:${PATH}
-RUN        for PY_TARGET in ${PY_VERSIONS}; do \
-               PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-               && ${PY_BIN} -m pip install -U pip               \
-               && ${PY_BIN} -m pip install -U setuptools cmake; \
-           done;
+# install dependencies (static, in /usr/local)
+#   zlib, HDF5, C-Blosc2, ADIOS2
+#   note: CMake is provided by the manylinux image
+RUN        curl -fsSLo zlib-1.3.1.tar.gz https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz \
+           && tar -xzf zlib-1.3.1.tar.gz \
+           && rm zlib-1.3.1.tar.gz \
+           && cmake -S zlib-1.3.1 -B build-zlib \
+               -DBUILD_SHARED_LIBS=OFF \
+               -DCMAKE_BUILD_TYPE=Release \
+               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+               -DCMAKE_INSTALL_PREFIX=/usr/local \
+               -DZLIB_BUILD_EXAMPLES=OFF \
+           && cmake --build build-zlib --parallel ${BUILD_PARALLEL} \
+           && cmake --build build-zlib --target install \
+           && rm -rf zlib-1.3.1 build-zlib \
+           && rm -f /usr/local/lib/libz.so*
 
-RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/hdf5-1.10.5.tar.gz \
-           && file hdf5*.tar.gz \
-           && tar -xzf hdf5*.tar.gz \
-           && rm hdf5*.tar.gz \
-           && cd hdf5-* \
-           && ./configure --disable-parallel --disable-shared --enable-static --prefix /usr \
-           && make \
-           && make install
+RUN        curl -fsSLo hdf5-1.14.6.tar.gz https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz \
+           && tar -xzf hdf5-1.14.6.tar.gz \
+           && rm hdf5-1.14.6.tar.gz \
+           && cd hdf5-1.14.6 \
+           && ./configure --disable-parallel --disable-shared --enable-static \
+                          --disable-hl --disable-tests --with-zlib=/usr/local \
+                          --prefix=/usr/local \
+           && make -j${BUILD_PARALLEL} \
+           && make install \
+           && cd .. \
+           && rm -rf hdf5-1.14.6
 
-# avoid picking up a static libpthread (also: those libs lack -fPIC)
-RUN        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
-RUN        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
+RUN        curl -fsSLo c-blosc2-2.11.1.tar.gz https://github.com/Blosc/c-blosc2/archive/refs/tags/v2.11.1.tar.gz \
+           && tar -xzf c-blosc2-2.11.1.tar.gz \
+           && rm c-blosc2-2.11.1.tar.gz \
+           && cmake -S c-blosc2-2.11.1 -B build-c-blosc2 \
+               -DBUILD_BENCHMARKS=OFF \
+               -DBUILD_EXAMPLES=OFF \
+               -DBUILD_FUZZERS=OFF \
+               -DBUILD_PLUGINS=OFF \
+               -DBUILD_SHARED=OFF \
+               -DBUILD_STATIC=ON \
+               -DBUILD_TESTS=OFF \
+               -DCMAKE_BUILD_TYPE=Release \
+               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+               -DCMAKE_INSTALL_PREFIX=/usr/local \
+               -DDEACTIVATE_AVX512=ON \
+               -DPREFER_EXTERNAL_ZLIB=ON \
+               -DZLIB_USE_STATIC_LIBS=ON \
+           && cmake --build build-c-blosc2 --parallel ${BUILD_PARALLEL} \
+           && cmake --build build-c-blosc2 --target install \
+           && rm -rf c-blosc2-2.11.1 build-c-blosc2
 
-RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/archive/v1.15.0.tar.gz \
-           && file c-blosc*.tar.gz \
-           && tar -xzf c-blosc*.tar.gz \
-           && rm c-blosc*.tar.gz \
-           && mkdir build-c-blosc \
-           && cd build-c-blosc \
-           && PY_TARGET=${PY_VERSIONS%% *} \
-           && PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-           && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-           && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DPREFER_EXTERNAL_ZLIB=ON -DZLIB_USE_STATIC_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-* \
-           && make \
-           && make install
-
-RUN        curl -sLo adios2-2.9.2.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.9.2.tar.gz \
-           && file adios2*.tar.gz \
-           && tar -xzf adios2*.tar.gz \
-           && rm adios2*.tar.gz \
-           && mkdir build-ADIOS2 \
-           && cd build-ADIOS2 \
-           && PY_TARGET=${PY_VERSIONS%% *} \
-           && PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-           && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-           && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DZLIB_USE_STATIC_LIBS=ON -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE -DCMAKE_INSTALL_PREFIX=/usr ../ADIOS2-* \
-           && make \
-           && make install
+RUN        curl -fsSLo adios2-2.11.0.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.11.0.tar.gz \
+           && tar -xzf adios2-2.11.0.tar.gz \
+           && rm adios2-2.11.0.tar.gz \
+           && cmake -S ADIOS2-2.11.0 -B build-ADIOS2 \
+               -DADIOS2_BUILD_EXAMPLES=OFF \
+               -DADIOS2_Blosc2_PREFER_SHARED=OFF \
+               -DADIOS2_INSTALL_GENERATE_CONFIG=OFF \
+               -DADIOS2_RUN_INSTALL_TEST=OFF \
+               -DADIOS2_USE_BZip2=OFF \
+               -DADIOS2_USE_Blosc2=ON \
+               -DADIOS2_USE_Campaign=OFF \
+               -DADIOS2_USE_Fortran=OFF \
+               -DADIOS2_USE_HDF5=OFF \
+               -DADIOS2_USE_MHS=OFF \
+               -DADIOS2_USE_MPI=OFF \
+               -DADIOS2_USE_PNG=OFF \
+               -DADIOS2_USE_Python=OFF \
+               -DADIOS2_USE_SST=ON \
+               -DADIOS2_USE_Sodium=OFF \
+               -DADIOS2_USE_ZFP=OFF \
+               -DBUILD_SHARED_LIBS=OFF \
+               -DBUILD_TESTING=OFF \
+               -DCMAKE_BUILD_TYPE=Release \
+               -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE \
+               -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE \
+               -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
+               -DCMAKE_INSTALL_PREFIX=/usr/local \
+               -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+           && cmake --build build-ADIOS2 --parallel ${BUILD_PARALLEL} \
+           && cmake --build build-ADIOS2 --target install \
+           && rm -rf ADIOS2-2.11.0 build-ADIOS2 \
+           && rm -f /usr/local/lib*/cmake/adios2/FindBlosc2.cmake
 
 ADD        . /opt/src
+WORKDIR    /opt/src
 
-RUN        ls /opt/python/
-
+# static dependencies; backends are required (fail instead of skipping them)
 ENV        HDF5_USE_STATIC_LIBRARIES=ON \
            ZLIB_USE_STATIC_LIBS=ON \
            openPMD_BUILD_TESTING=OFF \
-           openPMD_BUILD_EXAMPLES=OFF
+           openPMD_BUILD_EXAMPLES=OFF \
+           openPMD_CMAKE_openPMD_USE_ADIOS2=ON \
+           openPMD_CMAKE_openPMD_USE_HDF5=ON
 
 # build matrix
-RUN        cd /opt/src; \
-           for PY_TARGET in ${PY_VERSIONS}; do \
-               PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-               && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-               && PATH=${CMAKE_BIN}:${PATH} ${PY_BIN} setup.py bdist_wheel \
-               && ${PY_BIN} setup.py clean --all \
-               && rm -rf openPMD_api.egg-info/; \
-           done; \
-           ls dist/
-
-#RUN        mkdir build \
-#           && cd build \
-#           && /opt/cmake/bin/cmake \
-#               -DPython_ROOT_DIR=$(which /opt/python/cp${PY_TARGET}-cp${PY_TARGET}m) \
-#               -DHDF5_USE_STATIC_LIBRARIES=ON \
-#               -DZLIB_USE_STATIC_LIBS=ON \
-#               -DBUILD_SHARED_LIBS=OFF \
-#               -DopenPMD_BUILD_TESTING=OFF \
-#               -DopenPMD_BUILD_EXAMPLES=OFF \
-#               /opt/src \
-#           && make
-
+RUN        for PY_TARGET in ${PY_VERSIONS}; do \
+               PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}/bin/python \
+               && ${PY_BIN} -m pip wheel --no-deps --wheel-dir dist . \
+               && rm -rf build openPMD_api.egg-info \
+               || exit 1; \
+           done \
+           && ls dist/
 
 # verify wheel
 # https://github.com/pypa/auditwheel
-#RUN        pip install auditwheel  # already installed
-RUN         for whl in /opt/src/dist/*.whl; do \
-                auditwheel show ${whl} && \
-                auditwheel repair --plat manylinux2010_x86_64 ${whl}; \
-            done \
-            && du -hs /opt/src/dist/* \
-            && du -hs /wheelhouse/*
+RUN        for whl in /opt/src/dist/*.whl; do \
+               auditwheel show ${whl} \
+               && auditwheel repair --plat manylinux_2_28_x86_64 --wheel-dir /wheelhouse ${whl} \
+               || exit 1; \
+           done \
+           && du -hs /opt/src/dist/* \
+           && du -hs /wheelhouse/*
 
-# test in fresh env: Debian:Bullseye + Python 3.10
-FROM       debian:bullseye
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp310-cp310-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.10 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.10 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.10 get-pip.py \
-           && python3.10 -m pip install openPMD_api-*-cp310-cp310-manylinux2010_x86_64.whl
-RUN        python3.10 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.10 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
+# test in fresh envs: Debian + Python 3.11 - 3.15
+FROM       python:3.11-slim AS test-cp311
+COPY --from=build-env /wheelhouse/*-cp311-cp311-*.whl /wheels/
+RUN        python -m pip install --no-cache-dir /wheels/*.whl
+RUN        python -c "import openpmd_api as io; print(io.__version__); print(io.variants); assert io.variants['hdf5'] and io.variants['adios2']"
+RUN        python -m openpmd_api.ls --help
+RUN        openpmd-ls --help && touch /tested-cp311
 
-# test in fresh env: Debian:Bullseye + Python 3.11
-FROM       debian:bullseye
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.11 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.11 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.11 get-pip.py \
-           && python3.11 -m pip install openPMD_api-*-cp311-cp311-manylinux2010_x86_64.whl
-RUN        python3.11 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.11 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
+FROM       python:3.12-slim AS test-cp312
+COPY --from=build-env /wheelhouse/*-cp312-cp312-*.whl /wheels/
+RUN        python -m pip install --no-cache-dir /wheels/*.whl
+RUN        python -c "import openpmd_api as io; print(io.__version__); print(io.variants); assert io.variants['hdf5'] and io.variants['adios2']"
+RUN        python -m openpmd_api.ls --help
+RUN        openpmd-ls --help && touch /tested-cp312
 
-# test in fresh env: Debian:Bullseye + Python 3.12
-FROM       debian:bullseye
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp312-cp312-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.12 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.12 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.12 get-pip.py \
-           && python3.12 -m pip install openPMD_api-*-cp312-cp312-manylinux2010_x86_64.whl
-RUN        python3.12 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.12 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
+FROM       python:3.13-slim AS test-cp313
+COPY --from=build-env /wheelhouse/*-cp313-cp313-*.whl /wheels/
+RUN        python -m pip install --no-cache-dir /wheels/*.whl
+RUN        python -c "import openpmd_api as io; print(io.__version__); print(io.variants); assert io.variants['hdf5'] and io.variants['adios2']"
+RUN        python -m openpmd_api.ls --help
+RUN        openpmd-ls --help && touch /tested-cp313
 
-# test in fresh env: Debian:Bullseye + Python 3.13
-FROM       debian:bullseye
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp313-cp313-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.13 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.13 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.13 get-pip.py \
-           && python3.13 -m pip install openPMD_api-*-cp313-cp313-manylinux2010_x86_64.whl
-RUN        python3.13 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.13 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
+FROM       python:3.14-slim AS test-cp314
+COPY --from=build-env /wheelhouse/*-cp314-cp314-*.whl /wheels/
+RUN        python -m pip install --no-cache-dir /wheels/*.whl
+RUN        python -c "import openpmd_api as io; print(io.__version__); print(io.variants); assert io.variants['hdf5'] and io.variants['adios2']"
+RUN        python -m openpmd_api.ls --help
+RUN        openpmd-ls --help && touch /tested-cp314
 
-# test in fresh env: Debian:Bullseye + Python 3.14
-FROM       debian:bullseye
-ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp314-cp314-manylinux2010_x86_64.whl .
-RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3.14 python3-distutils ca-certificates curl \
-           && rm -rf /var/lib/apt/lists/*
-RUN        python3.14 --version \
-           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-           && python3.14 get-pip.py \
-           && python3.14 -m pip install openPMD_api-*-cp314-cp314-manylinux2010_x86_64.whl
-RUN        python3.14 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3.14 -m openpmd_api.ls --help
-RUN        openpmd-ls --help
+FROM       python:3.15-slim AS test-cp315
+COPY --from=build-env /wheelhouse/*-cp315-cp315-*.whl /wheels/
+RUN        python -m pip install --no-cache-dir /wheels/*.whl
+RUN        python -c "import openpmd_api as io; print(io.__version__); print(io.variants); assert io.variants['hdf5'] and io.variants['adios2']"
+RUN        python -m openpmd_api.ls --help
+RUN        openpmd-ls --help && touch /tested-cp315
 
 # copy binary artifacts (wheels)
-FROM       quay.io/pypa/manylinux2010_x86_64
-MAINTAINER Axel Huebl <a.huebl@hzdr.de>
-COPY --from=build-env /wheelhouse/openPMD_api-*.whl /opt/wheels/
+FROM       quay.io/pypa/manylinux_2_28_x86_64
+LABEL      maintainer="Axel Huebl <a.huebl@hzdr.de>"
+# depend on the test stages, otherwise BuildKit skips them
+COPY --from=test-cp311 /tested-cp311 /opt/tested/
+COPY --from=test-cp312 /tested-cp312 /opt/tested/
+COPY --from=test-cp313 /tested-cp313 /opt/tested/
+COPY --from=test-cp314 /tested-cp314 /opt/tested/
+COPY --from=test-cp315 /tested-cp315 /opt/tested/
+COPY --from=build-env /wheelhouse/*.whl /opt/wheels/
 RUN        ls /opt/wheels/
-ENTRYPOINT if [ -d /dist ]; then cp /opt/wheels/* /dist/; fi
+ENTRYPOINT ["/bin/sh", "-c", "if [ -d /dist ]; then cp /opt/wheels/* /dist/; fi"]
