@@ -3,6 +3,13 @@
 Upgrade Guide
 =============
 
+0.18.0
+------
+
+Python 3.10 support is EOL and removed.
+Python 3.15 is now supported.
+
+
 0.17.0
 ------
 
