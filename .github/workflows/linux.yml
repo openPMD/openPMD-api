@@ -236,17 +236,21 @@ jobs:
     - name: Spack Cache
       uses: actions/cache@v6
       with: {path: /opt/spack, key: gcc12_py36_ompi_h5_ad2_v2 }
+    - uses: actions/setup-python@v7
+      name: Install Python
+      with:
+        python-version: "3.15"
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install g++-12 gfortran libopenmpi-dev python3 python3-setuptools
         sudo .github/workflows/dependencies/install_spack
-        python3 -m pip install -U pip
-        python3 -m pip install -U numpy
-        python3 -m pip install -U mpi4py
-        python3 -m pip install -U pandas
-        python3 -m pip install -U dask
-        python3 -m pip install -U pyarrow
+        python3.15 -m pip install -U pip
+        python3.15 -m pip install -U numpy
+        python3.15 -m pip install -U mpi4py
+        python3.15 -m pip install -U pandas
+        python3.15 -m pip install -U dask
+        python3.15 -m pip install -U pyarrow
     - name: Build
       env: {CC: gcc-12, CXX: g++-12, CXXFLAGS: -Werror}
       run: |
@@ -263,7 +267,8 @@ jobs:
           -DopenPMD_USE_HDF5=ON   \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
-          -DCMAKE_VERBOSE_MAKEFILE=ON
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DPython_EXECUTABLE=$(which python3.15)
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
@@ -312,7 +317,7 @@ jobs:
             ./check.py "$i"
         done
 
-  musllinux_py10:
+  musllinux_py315:
     runs-on: ubuntu-24.04
     if: github.event.pull_request.draft == false
     container:
@@ -323,7 +328,7 @@ jobs:
       run: |
         apk update
         apk add hdf5-dev
-        python3.10 -m pip install numpy h5py
+        python3.15 -m pip install numpy h5py
     - name: Build
       env: {CXXFLAGS: "-Werror -Wno-error=maybe-uninitialized"}
       run: |
@@ -334,7 +339,7 @@ jobs:
           -DopenPMD_USE_HDF5=ON              \
           -DopenPMD_USE_INVASIVE_TESTS=ON    \
           -DopenPMD_USE_FILESYSTEM_HEADER=ON \
-          -DPython_EXECUTABLE=$(which python3.10)
+          -DPython_EXECUTABLE=$(which python3.15)
         cmake --build build --parallel 4
         ctest --test-dir build --output-on-failure
 
