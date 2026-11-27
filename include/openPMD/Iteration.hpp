@@ -424,15 +424,19 @@ private:
      *
      * @return BeginStepStatus
      */
-    BeginStepStatus beginStep(bool reread);
+    BeginStepStatus
+    beginStep(bool reread, std::optional<float> stepTimeout = std::nullopt);
 
     /*
      * Iteration-independent variant for beginStep().
      * Useful in group-based iteration encoding where the Iteration will only
      * be known after opening the step.
      */
-    static BeginStepStatus
-    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
+    static BeginStepStatus beginStep(
+        std::optional<Iteration> thisObject,
+        Series &series,
+        bool reread,
+        std::optional<float> stepTimeout = std::nullopt);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)

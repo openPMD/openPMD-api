@@ -57,6 +57,10 @@ auto Snapshots::begin() -> iterator
 {
     return get().begin();
 }
+auto Snapshots::beginLazy() -> iterator
+{
+    return get().beginLazy();
+}
 auto Snapshots::end() -> iterator
 {
     return get().end();

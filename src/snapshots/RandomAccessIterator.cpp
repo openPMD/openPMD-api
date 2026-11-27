@@ -76,6 +76,18 @@ auto RandomAccessIterator<iterator_t>::operator++() -> RandomAccessIterator &
 }
 
 template <typename iterator_t>
+auto RandomAccessIterator<iterator_t>::tryNext(float stepTimeout)
+    -> AdvanceStatus
+{
+    /*
+     * There are no IO steps in random-access workflows, so there is nothing to
+     * wait for. Signal to the caller that it should use ordinary iteration.
+     */
+    static_cast<void>(stepTimeout);
+    return AdvanceStatus::RANDOMACCESS;
+}
+
+template <typename iterator_t>
 auto RandomAccessIterator<iterator_t>::operator--() -> RandomAccessIterator &
 {
     --m_it;

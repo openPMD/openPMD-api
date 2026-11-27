@@ -303,7 +303,8 @@ public:
     StatefulIterator(
         tag_read_t,
         Series const &,
-        std::optional<internal::ParsePreference> const &parsePreference);
+        std::optional<internal::ParsePreference> const &parsePreference,
+        bool lazy = false);
 
     StatefulIterator(tag_write_t, Series const &);
 
@@ -345,7 +346,25 @@ public:
      *
      * A new step will be opened for this purpose if needed.
      */
-    auto seek(Seek const &) -> StatefulIterator &;
+    auto seek(
+        Seek const &,
+        std::optional<float> stepTimeout = std::nullopt,
+        AdvanceStatus *status = nullptr) -> StatefulIterator &;
+
+    /**
+     * @brief Advance to the next Iteration, waiting at most `stepTimeout`
+     *        seconds for the next IO step.
+     *
+     * Unlike operator++(), this distinguishes a timeout from the end of the
+     * data: TRY_AGAIN means that no step became available in time and the
+     * iterator may simply try again. OVER means the stream is over.
+     *
+     * On TRY_AGAIN the iterator stays where it was: either Before_t (no step
+     * opened yet) or During_t with no current Iteration (between steps). Use
+     * the returned status, not is_end(), to distinguish this from the end of
+     * the data.
+     */
+    AdvanceStatus tryNext(float stepTimeout) override;
 
 private:
     std::optional<StatefulIterator *> nextIterationInStep();
@@ -361,9 +380,13 @@ private:
      * the /data/snapshot attribute, this helps figuring out which iteration
      * is now active. Hence, recursion_depth.
      */
-    std::optional<StatefulIterator *> nextStep(size_t recursion_depth);
+    std::optional<StatefulIterator *> nextStep(
+        size_t recursion_depth,
+        std::optional<float> stepTimeout,
+        AdvanceStatus &status);
 
-    std::optional<StatefulIterator *> loopBody(Seek const &);
+    std::optional<StatefulIterator *> loopBody(
+        Seek const &, std::optional<float> stepTimeout, AdvanceStatus &status);
 
     void initIteratorFilebased();
 
@@ -372,7 +395,13 @@ private:
      */
     void deactivateDeadIteration(iteration_index_t);
 
-    void initSeriesInLinearReadMode();
+    AdvanceStatus initSeriesInLinearReadMode(std::optional<float> stepTimeout);
+
+    /*
+     * Initialize a lazily created iterator: open/parse the first step and, for
+     * file-based encoding, position at the first Iteration.
+     */
+    AdvanceStatus initializeLinearRead(std::optional<float> stepTimeout);
 
     void close();
 

@@ -77,6 +77,16 @@ auto OpaqueSeriesIterator<value_type>::operator++() -> OpaqueSeriesIterator &
     return *this;
 }
 template <typename value_type>
+void OpaqueSeriesIterator<value_type>::next()
+{
+    m_internal_iterator->increment_operator();
+}
+template <typename value_type>
+AdvanceStatus OpaqueSeriesIterator<value_type>::tryNext(float stepTimeout)
+{
+    return m_internal_iterator->tryNext(stepTimeout);
+}
+template <typename value_type>
 auto OpaqueSeriesIterator<value_type>::operator--() -> OpaqueSeriesIterator &
 {
     m_internal_iterator->decrement_operator();

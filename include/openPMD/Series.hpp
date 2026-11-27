@@ -981,14 +981,18 @@ OPENPMD_private
      *             based layout, it's the Series object.
      * @param it The iterator within Series::iterations pointing to that
      *           iteration.
+     * @param stepTimeout Maximum time in seconds to wait for the next IO
+     *                    step. If unset, wait indefinitely.
      * @return AdvanceStatus
      */
     AdvanceStatus advance(
         AdvanceMode mode,
         internal::AttributableData &file,
-        iterations_iterator it);
+        iterations_iterator it,
+        std::optional<float> stepTimeout = std::nullopt);
 
-    AdvanceStatus advance(AdvanceMode mode);
+    AdvanceStatus
+    advance(AdvanceMode mode, std::optional<float> stepTimeout = std::nullopt);
 
     /**
      * @brief Called at the end of an IO step to store the iterations defined

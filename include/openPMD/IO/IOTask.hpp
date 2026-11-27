@@ -742,6 +742,12 @@ struct OPENPMDAPI_EXPORT
      */
     std::variant<AdvanceMode, StepSelection> mode;
     bool isThisStepMandatory = false;
+    /**
+     * Optional timeout (in seconds) for waiting on the next IO step when
+     * beginning a step in a linear read workflow. Backend-independent:
+     * backends that do not use IO steps ignore it.
+     */
+    std::optional<float> stepTimeout;
     // output parameter
     std::shared_ptr<AdvanceStatus> status =
         std::make_shared<AdvanceStatus>(AdvanceStatus::OK);

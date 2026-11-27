@@ -1,4 +1,5 @@
 from . import openpmd_api_cxx as cxx
+from .AsyncIterator import stateful_iterator_aiter, stateful_iterator_anext
 from .DaskArray import record_component_to_daskarray
 from .DaskDataFrame import particles_to_daskdataframe
 from .DataFrame import (
@@ -19,6 +20,8 @@ ParticleSpecies.to_dask = particles_to_daskdataframe  # noqa
 Record_Component.to_dask_array = record_component_to_daskarray  # noqa
 Series.to_df = iterations_to_dataframe  # noqa
 Series.to_cudf = iterations_to_cudf  # noqa
+StatefulIterator.__aiter__ = stateful_iterator_aiter  # noqa
+StatefulIterator.__anext__ = stateful_iterator_anext  # noqa
 
 # TODO remove in future versions (deprecated)
 Access_Type = Access  # noqa
