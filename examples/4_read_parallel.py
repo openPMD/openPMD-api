@@ -12,6 +12,7 @@ License: LGPLv3+
 # on import: calls MPI_Init_thread()
 # exit hook: calls MPI_Finalize()
 from mpi4py import MPI
+
 import openpmd_api as io
 
 if __name__ == "__main__":
@@ -25,7 +26,7 @@ if __name__ == "__main__":
         {"defer_iteration_parsing": True},
     )
     if 0 == comm.rank:
-        print("Read a series in parallel with {} MPI ranks".format(comm.size))
+        print(f"Read a series in parallel with {comm.size} MPI ranks")
 
     # with defer_iteration_parsing, open() must be called explicitly
     # explicit use of open() is recommended for parallel applications
@@ -52,18 +53,14 @@ if __name__ == "__main__":
 
     for i in range(comm.size):
         if i == comm.rank and comm.rank < 13:
-            print("Rank {} - Read chunk contains:".format(i))
+            print(f"Rank {i} - Read chunk contains:")
             for row in range(chunk_extent[0]):
                 for col in range(chunk_extent[1]):
                     print(
-                        "\t({}|{}|1)\t{:e}".format(
-                            row + chunk_offset[0],
-                            col + chunk_offset[1],
-                            chunk_data[row, col, 0],
-                        ),
+                        f"\t({row + chunk_offset[0]}|{col + chunk_offset[1]}|1)\t{chunk_data[row, col, 0]:e}",
                         end="",
                     )
-                print("")
+                print()
 
         # this barrier is not necessary but structures the example output
         comm.Barrier()
