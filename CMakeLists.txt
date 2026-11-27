@@ -1290,22 +1290,27 @@ if(openPMD_BUILD_TESTING)
             else()
                 set(CFG_PATH "")
             endif()
-            set(BUILD_PYTHONDIR "${openPMD_PYTHON_OUTPUT_DIRECTORY}${CFG_PATH}")
-            set(BUILD_BINDIR "${openPMD_RUNTIME_OUTPUT_DIRECTORY}${CFG_PATH}")
+            # no trailing (back)slash: on Windows, it would escape the ";"
+            # that separates the entries of the property list below
+            string(REGEX REPLACE "[/\\\\]+$" "" PYTHON_OUTPUT_DIR "${openPMD_PYTHON_OUTPUT_DIRECTORY}")
+            string(REGEX REPLACE "[/\\\\]+$" "" RUNTIME_OUTPUT_DIR "${openPMD_RUNTIME_OUTPUT_DIRECTORY}")
+            set(BUILD_PYTHONDIR "${PYTHON_OUTPUT_DIR}${CFG_PATH}")
+            set(BUILD_BINDIR "${RUNTIME_OUTPUT_DIR}${CFG_PATH}")
+            # prepend at ctest run time, with the platform's path separator
+            # (instead of baking $ENV{PATH} into the list, whose entries can
+            # also end in a backslash on Windows)
             if(WIN32)
-                string(REGEX REPLACE "/" "\\\\" WIN_BUILD_PYTHONDIR "${BUILD_PYTHONDIR}")
-                string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR "${BUILD_BINDIR}")
-                string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                string(REGEX REPLACE "/" "\\\\" BUILD_PYTHONDIR "${BUILD_PYTHONDIR}")
+                string(REGEX REPLACE "/" "\\\\" BUILD_BINDIR "${BUILD_BINDIR}")
                 set_property(TEST ${test_name}
-                    PROPERTY ENVIRONMENT
-                        "PATH=${WIN_BUILD_BINDIR}\;${WIN_PATH}"
-                        "PYTHONPATH=${WIN_BUILD_PYTHONDIR}\;${WIN_PYTHONPATH}"
+                    PROPERTY ENVIRONMENT_MODIFICATION
+                        "PATH=path_list_prepend:${BUILD_BINDIR}"
+                        "PYTHONPATH=path_list_prepend:${BUILD_PYTHONDIR}"
                 )
             else()
-                set_tests_properties(${test_name}
-                    PROPERTIES ENVIRONMENT
-                        "PYTHONPATH=${BUILD_PYTHONDIR}:$ENV{PYTHONPATH}"
+                set_property(TEST ${test_name}
+                    PROPERTY ENVIRONMENT_MODIFICATION
+                        "PYTHONPATH=path_list_prepend:${BUILD_PYTHONDIR}"
                 )
             endif()
         endfunction()
