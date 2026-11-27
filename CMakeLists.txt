@@ -721,11 +721,24 @@ if(openPMD_HAVE_PYTHON)
             )
         endforeach()
     endif()
+    # same directories as the openPMD.py target above, so the build tree
+    # contains a complete Python package (per config for Multi-Config)
+    if(isMultiConfig AND NOT openPMD_BUILD_NO_CFG_SUBPATH)
+        set(openPMD_PYTHON_OUTPUT_CFG_DIRS "")
+        foreach(CFG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            list(APPEND openPMD_PYTHON_OUTPUT_CFG_DIRS
+                 ${openPMD_PYTHON_OUTPUT_DIRECTORY}/${CFG})
+        endforeach()
+    else()
+        set(openPMD_PYTHON_OUTPUT_CFG_DIRS ${openPMD_PYTHON_OUTPUT_DIRECTORY})
+    endif()
     function(copy_aux_py)
         set(AUX_PY_SRC_DIR ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api/)
-        set(AUX_PY_DSR_DIR ${openPMD_PYTHON_OUTPUT_DIRECTORY}/openpmd_api/)
-        foreach(src_name IN LISTS ARGN)
-            configure_file(${AUX_PY_SRC_DIR}/${src_name} ${AUX_PY_DSR_DIR}/${src_name} COPYONLY)
+        foreach(output_dir IN LISTS openPMD_PYTHON_OUTPUT_CFG_DIRS)
+            set(AUX_PY_DSR_DIR ${output_dir}/openpmd_api/)
+            foreach(src_name IN LISTS ARGN)
+                configure_file(${AUX_PY_SRC_DIR}/${src_name} ${AUX_PY_DSR_DIR}/${src_name} COPYONLY)
+            endforeach()
         endforeach()
     endfunction()
     copy_aux_py(
@@ -1270,25 +1283,34 @@ if(openPMD_BUILD_TESTING)
     # Python Unit tests
     if(openPMD_HAVE_PYTHON)
         function(test_set_pythonpath test_name)
+            # build directories of the Python package and the openPMD
+            # library for the tested config, see the target properties above
+            if(isMultiConfig AND NOT openPMD_BUILD_NO_CFG_SUBPATH)
+                set(CFG_PATH "/$<CONFIG>")
+            else()
+                set(CFG_PATH "")
+            endif()
+            # no trailing (back)slash: on Windows, it would escape the ";"
+            # that separates the entries of the property list below
+            string(REGEX REPLACE "[/\\\\]+$" "" PYTHON_OUTPUT_DIR "${openPMD_PYTHON_OUTPUT_DIRECTORY}")
+            string(REGEX REPLACE "[/\\\\]+$" "" RUNTIME_OUTPUT_DIR "${openPMD_RUNTIME_OUTPUT_DIRECTORY}")
+            set(BUILD_PYTHONDIR "${PYTHON_OUTPUT_DIR}${CFG_PATH}")
+            set(BUILD_BINDIR "${RUNTIME_OUTPUT_DIR}${CFG_PATH}")
+            # prepend at ctest run time, with the platform's path separator
+            # (instead of baking $ENV{PATH} into the list, whose entries can
+            # also end in a backslash on Windows)
             if(WIN32)
-                if(isMultiConfig)
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR}/$<CONFIG>)
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>)
-                else()
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${openPMD_RUNTIME_OUTPUT_DIRECTORY})
-                endif()
-                string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                string(REGEX REPLACE "/" "\\\\" BUILD_PYTHONDIR "${BUILD_PYTHONDIR}")
+                string(REGEX REPLACE "/" "\\\\" BUILD_BINDIR "${BUILD_BINDIR}")
                 set_property(TEST ${test_name}
-                    PROPERTY ENVIRONMENT
-                        "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                        "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${openPMD_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                    PROPERTY ENVIRONMENT_MODIFICATION
+                        "PATH=path_list_prepend:${BUILD_BINDIR}"
+                        "PYTHONPATH=path_list_prepend:${BUILD_PYTHONDIR}"
                 )
             else()
-                set_tests_properties(${test_name}
-                    PROPERTIES ENVIRONMENT
-                        "PYTHONPATH=${openPMD_BINARY_DIR}/${openPMD_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                set_property(TEST ${test_name}
+                    PROPERTY ENVIRONMENT_MODIFICATION
+                        "PYTHONPATH=path_list_prepend:${BUILD_PYTHONDIR}"
                 )
             endif()
         endfunction()

@@ -72,6 +72,9 @@ class CMakeBuild(build_ext):
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
             "-DopenPMD_PYTHON_OUTPUT_DIRECTORY=" + extdir,
+            # multi-config generators (e.g. Visual Studio, Ninja Multi-Config,
+            # Xcode): build into extdir, not into a per-config sub-directory
+            "-DopenPMD_BUILD_NO_CFG_SUBPATH:BOOL=ON",
             "-DopenPMD_USE_PYTHON:BOOL=ON",
             # variants
             "-DopenPMD_USE_MPI:BOOL=" + openPMD_USE_MPI,
@@ -115,7 +118,6 @@ class CMakeBuild(build_ext):
         # Assumption: Windows builds are always multi-config (MSVC VS)
         if platform.system() == "Windows":
             cmake_args += [
-                "-DopenPMD_BUILD_NO_CFG_SUBPATH:BOOL=ON",
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(
                     cfg.upper(), os.path.join(extdir, "openpmd_api")
                 ),
