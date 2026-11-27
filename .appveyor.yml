@@ -1,18 +1,11 @@
 environment:
   matrix:
     - TARGET_ARCH: x64
-      CONDA_PY: 3.10
+      CONDA_PY: 3.15
       CONDA_INSTALL_LOCN: C:\\openpmd-conda
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       platform: x64
       SHARED: OFF
-
-    - TARGET_ARCH: x86
-      CONDA_PY: 3.10
-      CONDA_INSTALL_LOCN: C:\\Miniconda37
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      platform: x86
-      SHARED: ON
 
 configuration:
 #  - Debug
@@ -75,9 +68,6 @@ install:
   # Cywin's git breaks conda-build. (see https://github.com/conda-forge/conda-smithy-feedstock/pull/2)
   - cmd: rmdir C:\cygwin /s /q
 
-  # x86: defaults required for Win32 Python 3.10.
-  - cmd: if "%TARGET_ARCH%"=="x86" call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
-
   - cmd: set PYTHONUNBUFFERED=1
 
   # x64: conda-forge only via micromamba.
@@ -85,12 +75,6 @@ install:
   - cmd: if "%TARGET_ARCH%"=="x64" C:\micromamba.exe create -y -p "%CONDA_INSTALL_LOCN%" -c conda-forge python=%CONDA_PY% cython numpy "cmake>=3.22" hdf5 adios2
   - cmd: if "%TARGET_ARCH%"=="x64" set PATH=%CONDA_INSTALL_LOCN%;%CONDA_INSTALL_LOCN%\Library\bin;%CONDA_INSTALL_LOCN%\Scripts;%PATH%
   - cmd: if "%TARGET_ARCH%"=="x64" set CMAKE_PREFIX_PATH=%CONDA_INSTALL_LOCN%
-
-  # x86: install with defaults.
-  - cmd: if "%TARGET_ARCH%"=="x86" conda config --set show_channel_urls true
-  - cmd: if "%TARGET_ARCH%"=="x86" conda config --add channels defaults
-  - cmd: if "%TARGET_ARCH%"=="x86" conda config --append channels conda-forge
-  - cmd: if "%TARGET_ARCH%"=="x86" conda install -n root --quiet --yes cython numpy cmake hdf5 python=%CONDA_PY%
 
 before_build:
   - cmd: cd C:\projects\openpmd-api
@@ -108,7 +92,6 @@ before_build:
 
   # CMake configure
   - cmd: if "%TARGET_ARCH%"=="x64" cmake -G "%OPENPMD_CMAKE_GENERATOR%" -A "%TARGET_ARCH%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE="%CONDA_INSTALL_LOCN%\python.exe" -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
-  - cmd: if "%TARGET_ARCH%"=="x86" cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE="%CONDA_INSTALL_LOCN%\python.exe" -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
 
 build_script:
   - cmd: cmake --build . --config %CONFIGURATION% -j 2

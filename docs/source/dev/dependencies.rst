@@ -18,7 +18,7 @@ Shipped internally
 The following libraries are downloaded by CMake for convenience, unless ``openPMD_SUPERBUILD=OFF`` is set:
 
 * `Catch2 <https://github.com/catchorg/Catch2>`_ 2.13.10+ (`BSL-1.0 <https://github.com/catchorg/Catch2/blob/master/LICENSE.txt>`__)
-* `pybind11 <https://github.com/pybind/pybind11>`_ 2.13.0+ (`new BSD <https://github.com/pybind/pybind11/blob/master/LICENSE>`_)
+* `pybind11 <https://github.com/pybind/pybind11>`_ 3.0.0+ (`new BSD <https://github.com/pybind/pybind11/blob/master/LICENSE>`_)
 * `NLohmann-JSON <https://github.com/nlohmann/json>`_ 3.9.1+ (`MIT <https://github.com/nlohmann/json/blob/develop/LICENSE.MIT>`_)
 * `toml11 <https://github.com/ToruNiina/toml11>`_ 3.7.1+ (`MIT <https://github.com/ToruNiina/toml11/blob/master/LICENSE>`__)
 
@@ -38,8 +38,8 @@ Optional: language bindings
 
 * Python:
 
-  * Python 3.10 - 3.14
-  * pybind11 2.13.0+
+  * Python 3.11 - 3.15
+  * pybind11 3.0.0+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)

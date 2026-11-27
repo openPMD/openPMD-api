@@ -28,6 +28,73 @@ jobs:
 # add before install, and fix Python path:
 # ctest --test-dir build -C Debug --output-on-failure
 
+  build_win_msvc_x86:
+    name: MSVC x86 w/o MPI
+    runs-on: windows-latest
+    if: github.event.pull_request.draft == false
+    env:
+      HDF5_VERSION: 1.14.6
+      HDF5_PREFIX: C:\hdf5-x86
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      name: Install Python
+      with:
+        python-version: "3.15"
+        architecture: x86
+    - name: HDF5 Cache
+      id: hdf5-cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ env.HDF5_PREFIX }}
+        key: hdf5-${{ env.HDF5_VERSION }}-win32-static-v1
+    # static: python.org CPython does not search PATH for DLLs (Python 3.8+)
+    - name: Build HDF5
+      if: steps.hdf5-cache.outputs.cache-hit != 'true'
+      run: |
+        $PSNativeCommandUseErrorActionPreference = $true
+        curl -fsSLo hdf5.tar.gz "https://github.com/HDFGroup/hdf5/releases/download/hdf5_$env:HDF5_VERSION/hdf5-$env:HDF5_VERSION.tar.gz"
+        tar -xzf hdf5.tar.gz
+        cmake -S "hdf5-$env:HDF5_VERSION" -B build-hdf5 -A Win32 `
+              -DBUILD_SHARED_LIBS=OFF           `
+              -DBUILD_TESTING=OFF               `
+              -DHDF5_BUILD_CPP_LIB=OFF          `
+              -DHDF5_BUILD_EXAMPLES=OFF         `
+              -DHDF5_BUILD_FORTRAN=OFF          `
+              -DHDF5_BUILD_HL_LIB=OFF           `
+              -DHDF5_BUILD_JAVA=OFF             `
+              -DHDF5_BUILD_TOOLS=OFF            `
+              -DHDF5_ENABLE_SZIP_SUPPORT=OFF    `
+              -DHDF5_ENABLE_Z_LIB_SUPPORT=OFF   `
+              -DCMAKE_INSTALL_PREFIX="$env:HDF5_PREFIX"
+        cmake --build build-hdf5 --config Release --parallel 4
+        cmake --build build-hdf5 --config Release --target install
+    - name: Build & Test
+      run: |
+        $PSNativeCommandUseErrorActionPreference = $true
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade numpy
+
+        pwsh "share\openPMD\download_samples.ps1" build
+        cmake -S . -B build -A Win32            `
+              -DCMAKE_BUILD_TYPE=Release        `
+              -DBUILD_SHARED_LIBS=OFF           `
+              -DBUILD_TESTING=ON                `
+              -DopenPMD_USE_MPI=OFF             `
+              -DopenPMD_USE_HDF5=ON             `
+              -DopenPMD_USE_PYTHON=ON           `
+              -DHDF5_USE_STATIC_LIBRARIES=ON    `
+              -DCMAKE_PREFIX_PATH="$env:HDF5_PREFIX" `
+              -DPython_EXECUTABLE="$env:pythonLocation\python.exe" `
+              -DCMAKE_INSTALL_PREFIX="$env:pythonLocation"
+        cmake --build build --config Release --parallel 4
+        # install first: the Python tests import the installed module
+        cmake --build build --config Release --target install
+        ctest --test-dir build -C Release --output-on-failure
+
+        python -c "import openpmd_api as io; print(io.__version__, io.variants); assert io.variants['hdf5']"
+        python -m openpmd_api.ls --help
+
   build_win_msvc_pip:
     name: MSVC w/o MPI via pip
     runs-on: windows-latest

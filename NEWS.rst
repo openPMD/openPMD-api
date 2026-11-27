@@ -3,6 +3,14 @@
 Upgrade Guide
 =============
 
+0.18.0
+------
+
+Python 3.10 support is EOL and removed.
+Python 3.15 is now supported.
+Known limitation: free-threaded Python 3.15 (``3.15t``) on 32-bit platforms is not yet supported, because pybind11 3.1.0 and older break the NumPy 2.5.2+ interoperability there (`pybind11 #6200 <https://github.com/pybind/pybind11/pull/6200>`__).
+
+
 0.17.0
 ------
 
