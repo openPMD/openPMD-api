@@ -129,7 +129,8 @@ install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh list_library_deps.py check_wheel_libs.py smoke_roundtrip.py src/.github/
   # Wheels-only re-release: bump the package version (same source).
-  - (cd src && git apply ../setup-py-version-post4.patch)
+  - (cd src && git apply ../setup-py-version-post5.patch)
+  - (cd src && git apply ../setup-py-python-versions.patch)
   # Keep statically-embedded deps (HDF5/ADIOS2/openPMD) private so the wheel can
   # be co-loaded with another extension that also embeds them (ImpactX/WarpX).
   - (cd src && git apply ../python-hide-symbols.patch)
