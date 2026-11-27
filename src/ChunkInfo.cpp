@@ -940,7 +940,9 @@ namespace host_info
     }
 
 #if openPMD_HAVE_MPI
-    chunk_assignment::RankMeta byMethodCollective(MPI_Comm comm, Method method)
+    template <typename Communicator>
+    chunk_assignment::RankMeta
+    byMethodCollective(Communicator comm, Method method)
     {
         auto myHostname = byMethod(method);
         chunk_assignment::RankMeta res;
@@ -952,6 +954,11 @@ namespace host_info
         }
         return res;
     }
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+    template chunk_assignment::RankMeta
+        byMethodCollective<MPI_Comm>(MPI_Comm, Method);
+#endif
 
     std::string mpi_processor_name()
     {

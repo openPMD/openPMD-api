@@ -38,10 +38,7 @@
 #include "openPMD/snapshots/Snapshots.hpp"
 #include "openPMD/version.hpp"
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include <any>
 #include <cstdint> // uint64_t
 #include <deque>
 #include <functional>
@@ -52,6 +49,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -246,12 +244,12 @@ namespace internal
 
         void close();
 
-#if openPMD_HAVE_MPI
         /*
-         * @todo Once we have separate MPI headers, move this there.
+         * The MPI communicator, stored type-erased as `std::any` so that this
+         * header does not need to include <mpi.h>. Empty if no communicator
+         * was passed.
          */
-        std::optional<MPI_Comm> m_communicator;
-#endif
+        std::any m_communicator;
 
         struct NoSourceSpecified
         {};
@@ -304,25 +302,34 @@ class Series : public Attributable
 public:
     explicit Series();
 
-#if openPMD_HAVE_MPI
     /**
-     * @brief Construct a new Series
+     * @brief Construct a new MPI-parallel Series.
+     *
+     * The communicator is accepted as a template parameter so that this header
+     * does not need to include `<mpi.h>`; it is type-erased only for internal
+     * storage. The parameter is constrained so that it does not clash with the
+     * `options` overload below (string-like arguments are excluded). Passing an
+     * `MPI_Comm` (e.g. `MPI_COMM_WORLD`) selects this overload.
      *
      * For further details, refer to the documentation of the non-MPI overload.
      *
+     * @tparam Communicator The communicator type, e.g. \c MPI_Comm.
      * @param filepath The file path.
      * @param at Access mode.
-     * @param comm The MPI communicator.
+     * @param communicator The MPI communicator.
      * @param options Advanced backend configuration via JSON.
      *      May be specified as a JSON-formatted string directly, or as a path
      *      to a JSON textfile, prepended by an at sign '@'.
      */
+    template <
+        typename Communicator,
+        typename = std::enable_if_t<
+            !std::is_convertible_v<std::decay_t<Communicator>, std::string>>>
     Series(
         std::string const &filepath,
         Access at,
-        MPI_Comm comm,
+        Communicator communicator,
         std::string const &options = "{}");
-#endif
 
     /**
      * @brief Construct a new Series.
@@ -487,11 +494,7 @@ public:
      * @return  Vector with a String per (writing) MPI rank, indicating user-
      *          defined meta information per rank. Example: host name.
      */
-#if openPMD_HAVE_MPI
     chunk_assignment::RankMeta rankTable(bool collective);
-#else
-    chunk_assignment::RankMeta rankTable(bool collective = false);
-#endif
 
     /**
      * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with

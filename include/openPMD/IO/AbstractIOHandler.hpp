@@ -28,16 +28,13 @@
 #include "openPMD/version.hpp"
 #include <ostream>
 
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include <future>
 #include <memory>
 #include <queue>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace openPMD
 {
@@ -283,13 +280,18 @@ protected:
 
 public:
 #if openPMD_HAVE_MPI
-    template <typename TracingJSON>
+    /*
+     * The communicator is a template parameter, analogous to TracingJSON, so
+     * that this public header does not need to include <mpi.h>. The
+     * instantiation for MPI_Comm is provided by the implementation.
+     */
+    template <typename TracingJSON, typename Communicator>
     AbstractIOHandler(
         std::optional<std::unique_ptr<AbstractIOHandler>> initialize_from,
         std::string path,
         Access at,
         TracingJSON &&jsonConfig,
-        MPI_Comm);
+        Communicator communicator);
 #endif
 
     template <typename TracingJSON>
