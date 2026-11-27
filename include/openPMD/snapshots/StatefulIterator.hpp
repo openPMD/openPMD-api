@@ -395,6 +395,11 @@ private:
         -> std::optional<value_type const *>;
     auto peekCurrentlyOpenIteration() -> std::optional<value_type *>;
 
+    // Only checks the index state from the Iterator, peekCurrentlyOpenIteration
+    // actually retrieves the Iteration and checks if it is open
+    [[nodiscard]] auto currentIterationIndex() const
+        -> std::optional<iteration_index_t>;
+
     auto reparse_possibly_deleted_iteration(iteration_index_t) -> void;
 };
 } // namespace openPMD
