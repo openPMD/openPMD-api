@@ -130,6 +130,7 @@ function build_adios2 {
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
+        -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=TRUE \
         -DADIOS2_INSTALL_GENERATE_CONFIG=OFF      \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
@@ -270,7 +271,8 @@ function build_zlib {
       -DBUILD_SHARED_LIBS=OFF \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      -DZLIB_BUILD_EXAMPLES=OFF
 
     PATH=${CMAKE_BIN}:${PATH} ${EMMAKE} cmake --build build-zlib --parallel ${CPU_COUNT}
     PATH=${CMAKE_BIN}:${PATH} ${SUDO} ${EMMAKE} cmake --build build-zlib --target install
