@@ -113,7 +113,8 @@ jobs:
 
         python3 -m pip wheel .
         if(!$?) { Exit $LASTEXITCODE }
-        python3 -m pip install --find-links=. openPMD_api
+        # install by path: --find-links would prefer a newer non-dev release from PyPI
+        python3 -m pip install (Get-ChildItem openpmd_api-*.whl).FullName
         if(!$?) { Exit $LASTEXITCODE }
 
         python3 -c "import openpmd_api as api; print(api.variants)"
@@ -121,6 +122,31 @@ jobs:
 
         python3 -m openpmd_api.ls --help
         if(!$?) { Exit $LASTEXITCODE }
+
+  build_win_msvc_pip_x86:
+    name: MSVC x86 w/o MPI via pip
+    runs-on: windows-latest
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      name: Install Python
+      with:
+        # oldest CPython with NumPy win32 wheels
+        python-version: "3.12"
+        architecture: x86
+    - name: Build & Install
+      run: |
+        $PSNativeCommandUseErrorActionPreference = $true
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade numpy
+
+        python -m pip wheel -v --no-deps --wheel-dir dist .
+        # install by path: --find-links would prefer a newer non-dev release from PyPI
+        python -m pip install (Get-ChildItem dist\openpmd_api-*.whl).FullName
+
+        python -c "import platform, openpmd_api as io; print(platform.architecture(), io.__version__, io.variants)"
+        python -m openpmd_api.ls --help
 
   build_win_clang:
     name: Clang w/o MPI
